@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
+import ApiError from "../utils/ApiError.js";
+
 class AuthService {
     async register(userData){
         const {email} = userData;
@@ -8,7 +10,9 @@ class AuthService {
         const existingUser = await User.findOne({email});
 
         if(existingUser){
-            throw new Error("User already exists with this email");
+            throw new ApiError(
+                409
+                ,"User already exists with this email");
         }
 
         const user = await User.create(userData);
@@ -21,13 +25,17 @@ class AuthService {
         const user = await User.findOne({email}).select("+password");
 
         if(!user){
-            throw new Error("Invalid email or password");
+            throw new ApiError(
+                401,
+                "Invalid email or password");
         }
 
         const isPasswordValid = await user.comparePassword(password);
 
         if(!isPasswordValid){
-            throw new Error ("Invalid email or password");
+            throw new ApiError (
+                401,
+                "Invalid email or password");
         }
 
         const token = jwt.sign(

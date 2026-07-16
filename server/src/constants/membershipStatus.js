@@ -1,0 +1,6 @@
+export const MEMBERSHIP_STATUS = {
+    ACTIVE: "ACTIVE",
+    INVITED: "INVITED",
+    SUSPENDED: "SUSPENDED",
+    LEFT: "LEFT"
+};

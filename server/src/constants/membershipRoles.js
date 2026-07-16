@@ -1,0 +1,5 @@
+export const MEMBERSHIP_ROLES = {
+    OWNER: "OWNER",
+    ADMIN: "ADMIN",
+    DEVELOPER: "DEVELOPER"
+};

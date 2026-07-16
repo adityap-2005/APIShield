@@ -1,0 +1,5 @@
+export const ORGANIZATION_STATUS = {
+    ACTIVE : "ACTIVE",
+    SUSPENDED : "SUSPENDED",
+    ARCHIVED : "ARCHIVE"
+}
