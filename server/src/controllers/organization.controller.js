@@ -23,17 +23,19 @@ class OrganizationController {
         }
     }
 
-    async getCurrentOrganization(req, res, next) {
+    async getUserOrganizations(req, res, next) {
         try {
-            const organization = await
-                organizationService.getCurrentOrganization(
-                    req.user.organization
+
+            const organizations =
+                await organizationService.getUserOrganizations(
+                    req.user._id
                 );
 
             return res.status(200).json({
                 success: true,
-                data: organization
-            })
+                data: organizations
+            });
+
         } catch (error) {
             next(error);
         }

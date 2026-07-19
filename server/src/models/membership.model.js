@@ -49,6 +49,19 @@ const membershipSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             default: null
+        },
+
+        // ======================
+        // Audits
+        // ======================
+
+        leftAt: Date,
+
+        removedAt: Date,
+
+        removedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
         }
 
     },

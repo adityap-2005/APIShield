@@ -17,7 +17,7 @@ class InvitationController {
                 data: invitation
             })
         } catch (error) {
-            next(next);
+            next(error);
         }
     }
 

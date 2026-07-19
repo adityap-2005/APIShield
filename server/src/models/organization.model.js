@@ -48,7 +48,7 @@ const organizationSchema = new mongoose.Schema(
         // Ownership
         // ======================
 
-        ownerId: {
+        createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true
@@ -70,10 +70,10 @@ const organizationSchema = new mongoose.Schema(
     });
 
 organizationSchema.index(
-    {slug : 1},
-    {unique : true}
+    { slug: 1 },
+    { unique: true }
 );
-organizationSchema.index({ownerId : 1});
+organizationSchema.index({ createdBy: 1 });
 
 const Organization = new mongoose.model(
     "Organization",

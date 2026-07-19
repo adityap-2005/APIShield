@@ -405,46 +405,62 @@ class InvitationService {
         invitation,
         user
     ) {
+
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
 
-            await Membership.create(
-                [
+            let membership = await Membership.findOne({
+                userId: user._id,
+                organizationId: invitation.organizationId
+            }).session(session);
+
+            if (membership) {
+
+                if (
+                    membership.status === MEMBERSHIP_STATUS.ACTIVE
+                ) {
+                    throw new ApiError(
+                        409,
+                        "You are already a member of this organization."
+                    );
+                }
+
+                membership.status = MEMBERSHIP_STATUS.ACTIVE;
+                membership.role = invitation.role;
+                membership.invitedBy = invitation.invitedBy;
+
+                membership.leftAt = null;
+                membership.removedAt = null;
+                membership.removedBy = null;
+
+                await membership.save({ session });
+
+            } else {
+
+                const memberships = await Membership.create(
+                    [
+                        {
+                            userId: user._id,
+                            organizationId: invitation.organizationId,
+                            role: invitation.role,
+                            status: MEMBERSHIP_STATUS.ACTIVE,
+                            invitedBy: invitation.invitedBy
+                        }
+                    ],
                     {
-                        userId: user._id,
-                        organizationId: invitation.organizationId,
-                        role: invitation.role,
-                        status: MEMBERSHIP_STATUS.ACTIVE,
-                        invitedBy: invitation.invitedBy
+                        session
                     }
-                ],
-                {
-                    session
-                }
-            );
+                );
 
-            await User.findByIdAndUpdate(
-                user._id,
-                {
-                    organization: invitation.organizationId
-                },
-                {
-                    session
-                }
-            );
+                membership = memberships[0];
+            }
 
-            await Invitation.findByIdAndUpdate(
-                invitation._id,
-                {
-                    status: INVITATION_STATUS.ACCEPTED,
-                    acceptedAt: new Date()
-                },
-                {
-                    session
-                }
-            );
+            invitation.status = INVITATION_STATUS.ACCEPTED;
+            invitation.acceptedAt = new Date();
+
+            await invitation.save({ session });
 
             await session.commitTransaction();
 
@@ -456,10 +472,14 @@ class InvitationService {
             return updatedInvitation;
 
         } catch (error) {
+
             await session.abortTransaction();
             throw error;
+
         } finally {
+
             await session.endSession();
+
         }
     }
 
@@ -480,21 +500,15 @@ class InvitationService {
         organizationId
     ) {
 
-        const invitation = await Invitation.findById(invitationId);
+        const invitation = await Invitation.findOne({
+            _id: invitationId,
+            organizationId
+        });
 
         if (!invitation) {
             throw new ApiError(
                 404,
                 "Invitation not found."
-            );
-        }
-
-        if (
-            !invitation.organizationId.equals(organizationId)
-        ) {
-            throw new ApiError(
-                403,
-                "Invitation does not belong to this organization."
             );
         }
 

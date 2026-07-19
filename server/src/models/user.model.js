@@ -35,27 +35,11 @@ const userSchema = new mongoose.Schema({
         minlength: [8, "Password must be at least 8 characters"],
         select: false
     },
-    // ======================
-    // Workspace
-    // ======================
-    organization: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Organization",
-        default: null
-    },
-    team: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Team",
-        default: null
-    },
-    role: {
-        type: String,
-        enum: Object.values(USER_ROLES),
-        default: USER_ROLES.DEVELOPER
-    },
+    
     // ======================
     // Account
     // ======================
+
     avatar: {
         type: String,
         default: null
@@ -72,13 +56,6 @@ const userSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
-// ======================
-// Indexes
-// ======================
-
-// userSchema.index({ organization: 1 });
-// userSchema.index({ team: 1 });
 
 // ======================
 // Middleware (Hooks)

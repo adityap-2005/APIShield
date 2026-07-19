@@ -65,20 +65,11 @@ const invitationSchema = new mongoose.Schema({
     // Audits
     // ======================
 
-    acceptedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    },
+    acceptedAt: Date,
 
-    rejectedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    },
+    rejectedAt: Date,
 
-    cancelledBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    }
+    cancelledAt: Date
 },
     {
         timestamps: true

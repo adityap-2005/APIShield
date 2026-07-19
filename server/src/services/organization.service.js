@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Organization from "../models/organization.model.js";
 import Membership from "../models/membership.model.js";
-import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 
 import { MEMBERSHIP_ROLES } from "../constants/membershipRoles.js";
@@ -56,7 +55,7 @@ class OrganizationService {
                         slug,
                         description,
                         website,
-                        ownerId: userId
+                        createdBy: userId
                     }
                 ],
                 {
@@ -80,16 +79,6 @@ class OrganizationService {
                 }
             );
 
-            await User.findByIdAndUpdate(
-                userId,
-                {
-                    organization: createdOrganization._id
-                },
-                {
-                    session
-                }
-            );
-
             await session.commitTransaction();
 
             return createdOrganization;
@@ -104,19 +93,19 @@ class OrganizationService {
 
     }
 
-    async getCurrentOrganization(organizationId) {
-        const organization =
-            await
-                Organization.findById(organizationId)
-                    .populate("ownerId", "name email avatar");
+    async getUserOrganizations(userId) {
 
-        if (!organization) {
-            throw new ApiError(
-                404,
-                "Organization not found");
-        }
+        const memberships = await Membership.find({
+            userId,
+            status: MEMBERSHIP_STATUS.ACTIVE
+        }).populate({
+            path: "organizationId",
+            select: "-__v"
+        });
 
-        return organization;
+        return memberships.map(
+            membership => membership.organizationId
+        );
     }
 
 }

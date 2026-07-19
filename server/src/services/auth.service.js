@@ -3,58 +3,88 @@ import jwt from "jsonwebtoken";
 
 import ApiError from "../utils/ApiError.js";
 
+import { ACCOUNT_STATUS } from "../constants/accountStatus.js";
+
 class AuthService {
-    async register(userData){
-        const {email} = userData;
 
-        const existingUser = await User.findOne({email});
+    async register(userData) {
 
-        if(existingUser){
+        const normalizedEmail =
+            userData.email.trim().toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail
+        });
+
+        if (existingUser) {
             throw new ApiError(
-                409
-                ,"User already exists with this email");
+                409,
+                "User already exists with this email."
+            );
         }
 
-        const user = await User.create(userData);
+        const user = await User.create({
+            ...userData,
+            email: normalizedEmail
+        });
+
         return user;
     }
 
-    async login(loginData){
-        const {email,password} = loginData;
+    async login(loginData) {
 
-        const user = await User.findOne({email}).select("+password");
+        const normalizedEmail =
+            loginData.email.trim().toLowerCase();
 
-        if(!user){
+        const { password } = loginData;
+
+        const user = await User.findOne({
+            email: normalizedEmail
+        }).select("+password");
+
+        if (!user) {
             throw new ApiError(
                 401,
-                "Invalid email or password");
+                "Invalid email or password."
+            );
         }
 
-        const isPasswordValid = await user.comparePassword(password);
+        if (user.status !== ACCOUNT_STATUS.ACTIVE) {
+            throw new ApiError(
+                403,
+                "Your account is inactive."
+            );
+        }
 
-        if(!isPasswordValid){
-            throw new ApiError (
+        const isPasswordValid =
+            await user.comparePassword(password);
+
+        if (!isPasswordValid) {
+            throw new ApiError(
                 401,
-                "Invalid email or password");
+                "Invalid email or password."
+            );
         }
 
         const token = jwt.sign(
             {
-                userId : user._id
+                userId: user._id
             },
             process.env.JWT_SECRET,
             {
-                expiresIn : process.env.JWT_EXPIRES_IN
+                expiresIn: process.env.JWT_EXPIRES_IN
             }
-        )
+        );
 
-        user.password = undefined;
+        const userObject = user.toObject();
+        delete userObject.password;
 
         return {
-            user,
+            user: userObject,
             token
-        }
+        };
     }
+
 }
 
 const authService = new AuthService();
