@@ -2,7 +2,8 @@ import express from "express";
 import protect from "../middleware/auth.middleware.js";
 import organizationController from "../controllers/organization.controller.js";
 import invitationController from "../controllers/invitation.controller.js";
-import membershipController from "../controllers/membership.controller.js"
+import membershipController from "../controllers/membership.controller.js";
+import teamController from "../controllers/team.controller.js";
 
 const router = new express.Router();
 
@@ -53,6 +54,70 @@ router.delete(
     "/:organizationId/members/:memberId",
     protect,
     membershipController.removeMember
+);
+
+// Team Management
+
+router.post(
+    "/:organizationId/teams",
+    protect,
+    teamController.createTeam
+);
+
+router.get(
+    "/:organizationId/teams",
+    protect,
+    teamController.getOrganizationTeams
+);
+
+router.get(
+    "/:organizationId/teams/:teamId",
+    protect,
+    teamController.getTeamById
+);
+
+router.patch(
+    "/:organizationId/teams/:teamId",
+    protect,
+    teamController.updateTeam
+);
+
+router.delete(
+    "/:organizationId/teams/:teamId",
+    protect,
+    teamController.deleteTeam
+);
+
+// Team Members
+
+router.post(
+    "/:organizationId/teams/:teamId/members",
+    protect,
+    teamController.addTeamMember
+);
+
+router.get(
+    "/:organizationId/teams/:teamId/members",
+    protect,
+    teamController.getTeamMembers
+);
+
+router.delete(
+    "/:organizationId/teams/:teamId/members/:membershipId",
+    protect,
+    teamController.removeTeamMember
+);
+
+router.patch(
+    "/:organizationId/teams/:teamId/members/:membershipId",
+    protect,
+    teamController.updateTeamMemberRole
+);
+
+router.delete(
+    "/:organizationId/teams/:teamId/leave",
+    protect,
+    teamController.leaveTeam
 );
 
 export default router;
