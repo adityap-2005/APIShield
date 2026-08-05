@@ -7,6 +7,7 @@ import errorHandler from "./middleware/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import organizationRoutes from "./routes/organization.routes.js"
 import invitationRoutes from "../src/routes/invitation.routes.js";
+import apiKeyRoutes from "./routes/apiKey.routes.js"
 
 app.get("/",(req,res)=>{
     res.send("Welcome to APIShield");
@@ -20,6 +21,10 @@ app.use((req, res, next) => {
 app.use("/api/v1/auth",authRoutes);
 app.use("/api/v1/organizations",organizationRoutes);
 app.use("/api/v1/invitations",invitationRoutes);
+app.use(
+    "/api/v1/organizations/:organizationId/teams/:teamId/api-keys",
+    apiKeyRoutes
+);
 
 app.use(errorHandler);
 
