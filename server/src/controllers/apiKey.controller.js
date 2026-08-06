@@ -148,6 +148,16 @@ class ApiKeyController {
             next(error);
         }
     }
+
+    async getUsers(req, res) {
+        return res.status(200).json({
+            success: true,
+            message:
+                "Authenticated successfully",
+
+            data: req.apiKeyContext
+        });
+    }
 }
 
 export default new ApiKeyController();
