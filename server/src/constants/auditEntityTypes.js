@@ -1,0 +1,13 @@
+export const AUDIT_ENTITY_TYPES = {
+
+    USER: "USER",
+
+    ORGANIZATION: "ORGANIZATION",
+
+    MEMBER: "MEMBER",
+
+    TEAM: "TEAM",
+
+    API_KEY: "API_KEY"
+
+};

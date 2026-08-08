@@ -4,11 +4,16 @@ import Invitation from "../models/invitation.model.js";
 import Membership from "../models/membership.model.js";
 import Organization from "../models/organization.model.js";
 import User from "../models/user.model.js";
+
+import auditLogService from "./auditLog.service.js";
+
 import ApiError from "../utils/ApiError.js";
 
 import { MEMBERSHIP_ROLES } from "../constants/membershipRoles.js";
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { INVITATION_STATUS } from "../constants/invitationStatus.js";
+import { AUDIT_ACTIONS } from "../constants/auditActions.js";
+import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 class InvitationService {
 
@@ -43,12 +48,41 @@ class InvitationService {
             normalizedEmail
         )
 
-        return await this._createInvitation(
+        const invitation =
+            await this._createInvitation(
+                organizationId,
+                inviterId,
+                normalizedEmail,
+                role
+            );
+
+        const actor =
+            await auditLogService.getActor(inviterId);
+
+        await auditLogService.log({
             organizationId,
-            inviterId,
-            normalizedEmail,
-            role
-        );
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.MEMBER_INVITED,
+
+            entity: {
+                id: invitation._id,
+                type:
+                    AUDIT_ENTITY_TYPES.MEMBER,
+                name: normalizedEmail
+            },
+
+            metadata: {
+                invitedEmail: normalizedEmail,
+                role,
+                invitationExpiresAt:
+                    invitation.expiresAt
+            }
+        });
+
+        return invitation;
     }
 
     async getOrganizationInvitations(
@@ -461,6 +495,36 @@ class InvitationService {
             invitation.acceptedAt = new Date();
 
             await invitation.save({ session });
+
+            const actor =
+                await auditLogService.getActor(
+                    user._id
+                );
+
+            await auditLogService.log({
+                organizationId:
+                    invitation.organizationId,
+
+                actor,
+
+                action:
+                    AUDIT_ACTIONS.INVITATION_ACCEPTED,
+
+                entity: {
+                    id: invitation._id,
+                    type:
+                        AUDIT_ENTITY_TYPES.MEMBER,
+                    name: user.email
+                },
+
+                metadata: {
+                    membershipId: membership._id,
+                    role: invitation.role,
+                    invitedBy: invitation.invitedBy
+                },
+
+                session
+            });
 
             await session.commitTransaction();
 

@@ -126,9 +126,42 @@ class MembershipService {
             );
         }
 
+        const previousRole =
+            targetMembership.role;
+
         targetMembership.role = role;
 
         await targetMembership.save();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.MEMBER_ROLE_CHANGED,
+
+            entity: {
+                id: targetMembership._id,
+                type:
+                    AUDIT_ENTITY_TYPES.MEMBER,
+                name:
+                    targetMembership._id.toString()
+            },
+
+            metadata: {
+                membershipId:
+                    targetMembership._id,
+
+                previousRole,
+
+                newRole:
+                    targetMembership.role
+            }
+        });
 
         return {
             membershipId: targetMembership._id,
@@ -179,6 +212,9 @@ class MembershipService {
             targetMembership
         );
 
+        const previousRole =
+            targetMembership.role;
+
         targetMembership.status =
             MEMBERSHIP_STATUS.REMOVED;
 
@@ -189,6 +225,33 @@ class MembershipService {
             userId;
 
         await targetMembership.save();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.MEMBER_REMOVED,
+
+            entity: {
+                id: targetMembership._id,
+                type:
+                    AUDIT_ENTITY_TYPES.MEMBER,
+                name:
+                    targetMembership._id.toString()
+            },
+
+            metadata: {
+                membershipId:
+                    targetMembership._id,
+
+                previousRole
+            }
+        });
     }
 
     // ======================

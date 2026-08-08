@@ -3,6 +3,10 @@ import Team from "../models/team.model.js";
 import Organization from "../models/organization.model.js";
 import Membership from "../models/membership.model.js";
 import TeamMembership from "../models/teamMembership.model.js";
+import AuditLog from "../models/auditLog.model.js";
+import User from "../models/user.model.js";
+
+import auditLogService from "./auditLog.service.js";
 
 import ApiError from "../utils/ApiError.js";
 import { generateApiKey } from "../utils/apiKey.util.js";
@@ -10,6 +14,8 @@ import { generateApiKey } from "../utils/apiKey.util.js";
 import { TEAM_ROLES } from "../constants/teamRoles.js";
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { API_KEY_STATUS } from "../constants/apiKey.js";
+import { AUDIT_ACTIONS } from "../constants/auditActions.js";
+import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 class ApiKeyService {
 
@@ -107,6 +113,28 @@ class ApiKeyService {
 
                 createdBy: userId
             });
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action: AUDIT_ACTIONS.API_KEY_CREATED,
+
+            entity: {
+                id: createdApiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: createdApiKey.name
+            },
+
+            metadata: {
+                environment: createdApiKey.environment
+            }
+        });
 
         return {
 
@@ -242,6 +270,13 @@ class ApiKeyService {
             );
         }
 
+        const previousValues = {
+            name: apiKey.name,
+            description: apiKey.description,
+            scopes: [...apiKey.scopes],
+            expiresAt: apiKey.expiresAt
+        };
+
         if (name !== undefined) {
             apiKey.name = name;
         }
@@ -259,6 +294,34 @@ class ApiKeyService {
         }
 
         await apiKey.save();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action: AUDIT_ACTIONS.API_KEY_UPDATED,
+
+            entity: {
+                id: apiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: apiKey.name
+            },
+
+            metadata: {
+                previousValues,
+                updatedValues: {
+                    name: apiKey.name,
+                    description: apiKey.description,
+                    scopes: apiKey.scopes,
+                    expiresAt: apiKey.expiresAt
+                }
+            }
+        });
 
         return apiKey;
     }
@@ -322,6 +385,29 @@ class ApiKeyService {
 
         await apiKey.save();
 
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action: AUDIT_ACTIONS.API_KEY_ROTATED,
+
+            entity: {
+                id: apiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: apiKey.name
+            },
+
+            metadata: {
+                environment: apiKey.environment,
+                publicKeyId: apiKey.publicKeyId
+            }
+        });
+
         return {
             apiKey: newPlainApiKey,
             apiKeyDetails: apiKey
@@ -371,6 +457,29 @@ class ApiKeyService {
         apiKey.revokedBy = userId;
 
         await apiKey.save();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action: AUDIT_ACTIONS.API_KEY_REVOKED,
+
+            entity: {
+                id: apiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: apiKey.name
+            },
+
+            metadata: {
+                environment: apiKey.environment,
+                publicKeyId: apiKey.publicKeyId
+            }
+        });
 
         return {
             apiKeyId: apiKey._id,
@@ -432,6 +541,29 @@ class ApiKeyService {
         apiKey.archivedBy = userId;
 
         await apiKey.save();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action: AUDIT_ACTIONS.API_KEY_ARCHIVED,
+
+            entity: {
+                id: apiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: apiKey.name
+            },
+
+            metadata: {
+                environment: apiKey.environment,
+                publicKeyId: apiKey.publicKeyId
+            }
+        });
 
         return {
             apiKeyId: apiKey._id,

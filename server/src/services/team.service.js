@@ -3,11 +3,15 @@ import TeamMembership from "../models/teamMembership.model.js"
 import Organization from "../models/organization.model.js";
 import Membership from "../models/membership.model.js";
 
+import auditLogService from "./auditLog.service.js";
+
 import ApiError from "../utils/ApiError.js";
 
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js";
 import { TEAM_ROLES } from "../constants/teamRoles.js";
+import { AUDIT_ACTIONS } from "../constants/auditActions.js";
+import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 class TeamService {
 
@@ -61,6 +65,29 @@ class TeamService {
             membershipId: requesterMembership._id,
             role: TEAM_ROLES.TEAM_ADMIN,
             addedBy: userId
+        });
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+
+            teamId: team._id,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.TEAM_CREATED,
+
+            entity: {
+                id: team._id,
+                type:
+                    AUDIT_ENTITY_TYPES.TEAM,
+                name: team.name
+            },
+
+            metadata: {}
         });
 
         return team;
@@ -234,6 +261,29 @@ class TeamService {
 
         await team.deleteOne();
 
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+
+            teamId: team._id,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.TEAM_DELETED,
+
+            entity: {
+                id: team._id,
+                type:
+                    AUDIT_ENTITY_TYPES.TEAM,
+                name: team.name
+            },
+
+            metadata: {}
+        });
+
         return;
     }
 
@@ -266,12 +316,12 @@ class TeamService {
             ]
         );
 
-        await this._getTeamById(
+        const team = await this._getTeamById(
             teamId,
             organizationId
         );
 
-        await this._getMembershipById(
+        const membership = await this._getMembershipById(
             membershipId,
             organizationId
         );
@@ -297,6 +347,32 @@ class TeamService {
                 role: TEAM_ROLES.MEMBER,
                 addedBy: userId,
             });
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+
+            teamId,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.TEAM_MEMBER_ADDED,
+
+            entity: {
+                id: team._id,
+                type:
+                    AUDIT_ENTITY_TYPES.TEAM,
+                name: team.name
+            },
+
+            metadata: {
+                memberId: membership._id,
+                role: teamMembership.role
+            }
+        });
 
         return teamMembership;
     }
@@ -396,12 +472,12 @@ class TeamService {
             );
         }
 
-        await this._getTeamById(
+        const team = await this._getTeamById(
             teamId,
             organizationId
         );
 
-        await this._getMembershipById(
+        const membership = await this._getMembershipById(
             membershipId,
             organizationId
         );
@@ -423,6 +499,31 @@ class TeamService {
         }
 
         await teamMembership.deleteOne();
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            teamId,
+
+            actor,
+
+            action:
+                AUDIT_ACTIONS.TEAM_MEMBER_REMOVED,
+
+            entity: {
+                id: team._id,
+                type:
+                    AUDIT_ENTITY_TYPES.TEAM,
+                name: team.name
+            },
+
+            metadata: {
+                memberId: membership._id,
+                role: teamMembership.role
+            }
+        });
 
         return;
     }
@@ -528,10 +629,52 @@ class TeamService {
             );
         }
 
+        const previousRole = teamMembership.role;
+
         teamMembership.role = role;
 
         await teamMembership.save();
 
+        if (role === TEAM_ROLES.TEAM_ADMIN) {
+
+            const actor =
+                await auditLogService.getActor(userId);
+
+            const team =
+                await this._getTeamById(
+                    teamId,
+                    organizationId
+                );
+
+            await auditLogService.log({
+                organizationId,
+
+                teamId,
+
+                actor,
+
+                action:
+                    AUDIT_ACTIONS.TEAM_ADMIN_ASSIGNED,
+
+                entity: {
+                    id: team._id,
+                    type:
+                        AUDIT_ENTITY_TYPES.TEAM,
+                    name: team.name
+                },
+
+                metadata: {
+                    memberId:
+                        teamMembership.membershipId,
+
+                    previousRole,
+
+                    newRole:
+                        TEAM_ROLES.TEAM_ADMIN
+                }
+            });
+        }
+        
         return {
             teamMembershipId: teamMembership._id,
             membershipId: teamMembership.membershipId,
