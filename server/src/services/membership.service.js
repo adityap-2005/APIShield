@@ -5,9 +5,13 @@ import Membership from "../models/membership.model.js";
 import Organization from "../models/organization.model.js";
 import User from "../models/user.model.js";
 
+import auditLogService from "./auditLog.service.js";
+
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { MEMBERSHIP_ROLES } from "../constants/membershipRoles.js";
-import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js"
+import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js";
+import { AUDIT_ACTIONS } from "../constants/auditActions.js";
+import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 class MembershipService {
 
