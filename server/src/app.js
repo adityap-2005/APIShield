@@ -20,7 +20,8 @@ import organizationRoutes from "./routes/organization.routes.js"
 import invitationRoutes from "../src/routes/invitation.routes.js";
 import apiKeyRoutes from "./routes/apiKey.routes.js";
 import demoRoutes from "../src/routes/demo.routes.js";
-import auditLogRoutes from "../src/routes/auditLog.routes.js"
+import auditLogRoutes from "../src/routes/auditLog.routes.js";
+import analyticsRouter from "../src/routes/analytics.routes.js";
 
 app.get("/", (req, res) => {
     res.send("Welcome to APIShield");
@@ -42,6 +43,10 @@ app.use("/api/v1/demo", demoRoutes);
 app.use(
     "/api/v1",
     auditLogRoutes
+);
+app.use(
+    "/api/v1",
+    analyticsRouter
 );
 
 app.use(errorHandler);
