@@ -1,122 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/**
+ * App.jsx
+ *
+ * Root Application component configuring React Router routes, AuthProvider, and OrgProvider.
+ * Features strict separation between Public Landing Page, Personal Area, and Organization Area.
+ */
 
-function App() {
-  const [count, setCount] = useState(0)
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { OrgProvider } from "./context/OrgContext";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+
+// Public Pages
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+
+// Personal Area Pages
+import MyDashboardPage from "./pages/MyDashboardPage";
+import ProfilePage from "./pages/ProfilePage";
+import PersonalSettingsPage from "./pages/PersonalSettingsPage";
+
+// Organization Area Pages
+import OrgDashboardPage from "./pages/OrgDashboardPage";
+import ApiKeysPage from "./pages/ApiKeysPage";
+import TeamsPage from "./pages/TeamsPage";
+import TeamDetailPage from "./pages/TeamDetailPage";
+import MembersPage from "./pages/MembersPage";
+import InvitationsPage from "./pages/InvitationsPage";
+import UsagePage from "./pages/UsagePage";
+import AuditLogsPage from "./pages/AuditLogsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SettingsPage from "./pages/SettingsPage";
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <AuthProvider>
+        <OrgProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-      <div className="ticks"></div>
+            {/* Protected Routes (Require Authentication) */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                {/* ── PERSONAL AREA ───────────────────────────────────── */}
+                <Route path="/dashboard" element={<MyDashboardPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings/personal" element={<PersonalSettingsPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+                {/* ── ORGANIZATION AREA (/org/:organizationId) ───────── */}
+                <Route path="/org/:organizationId" element={<OrgDashboardPage />} />
+                <Route path="/org/:organizationId/api-keys" element={<ApiKeysPage />} />
+                <Route path="/org/:organizationId/teams" element={<TeamsPage />} />
+                <Route path="/org/:organizationId/teams/:teamId" element={<TeamDetailPage />} />
+                <Route path="/org/:organizationId/members" element={<MembersPage />} />
+                <Route path="/org/:organizationId/invitations" element={<InvitationsPage />} />
+                <Route path="/org/:organizationId/usage" element={<UsagePage />} />
+                <Route path="/org/:organizationId/audit-logs" element={<AuditLogsPage />} />
+                <Route path="/org/:organizationId/analytics" element={<AnalyticsPage />} />
+                <Route path="/org/:organizationId/settings" element={<SettingsPage />} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                {/* ── BACKWARDS COMPATIBLE SHORTCUT ROUTES ────────────── */}
+                <Route path="/api-keys" element={<ApiKeysPage />} />
+                <Route path="/teams" element={<TeamsPage />} />
+                <Route path="/teams/:teamId" element={<TeamDetailPage />} />
+                <Route path="/members" element={<MembersPage />} />
+                <Route path="/invitations" element={<InvitationsPage />} />
+                <Route path="/usage" element={<UsagePage />} />
+                <Route path="/audit-logs" element={<AuditLogsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+            </Route>
+
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </OrgProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
-
-export default App
