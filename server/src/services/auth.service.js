@@ -1,7 +1,10 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 import ApiError from "../utils/ApiError.js";
+import { generateEmailVerificationToken } from "../utils/emailVerification.js";
+import emailService from "./email.service.js";
 
 import { ACCOUNT_STATUS } from "../constants/accountStatus.js";
 
@@ -23,12 +26,32 @@ class AuthService {
             );
         }
 
+        const {
+            rawToken,
+            tokenHash,
+            tokenExpiry
+        } = generateEmailVerificationToken();
+
         const user = await User.create({
             ...userData,
-            email: normalizedEmail
+            email: normalizedEmail,
+            isVerified: false,
+            verificationTokenHash: tokenHash,
+            verificationTokenExpiry: tokenExpiry
         });
 
-        return user;
+        await emailService.sendVerificationEmail(
+            normalizedEmail,
+            rawToken
+        );
+
+        const userObject = user.toObject();
+
+        delete userObject.password;
+        delete userObject.verificationTokenHash;
+        delete userObject.verificationTokenExpiry;
+
+        return userObject;
     }
 
     async login(loginData) {
@@ -53,6 +76,13 @@ class AuthService {
             throw new ApiError(
                 403,
                 "Your account is inactive."
+            );
+        }
+
+        if (!user.isVerified) {
+            throw new ApiError(
+                403,
+                "Please verify your email before logging in."
             );
         }
 
@@ -85,6 +115,69 @@ class AuthService {
         };
     }
 
+    async verifyEmail(rawToken) {
+
+        const tokenHash = crypto
+            .createHash("sha256")
+            .update(rawToken)
+            .digest("hex");
+
+        const user = await User.findOne({
+            verificationTokenHash: tokenHash
+        });
+
+        if (!user) {
+            throw new ApiError(
+                400,
+                "Invalid verification token."
+            );
+        }
+
+        if (
+            !user.verificationTokenExpiry ||
+            user.verificationTokenExpiry < new Date()
+        ) {
+            throw new ApiError(
+                400,
+                "Verification token has expired."
+            );
+        }
+
+        user.isVerified = true;
+
+        user.verificationTokenHash = null;
+        user.verificationTokenExpiry = null;
+
+        await user.save();
+
+        return {
+            message: "Email verified successfully."
+        };
+    }
+
+    async updateProfile(userId, name) {
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found."
+            );
+        }
+
+        user.name = name;
+
+        await user.save();
+
+        const userObject = user.toObject();
+
+        delete userObject.password;
+        delete userObject.verificationTokenHash;
+        delete userObject.verificationTokenExpiry;
+
+        return userObject;
+    }
 }
 
 const authService = new AuthService();

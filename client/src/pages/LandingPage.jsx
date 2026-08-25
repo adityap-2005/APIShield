@@ -1,11 +1,7 @@
-/**
- * LandingPage.jsx
- *
- * Public landing page introducing APIShield developer platform.
- * Features hero overview, feature cards, and direct links to Login and Register.
- */
-
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import ProfileDropdown from "../components/ProfileDropdown";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   ShieldCheck,
   KeyRound,
@@ -14,10 +10,13 @@ import {
   FileText,
   RefreshCw,
   ArrowRight,
-  Lock
+  Lock,
+  LayoutDashboard
 } from "lucide-react";
 
 export default function LandingPage() {
+  const { user, isLoading } = useAuth();
+
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#f0f6fc] font-sans flex flex-col justify-between">
       {/* Top Navbar */}
@@ -29,13 +28,28 @@ export default function LandingPage() {
           <span className="font-bold text-[#f0f6fc] text-base tracking-tight">APIShield</span>
         </div>
 
+        {/* Authenticated vs Unauthenticated Navigation Header */}
         <div className="flex items-center gap-3">
-          <Link to="/login" className="btn-secondary text-xs">
-            Sign In
-          </Link>
-          <Link to="/register" className="btn-primary text-xs">
-            Get Started
-          </Link>
+          {isLoading ? (
+            <div className="w-6 h-6 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin" />
+          ) : user ? (
+            <div className="flex items-center gap-3">
+              <Link to="/dashboard" className="btn-primary text-xs flex items-center gap-1.5">
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Go to Dashboard
+              </Link>
+              <ProfileDropdown />
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="btn-secondary text-xs">
+                Sign In
+              </Link>
+              <Link to="/register" className="btn-primary text-xs">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -55,12 +69,20 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Link to="/register" className="btn-primary text-sm px-6 py-2.5 w-full sm:w-auto justify-center">
-            Get Started <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link to="/login" className="btn-secondary text-sm px-6 py-2.5 w-full sm:w-auto justify-center">
-            Sign In to Console
-          </Link>
+          {user ? (
+            <Link to="/dashboard" className="btn-primary text-sm px-6 py-2.5 w-full sm:w-auto justify-center">
+              Go to Dashboard <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <>
+              <Link to="/register" className="btn-primary text-sm px-6 py-2.5 w-full sm:w-auto justify-center">
+                Get Started <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link to="/login" className="btn-secondary text-sm px-6 py-2.5 w-full sm:w-auto justify-center">
+                Sign In to Console
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Feature Cards Grid */}

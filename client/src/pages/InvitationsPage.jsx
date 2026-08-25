@@ -1,12 +1,5 @@
-/**
- * InvitationsPage.jsx
- *
- * Page for viewing organization invitations and personal invitations.
- * Uses ConfirmModal for cancellation confirmations.
- */
-
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
 import invitationsApi from "../api/invitations";
 
@@ -21,51 +14,53 @@ import { Mail, Check, X, Ban, Building2 } from "lucide-react";
 export default function InvitationsPage() {
   const { activeOrg, fetchOrganizations } = useOrg();
   const { organizationId } = useParams();
+  const location = useLocation();
 
+  const isOrgContext = Boolean(organizationId) || location.pathname.startsWith("/org/");
   const targetOrgId = organizationId || activeOrg?._id;
 
-  const [orgInvitations, setOrgInvitations] = useState([]);
-  const [myInvitations, setMyInvitations] = useState([]);
-
+  const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Confirm Modal state
   const [confirmState, setConfirmState] = useState({
     isOpen: false,
     invitationId: null,
     loading: false,
   });
 
-  const loadAllInvitations = async () => {
+  const loadInvitations = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [myRes, orgRes] = await Promise.all([
-        invitationsApi.getMyInvitations().catch(() => ({ data: { data: [] } })),
-        targetOrgId
-          ? invitationsApi.getOrganizationInvitations(targetOrgId).catch(() => ({ data: { data: [] } }))
-          : Promise.resolve({ data: { data: [] } }),
-      ]);
-
-      setMyInvitations(myRes.data?.data || []);
-      setOrgInvitations(orgRes.data?.data || []);
+      if (isOrgContext) {
+        if (!targetOrgId) {
+          setInvitations([]);
+          setLoading(false);
+          return;
+        }
+        const response = await invitationsApi.getOrganizationInvitations(targetOrgId);
+        setInvitations(response.data?.data || []);
+      } else {
+        const response = await invitationsApi.getMyInvitations();
+        setInvitations(response.data?.data || []);
+      }
     } catch (err) {
-      setError("Failed to load invitations.");
+      setError(err.response?.data?.message || "Failed to load invitations.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAllInvitations();
-  }, [targetOrgId]);
+    loadInvitations();
+  }, [isOrgContext, targetOrgId]);
 
   const handleAcceptMyInvitation = async (invitationId) => {
     try {
       await invitationsApi.accept(invitationId);
-      loadAllInvitations();
+      loadInvitations();
       fetchOrganizations();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to accept invitation.");
@@ -75,7 +70,7 @@ export default function InvitationsPage() {
   const handleRejectMyInvitation = async (invitationId) => {
     try {
       await invitationsApi.reject(invitationId);
-      loadAllInvitations();
+      loadInvitations();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to reject invitation.");
     }
@@ -94,7 +89,7 @@ export default function InvitationsPage() {
       setConfirmState((prev) => ({ ...prev, loading: true }));
       await invitationsApi.cancel(targetOrgId, confirmState.invitationId);
       setConfirmState({ isOpen: false, invitationId: null, loading: false });
-      loadAllInvitations();
+      loadInvitations();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to cancel invitation.");
       setConfirmState((prev) => ({ ...prev, loading: false }));
@@ -107,73 +102,78 @@ export default function InvitationsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
             <Mail className="w-5 h-5 text-[#58a6ff]" />
-            Invitations
+            {isOrgContext ? "Organization Invitations" : "My Personal Invitations"}
           </h1>
-          <p className="page-description">Manage organization invites sent and received</p>
+          <p className="page-description">
+            {isOrgContext
+              ? "Manage invitations sent to developers for this organization"
+              : "Review and respond to organization invitations sent to you"}
+          </p>
         </div>
       </div>
 
-      {error && <ErrorMessage message={error} onRetry={loadAllInvitations} />}
+      {error && <ErrorMessage message={error} onRetry={loadInvitations} />}
 
-      {/* SECTION 1: My Pending Invitations */}
-      <div className="space-y-4">
-        <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-[#58a6ff]" />
-          Pending Invitations Sent to You ({myInvitations.length})
-        </h2>
-
-        {myInvitations.length === 0 ? (
-          <EmptyState message="You have no pending organization invitations." />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {myInvitations.map((inv) => (
-              <div key={inv._id} className="card flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-[#f0f6fc] text-sm">
-                    {inv.organizationId?.name || "Organization"}
-                  </h3>
-                  <p className="text-xs text-[#8b949e] mt-0.5">
-                    Invited by <span className="text-[#c9d1d9] font-medium">{inv.invitedBy?.name || inv.invitedBy?.email}</span> as{" "}
-                    <Badge variant="info">{inv.role}</Badge>
-                  </p>
-                  <p className="text-[11px] text-[#8b949e] font-mono mt-1">
-                    Expires: {new Date(inv.expiresAt).toLocaleDateString()}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleAcceptMyInvitation(inv._id)}
-                    className="btn-primary text-xs px-3 py-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" /> Accept
-                  </button>
-                  <button
-                    onClick={() => handleRejectMyInvitation(inv._id)}
-                    className="btn-secondary text-xs px-3 py-1.5 text-red-400 border-red-900/50 hover:bg-red-950/30"
-                  >
-                    <X className="w-3.5 h-3.5" /> Reject
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* SECTION 2: Organization Invitations */}
-      {targetOrgId && (
-        <div className="space-y-4 pt-4 border-t border-[#30363d]">
-          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider">
-            Invitations Sent by Organization ({orgInvitations.length})
+      {/* USER PERSONAL INVITATIONS VIEW */}
+      {!isOrgContext && !error && (
+        <div className="space-y-4">
+          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-[#58a6ff]" />
+            Pending Invitations Sent to You ({invitations.length})
           </h2>
 
-          {orgInvitations.length === 0 ? (
+          {invitations.length === 0 ? (
+            <EmptyState message="You have no pending organization invitations." />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {invitations.map((inv) => (
+                <div key={inv._id} className="card flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-[#f0f6fc] text-sm">
+                      {inv.organizationId?.name || "Organization"}
+                    </h3>
+                    <p className="text-xs text-[#8b949e] mt-0.5">
+                      Invited by <span className="text-[#c9d1d9] font-medium">{inv.invitedBy?.name || inv.invitedBy?.email}</span> as{" "}
+                      <Badge variant="info">{inv.role}</Badge>
+                    </p>
+                    <p className="text-[11px] text-[#8b949e] font-mono mt-1">
+                      Expires: {new Date(inv.expiresAt).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleAcceptMyInvitation(inv._id)}
+                      className="btn-primary text-xs px-3 py-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Accept
+                    </button>
+                    <button
+                      onClick={() => handleRejectMyInvitation(inv._id)}
+                      className="btn-secondary text-xs px-3 py-1.5 text-red-400 border-red-900/50 hover:bg-red-950/30"
+                    >
+                      <X className="w-3.5 h-3.5" /> Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ORGANIZATION INVITATIONS MANAGEMENT VIEW */}
+      {isOrgContext && !error && (
+        <div className="space-y-4">
+          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider">
+            Invitations Sent by Organization ({invitations.length})
+          </h2>
+
+          {invitations.length === 0 ? (
             <EmptyState message="No invitations sent for this organization." />
           ) : (
             <div className="table-container">
@@ -189,7 +189,7 @@ export default function InvitationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orgInvitations.map((inv) => (
+                  {invitations.map((inv) => (
                     <tr key={inv._id}>
                       <td className="font-medium text-[#f0f6fc] font-mono text-xs">{inv.email}</td>
                       <td>
@@ -224,7 +224,6 @@ export default function InvitationsPage() {
         </div>
       )}
 
-      {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmState.isOpen}
         onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}

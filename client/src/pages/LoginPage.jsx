@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ShieldCheck, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { user, isLoading, login } = useAuth();
   const navigate = useNavigate();
+
+  if (!isLoading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

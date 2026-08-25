@@ -41,6 +41,42 @@ class OrganizationController {
         }
     }
 
+    async updateOrganization(req, res, next) {
+        try {
+            const organization =
+                await organizationService.updateOrganization(
+                    req.user._id,
+                    req.params.organizationId,
+                    req.body
+                );
+
+            return res.status(200).json({
+                success: true,
+                message: "Organization updated successfully",
+                data: organization
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteOrganization(req, res, next) {
+        try {
+            await organizationService.deleteOrganization(
+                req.user._id,
+                req.params.organizationId
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Organization deleted successfully"
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 const organizationController = new OrganizationController();

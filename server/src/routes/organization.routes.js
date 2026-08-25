@@ -16,6 +16,18 @@ router.get("/",
     organizationController.getUserOrganizations
 );
 
+router.patch(
+    "/:organizationId",
+    protect,
+    organizationController.updateOrganization
+);
+
+router.delete(
+    "/:organizationId",
+    protect,
+    organizationController.deleteOrganization
+);
+
 router.post("/:organizationId/invitations",
     protect,
     invitationController.inviteMember

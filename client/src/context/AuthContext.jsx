@@ -56,9 +56,10 @@ export function AuthProvider({ children }) {
     return user;
   };
 
+  // Register calls ONLY the registration API. Does not automatically log in.
   const register = async (name, email, password) => {
-    await authApi.register(name, email, password);
-    return login(email, password);
+    const response = await authApi.register(name, email, password);
+    return response.data;
   };
 
   const logout = () => {

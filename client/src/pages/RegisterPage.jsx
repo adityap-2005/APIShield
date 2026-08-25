@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ShieldCheck, UserPlus, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, UserPlus, Eye, EyeOff, Mail, ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { user, isLoading, register } = useAuth();
   const navigate = useNavigate();
+
+  if (!isLoading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,6 +19,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,13 +42,52 @@ export default function RegisterPage() {
       setLoading(true);
       setError("");
       await register(name.trim(), email.trim(), password);
-      navigate("/dashboard");
+      setIsRegistered(true);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  // Render Registration Success Screen
+  if (isRegistered) {
+    return (
+      <div className="min-h-screen bg-[#0d1117] flex flex-col justify-center items-center p-4">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#238636]/20 border border-[#238636]/40 text-[#58a6ff] mb-3">
+            <ShieldCheck className="w-7 h-7 text-[#238636]" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#f0f6fc] tracking-tight">APIShield</h2>
+        </div>
+
+        <div className="w-full sm:max-w-md card bg-[#161b22] border border-[#30363d] p-8 shadow-2xl text-center space-y-5">
+          <div className="w-12 h-12 rounded-full bg-[#1f6feb]/20 border border-[#58a6ff]/40 text-[#58a6ff] mx-auto flex items-center justify-center">
+            <Mail className="w-6 h-6" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-[#f0f6fc]">Account created successfully!</h3>
+            <p className="text-xs text-[#c9d1d9] leading-relaxed">
+              We've sent a verification email to <span className="font-semibold text-[#58a6ff]">{email}</span>.
+            </p>
+            <p className="text-xs text-[#8b949e]">
+              Please verify your email before logging in.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              to="/login"
+              className="btn-primary w-full justify-center text-sm py-2.5 flex items-center gap-2"
+            >
+              Go to Login <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex flex-col justify-center items-center p-4">

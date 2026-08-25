@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
+
+import Team from "../models/team.model.js";
+import ApiKey from "../models/apiKey.model.js";
+import ApiUsage from "../models/apiUsage.model.js";
+import Invitation from "../models/invitation.model.js";
+import AuditLog from "../models/auditLog.model.js";
 import Organization from "../models/organization.model.js";
 import Membership from "../models/membership.model.js";
+
 import ApiError from "../utils/ApiError.js";
 import auditLogService from "./auditLog.service.js";
 
@@ -135,6 +142,145 @@ class OrganizationService {
         return memberships.map(
             membership => membership.organizationId
         );
+    }
+
+    async updateOrganization(userId, organizationId, organizationData) {
+
+        const organization = await Organization.findById(
+            organizationId
+        );
+
+        if (!organization) {
+            throw new ApiError(
+                404,
+                "Organization not found."
+            );
+        }
+
+        const membership = await Membership.findOne({
+            userId,
+            organizationId,
+            role: MEMBERSHIP_ROLES.OWNER,
+            status: MEMBERSHIP_STATUS.ACTIVE
+        });
+
+        if (!membership) {
+            throw new ApiError(
+                403,
+                "Only the organization owner can update this organization."
+            );
+        }
+
+        const { name, description, website } = organizationData;
+
+        if (name !== undefined) {
+            organization.name = name;
+        }
+
+        if (description !== undefined) {
+            organization.description = description;
+        }
+
+        if (website !== undefined) {
+
+            if (
+                website &&
+                !website.startsWith("http")
+            ) {
+                throw new ApiError(
+                    400,
+                    "Invalid website URL."
+                );
+            }
+
+            organization.website = website;
+        }
+
+        await organization.save();
+
+        return organization;
+    }
+
+    async deleteOrganization(userId, organizationId) {
+
+        const organization = await Organization.findById(
+            organizationId
+        );
+
+        if (!organization) {
+            throw new ApiError(
+                404,
+                "Organization not found."
+            );
+        }
+
+        const membership = await Membership.findOne({
+            userId,
+            organizationId,
+            role: MEMBERSHIP_ROLES.OWNER,
+            status: MEMBERSHIP_STATUS.ACTIVE
+        });
+
+        if (!membership) {
+            throw new ApiError(
+                403,
+                "Only the organization owner can delete this organization."
+            );
+        }
+
+        const session = await mongoose.startSession();
+
+        session.startTransaction();
+
+        try {
+
+            await ApiUsage.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await ApiKey.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await Team.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await Membership.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await Invitation.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await AuditLog.deleteMany(
+                { organizationId },
+                { session }
+            );
+
+            await Organization.deleteOne(
+                { _id: organizationId },
+                { session }
+            );
+
+            await session.commitTransaction();
+
+        } catch (error) {
+
+            await session.abortTransaction();
+            throw error;
+
+        } finally {
+
+            await session.endSession();
+
+        }
     }
 
 }

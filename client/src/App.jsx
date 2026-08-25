@@ -1,10 +1,3 @@
-/**
- * App.jsx
- *
- * Root Application component configuring React Router routes, AuthProvider, and OrgProvider.
- * Features strict separation between Public Landing Page, Personal Area, and Organization Area.
- */
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { OrgProvider } from "./context/OrgContext";
@@ -16,6 +9,7 @@ import Layout from "./components/Layout";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 // Personal Area Pages
 import MyDashboardPage from "./pages/MyDashboardPage";
@@ -44,12 +38,14 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
 
             {/* Protected Routes (Require Authentication) */}
             <Route element={<ProtectedRoute />}>
               <Route element={<Layout />}>
                 {/* ── PERSONAL AREA ───────────────────────────────────── */}
                 <Route path="/dashboard" element={<MyDashboardPage />} />
+                <Route path="/invitations" element={<InvitationsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings/personal" element={<PersonalSettingsPage />} />
 

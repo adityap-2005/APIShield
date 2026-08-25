@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema({
         minlength: [8, "Password must be at least 8 characters"],
         select: false
     },
-    
+
     // ======================
     // Account
     // ======================
@@ -53,6 +53,14 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    verificationTokenHash: {
+        type: String,
+        default: null
+    },
+    verificationTokenExpiry: {
+        type: Date,
+        default: null
+    }
 }, {
     timestamps: true
 });
