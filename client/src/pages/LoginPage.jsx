@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ShieldCheck, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const { user, isLoading, login } = useAuth();
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isUnverified, setIsUnverified] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,10 +28,19 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError("");
+      setIsUnverified(false);
       await login(email.trim(), password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password");
+      const errorMsg = err.response?.data?.message || "Invalid email or password";
+      setError(errorMsg);
+
+      if (
+        err.response?.status === 403 &&
+        errorMsg.toLowerCase().includes("verify")
+      ) {
+        setIsUnverified(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -48,9 +58,25 @@ export default function LoginPage() {
 
       <div className="w-full sm:max-w-md card bg-[#161b22] border border-[#30363d] p-8 shadow-2xl">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {/* Standard Error Notice */}
+          {error && !isUnverified && (
             <div className="p-3 rounded-md bg-red-950/60 border border-red-800/80 text-red-300 text-xs font-medium">
               {error}
+            </div>
+          )}
+
+          {/* Unverified Email Notice */}
+          {isUnverified && (
+            <div className="p-4 rounded-md bg-yellow-950/40 border border-yellow-800/60 space-y-2 text-xs">
+              <div className="flex items-start gap-2.5 text-yellow-300">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-yellow-200">Email Verification Required</p>
+                  <p className="text-yellow-300/90 text-[11px] mt-0.5 leading-relaxed">
+                    Please check your inbox and verify your email address before signing in.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -62,7 +88,10 @@ export default function LoginPage() {
               className="input"
               placeholder="developer@apishield.io"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (isUnverified) setIsUnverified(false);
+              }}
               disabled={loading}
               required
               autoComplete="email"

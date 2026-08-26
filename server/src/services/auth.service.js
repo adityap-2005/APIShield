@@ -79,12 +79,12 @@ class AuthService {
             );
         }
 
-        if (!user.isVerified) {
-            throw new ApiError(
-                403,
-                "Please verify your email before logging in."
-            );
-        }
+        // if (!user.isVerified) {
+        //     throw new ApiError(
+        //         403,
+        //         "Please verify your email before logging in."
+        //     );
+        // }
 
         const isPasswordValid =
             await user.comparePassword(password);

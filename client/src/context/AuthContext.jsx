@@ -11,6 +11,8 @@ function authReducer(state, action) {
   switch (action.type) {
     case "SET_USER":
       return { ...state, user: action.payload.user, token: action.payload.token, isLoading: false };
+    case "UPDATE_USER":
+      return { ...state, user: { ...state.user, ...action.payload } };
     case "LOGOUT":
       return { ...state, user: null, token: null, isLoading: false };
     case "DONE_LOADING":
@@ -62,13 +64,17 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
+  const updateUser = (updatedUserData) => {
+    dispatch({ type: "UPDATE_USER", payload: updatedUserData });
+  };
+
   const logout = () => {
     localStorage.removeItem("apiShield_token");
     dispatch({ type: "LOGOUT" });
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, register }}>
+    <AuthContext.Provider value={{ ...state, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

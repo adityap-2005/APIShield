@@ -46,6 +46,29 @@ export function OrgProvider({ children }) {
     switchOrg(org);
   };
 
+  const updateOrg = (updatedOrg) => {
+    setOrganizations((prev) =>
+      prev.map((org) => (org._id === updatedOrg._id ? { ...org, ...updatedOrg } : org))
+    );
+    setActiveOrg((prev) => (prev?._id === updatedOrg._id ? { ...prev, ...updatedOrg } : prev));
+  };
+
+  const removeOrg = (orgId) => {
+    setOrganizations((prev) => {
+      const remaining = prev.filter((org) => org._id !== orgId);
+      if (activeOrg?._id === orgId) {
+        if (remaining.length > 0) {
+          setActiveOrg(remaining[0]);
+          localStorage.setItem("apiShield_activeOrgId", remaining[0]._id);
+        } else {
+          setActiveOrg(null);
+          localStorage.removeItem("apiShield_activeOrgId");
+        }
+      }
+      return remaining;
+    });
+  };
+
   return (
     <OrgContext.Provider value={{
       organizations,
@@ -55,6 +78,8 @@ export function OrgProvider({ children }) {
       fetchOrganizations,
       switchOrg,
       addOrg,
+      updateOrg,
+      removeOrg,
     }}>
       {children}
     </OrgContext.Provider>

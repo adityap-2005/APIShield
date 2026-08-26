@@ -16,6 +16,10 @@ const authApi = {
   // GET /api/v1/auth/verify-email?token=...
   verifyEmail: (token) =>
     axiosInstance.get("/auth/verify-email", { params: { token } }),
+
+  // PATCH /api/v1/auth/profile
+  updateProfile: (name) =>
+    axiosInstance.patch("/auth/profile", { name }),
 };
 
 export default authApi;
