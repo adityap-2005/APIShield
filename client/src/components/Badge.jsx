@@ -1,6 +1,6 @@
 /**
  * Badge.jsx
- * Small colored pill badge for statuses and roles.
+ * Small colored pill badge for statuses and roles matching the landing page theme.
  *
  * Usage:
  *   <Badge variant="success">Active</Badge>
@@ -11,17 +11,18 @@
  */
 
 const variants = {
-  success: "bg-green-900/40 text-green-400 border border-green-800",
-  danger:  "bg-red-900/40 text-red-400 border border-red-800",
-  warning: "bg-yellow-900/40 text-yellow-400 border border-yellow-800",
-  info:    "bg-blue-900/40 text-blue-400 border border-blue-800",
-  purple:  "bg-purple-900/40 text-purple-400 border border-purple-800",
-  default: "bg-gray-800 text-gray-400 border border-gray-700",
+  success: "bg-green-950/60 text-green-400 border border-green-800/40",
+  danger:  "bg-red-950/60 text-red-400 border border-red-800/40",
+  warning: "bg-yellow-950/60 text-yellow-400 border border-yellow-800/40",
+  info:    "bg-blue-950/60 text-blue-400 border border-blue-800/40",
+  blue:    "bg-blue-950/60 text-blue-300 border border-blue-800/40",
+  purple:  "bg-blue-950/60 text-blue-300 border border-blue-800/40",
+  default: "bg-white/5 text-gray-400 border border-white/10",
 };
 
 export default function Badge({ children, variant = "default" }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${variants[variant]}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium ${variants[variant]}`}>
       {children}
     </span>
   );

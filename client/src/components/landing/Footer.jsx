@@ -32,14 +32,14 @@ export default function Footer() {
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="border-t border-white/10 bg-[#050505] text-left text-xs text-gray-400"
+      className="border-t border-white/10 bg-[#0d1117] text-left text-xs text-gray-400"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
           {/* Brand Column */}
           <div className="md:col-span-4 space-y-4">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-purple-600 flex items-center justify-center text-white">
+              <div className="w-7 h-7 rounded-md bg-[#2f81f7] flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <span className="font-bold text-white text-base tracking-tight">

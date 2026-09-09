@@ -1,7 +1,7 @@
 /**
  * ProfileDropdown.jsx
  *
- * GitHub-inspired user profile dropdown menu in the top header.
+ * User profile dropdown menu in the top header.
  * Provides quick access to Personal Area (My Dashboard, My Profile, Personal Settings),
  * Organization Settings, and Sign out.
  */
@@ -11,7 +11,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useOrg } from "../context/OrgContext";
 import {
-  User,
   LayoutDashboard,
   UserCheck,
   Settings,
@@ -68,51 +67,51 @@ export default function ProfileDropdown() {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 rounded-md hover:bg-[#21262d] transition-colors focus:outline-none"
+        className="flex items-center gap-2 p-1 rounded-md hover:bg-white/5 transition-colors focus:outline-none"
         aria-label="User Menu"
       >
-        <div className="w-7 h-7 rounded-full bg-[#1f6feb]/30 border border-[#58a6ff]/40 text-[#79c0ff] flex items-center justify-center text-xs font-bold font-mono shadow-xs">
+        <div className="w-7 h-7 rounded-full bg-blue-950/60 border border-blue-800/40 text-blue-300 flex items-center justify-center text-xs font-bold font-mono">
           {initials}
         </div>
         <div className="text-left hidden sm:block">
-          <div className="text-xs font-semibold text-[#f0f6fc] leading-tight">{user?.name}</div>
+          <div className="text-xs font-medium text-white leading-tight">{user?.name}</div>
         </div>
-        <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />
+        <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
       </button>
 
       {/* Menu Overlay */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-[#161b22] border border-[#30363d] rounded-lg shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 w-64 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-blue-950/20 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
           {/* User Info Header */}
-          <div className="px-4 py-3 border-b border-[#30363d] bg-[#21262d]/40">
+          <div className="px-4 py-3 border-b border-white/5 bg-[#1c2128]">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#1f6feb]/30 border border-[#58a6ff]/40 text-[#79c0ff] flex items-center justify-center text-sm font-bold font-mono">
+              <div className="w-8 h-8 rounded-full bg-blue-950/60 border border-blue-800/40 text-blue-300 flex items-center justify-center text-xs font-bold font-mono">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-[#f0f6fc] truncate">{user?.name}</p>
-                <p className="text-[11px] text-[#8b949e] font-mono truncate">{user?.email}</p>
+                <p className="text-xs font-bold text-white truncate">{user?.name}</p>
+                <p className="text-[11px] text-gray-400 font-mono truncate">{user?.email}</p>
               </div>
             </div>
           </div>
 
           {/* Personal Area Links */}
           <div className="py-1">
-            <div className="px-3 py-1 text-[10px] font-bold text-[#8b949e] uppercase tracking-wider">
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
               Personal Area
             </div>
             <Link
               to="/dashboard"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors"
+              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#58a6ff]" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-blue-400" />
               <span>My Dashboard</span>
             </Link>
             <Link
               to="/profile"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors"
+              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
             >
               <UserCheck className="w-3.5 h-3.5 text-green-400" />
               <span>My Profile</span>
@@ -120,35 +119,35 @@ export default function ProfileDropdown() {
             <Link
               to="/settings/personal"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors"
+              className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
             >
-              <Settings className="w-3.5 h-3.5 text-yellow-400" />
+              <Settings className="w-3.5 h-3.5 text-gray-400" />
               <span>Personal Settings</span>
             </Link>
           </div>
 
           {/* Organization Area Link */}
           {activeOrg && (
-            <div className="py-1 border-t border-[#30363d]">
-              <div className="px-3 py-1 text-[10px] font-bold text-[#8b949e] uppercase tracking-wider">
-                Organization: {activeOrg.name}
+            <div className="py-1 border-t border-white/5">
+              <div className="px-3 py-1 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+                Workspace: {activeOrg.name}
               </div>
               <Link
                 to={`/org/${activeOrg._id}/settings`}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#f0f6fc] transition-colors"
+                className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <Building2 className="w-3.5 h-3.5 text-purple-400" />
-                <span>Organization Settings</span>
+                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                <span>Workspace Settings</span>
               </Link>
             </div>
           )}
 
           {/* Logout */}
-          <div className="py-1 border-t border-[#30363d]">
+          <div className="py-1 border-t border-white/5">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950/40 transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign out</span>

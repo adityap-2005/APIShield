@@ -1,12 +1,3 @@
-/**
- * Layout.jsx
- *
- * Primary authenticated Layout wrapper combining:
- * - Collapsible & mobile-drawer Sidebar
- * - Top Header with OrgSelector and ProfileDropdown
- * - Content Outlet
- */
-
 import { useState, useEffect } from "react";
 import { Outlet, useParams } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -46,7 +37,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0d1117] text-[#f0f6fc] font-sans antialiased">
+    <div className="flex min-h-screen bg-[#0d1117] text-white font-sans antialiased selection:bg-blue-600/30 selection:text-blue-300">
       {/* Navigation Sidebar */}
       <Sidebar
         isCollapsed={isCollapsed}
@@ -62,12 +53,12 @@ export default function Layout() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
           {/* Zero Organization view prompt */}
           {organizations.length === 0 ? (
-            <div className="max-w-md mx-auto my-16 text-center card">
-              <div className="w-12 h-12 rounded-full bg-[#1f6feb]/20 border border-[#58a6ff]/30 flex items-center justify-center mx-auto mb-4 text-[#58a6ff]">
+            <div className="max-w-md mx-auto my-16 text-center card bg-[#161b22] border border-white/10 p-8 rounded-xl">
+              <div className="w-12 h-12 rounded-xl bg-blue-950/60 border border-blue-800/40 flex items-center justify-center mx-auto mb-4 text-blue-400">
                 <Building2 className="w-6 h-6" />
               </div>
-              <h2 className="text-base font-bold text-[#f0f6fc] mb-2">No Organizations Found</h2>
-              <p className="text-xs text-[#8b949e] mb-6 leading-relaxed">
+              <h2 className="text-base font-bold text-white mb-2">No Organizations Found</h2>
+              <p className="text-xs text-gray-400 mb-6 leading-relaxed">
                 You don't belong to any organization yet. Create your first organization to begin managing your API keys, teams, and gateway security.
               </p>
               <button

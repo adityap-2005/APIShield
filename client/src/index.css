@@ -1,129 +1,151 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-main: #0d1117;
+  --bg-surface: #161b22;
+  --bg-card: #161b22;
+  --bg-input: #0e131b;
+  --bg-panel: #1c2128;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-subtler: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --accent-primary: #2f81f7;
+  --accent-hover: #58a6ff;
+  --color-success: #4ade80;
+  --color-error: #f87171;
+}
+
 @layer base {
   body {
-    @apply bg-[#0d1117] text-[#f0f6fc] font-sans antialiased selection:bg-[#1f6feb]/30 selection:text-[#58a6ff];
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   * {
-    @apply border-[#30363d];
+    border-color: var(--border-subtle);
   }
 
-  /* GitHub styled scrollbar */
+  /* Custom scrollbar matching dark charcoal theme */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-[#0d1117];
+    background-color: #0d1117;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-[#30363d] rounded-full;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-[#8b949e];
+    background-color: rgba(255, 255, 255, 0.25);
   }
 }
 
 @layer components {
-  /* Input fields */
+  /* Standard input fields */
   .input {
-    @apply block w-full rounded-md border border-[#30363d] bg-[#0d1117] px-3 py-1.5
-           text-sm text-[#f0f6fc] placeholder-[#8b949e]
-           focus:border-[#58a6ff] focus:outline-none focus:ring-1 focus:ring-[#58a6ff]
+    @apply block w-full rounded-md border border-white/10 bg-[#0e131b] px-3.5 py-2
+           text-xs text-white placeholder-gray-500
+           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
            disabled:opacity-50 disabled:cursor-not-allowed
            transition-colors;
   }
 
-  /* Primary button (GitHub green) */
+  /* Primary button (Light/Medium Blue accent) */
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-md bg-[#238636] px-3.5 py-1.5
-           text-xs font-semibold text-white shadow-sm
-           hover:bg-[#2ea043] active:bg-[#1e7e34]
-           focus:outline-none focus:ring-2 focus:ring-[#2ea043] focus:ring-offset-2 focus:ring-offset-[#0d1117]
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md bg-[#2f81f7] px-3.5 py-2
+           text-xs font-semibold text-white shadow-sm shadow-blue-500/20
+           hover:bg-[#58a6ff] active:bg-[#1f6feb]
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0d1117]
            disabled:opacity-50 disabled:cursor-not-allowed
            transition-colors;
   }
 
-  /* Secondary button (GitHub dark button) */
+  /* Secondary button */
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-md border border-[#30363d] bg-[#21262d] px-3.5 py-1.5
-           text-xs font-medium text-[#c9d1d9] shadow-sm
-           hover:bg-[#30363d] hover:border-[#8b949e] hover:text-[#f0f6fc]
-           focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:ring-offset-2 focus:ring-offset-[#0d1117]
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-white/10 bg-[#1c2128] px-3.5 py-2
+           text-xs font-medium text-gray-300 shadow-sm
+           hover:bg-[#252b35] hover:text-white hover:border-white/20
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0d1117]
            disabled:opacity-50 disabled:cursor-not-allowed
            transition-colors;
   }
 
   /* Ghost button */
   .btn-ghost {
-    @apply inline-flex items-center gap-2 rounded-md px-3 py-1.5
-           text-xs font-medium text-[#8b949e]
-           hover:bg-[#21262d] hover:text-[#f0f6fc]
-           focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:ring-offset-2 focus:ring-offset-[#0d1117]
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5
+           text-xs font-medium text-gray-400
+           hover:bg-white/5 hover:text-white
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0d1117]
            disabled:opacity-50 disabled:cursor-not-allowed
            transition-colors;
   }
 
   /* Danger button */
   .btn-danger {
-    @apply inline-flex items-center gap-2 rounded-md border border-red-900/60 bg-[#da3633]/20 px-3.5 py-1.5
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-red-800/60 bg-red-950/40 px-3.5 py-2
            text-xs font-medium text-red-400 shadow-sm
-           hover:bg-[#da3633] hover:text-white hover:border-[#da3633]
+           hover:bg-red-900/60 hover:text-white hover:border-red-700
            focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#0d1117]
            disabled:opacity-50 disabled:cursor-not-allowed
            transition-colors;
   }
 
-  /* Cards */
+  /* Standard card panels */
   .card {
-    @apply rounded-lg border border-[#30363d] bg-[#161b22] p-5 shadow-sm;
+    @apply rounded-xl border border-white/10 bg-[#161b22] p-5 shadow-sm;
   }
 
   /* Table styling */
   .table-container {
-    @apply overflow-x-auto rounded-lg border border-[#30363d] bg-[#161b22];
+    @apply overflow-x-auto rounded-xl border border-white/10 bg-[#161b22];
   }
 
   .table {
-    @apply w-full text-left text-xs text-[#c9d1d9];
+    @apply w-full text-left text-xs text-white;
   }
 
   .table thead {
-    @apply bg-[#21262d] border-b border-[#30363d];
+    @apply bg-[#1c2128] border-b border-white/10;
   }
 
   .table th {
-    @apply px-4 py-3 font-semibold text-[#8b949e] uppercase tracking-wider text-[11px];
+    @apply px-4 py-3 font-semibold text-gray-400 uppercase tracking-wider text-[10px] font-mono;
   }
 
   .table td {
-    @apply px-4 py-3 border-t border-[#30363d]/60;
+    @apply px-4 py-3 border-t border-white/5 text-gray-300;
   }
 
   .table tbody tr {
-    @apply hover:bg-[#21262d]/50 transition-colors;
+    @apply hover:bg-white/[0.03] transition-colors;
   }
 
   /* Form Labels */
   .label {
-    @apply block text-xs font-semibold text-[#c9d1d9] mb-1.5;
+    @apply block text-xs font-semibold text-gray-200 mb-1.5;
   }
 
   /* Page Headers */
   .page-header {
-    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-[#30363d] pb-4;
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-white/10 pb-4;
   }
 
   .page-title {
-    @apply text-lg font-bold text-[#f0f6fc] tracking-tight;
+    @apply text-lg font-bold text-white tracking-tight;
   }
 
   .page-description {
-    @apply text-xs text-[#8b949e] mt-0.5;
+    @apply text-xs text-gray-400 mt-0.5;
   }
 }

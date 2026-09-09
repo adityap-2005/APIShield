@@ -180,7 +180,7 @@ export default function TeamDetailPage() {
   if (error || !team) {
     return (
       <div className="space-y-4">
-        <Link to={targetOrgId ? `/org/${targetOrgId}/teams` : "/teams"} className="text-xs text-[#58a6ff] hover:underline flex items-center gap-1">
+        <Link to={targetOrgId ? `/org/${targetOrgId}/teams` : "/teams"} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Teams
         </Link>
         <ErrorMessage message={error || "Team not found."} onRetry={loadTeamData} />
@@ -191,22 +191,22 @@ export default function TeamDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb Back link */}
-      <Link to={targetOrgId ? `/org/${targetOrgId}/teams` : "/teams"} className="text-xs text-[#8b949e] hover:text-[#f0f6fc] flex items-center gap-1">
+      <Link to={targetOrgId ? `/org/${targetOrgId}/teams` : "/teams"} className="text-xs text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Teams
       </Link>
 
       {/* Team Details Banner */}
-      <div className="card space-y-3">
+      <div className="card bg-[#161b22] border border-white/10 space-y-3 rounded-xl shadow-xl shadow-blue-950/10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#f0f6fc] flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-400" />
+            <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-400" />
               {team.name}
             </h1>
-            <p className="font-mono text-xs text-[#8b949e] mt-1">slug: {team.slug}</p>
+            <p className="font-mono text-xs text-gray-500 mt-1">slug: {team.slug}</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-900/50 hover:bg-red-950/30">
+            <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-800/60 hover:bg-red-950/40">
               <LogOut className="w-3.5 h-3.5" />
               Leave Team
             </button>
@@ -218,7 +218,7 @@ export default function TeamDetailPage() {
         </div>
 
         {team.description && (
-          <p className="text-xs text-[#c9d1d9] border-t border-[#30363d] pt-3">
+          <p className="text-xs text-gray-400 border-t border-white/5 pt-3">
             {team.description}
           </p>
         )}
@@ -227,7 +227,7 @@ export default function TeamDetailPage() {
       {/* Team Members List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider">
+          <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
             Team Members ({teamMembers.length})
           </h2>
         </div>
@@ -257,8 +257,8 @@ export default function TeamDetailPage() {
                 {teamMembers.map((member) => (
                   <tr key={member.teamMembershipId}>
                     <td>
-                      <div className="font-semibold text-[#f0f6fc]">{member.user?.name}</div>
-                      <div className="text-xs text-[#8b949e] font-mono">{member.user?.email}</div>
+                      <div className="font-semibold text-white">{member.user?.name}</div>
+                      <div className="text-xs text-gray-400 font-mono">{member.user?.email}</div>
                     </td>
                     <td>
                       <Badge variant={getRoleVariant(member.teamRole)}>
@@ -294,7 +294,7 @@ export default function TeamDetailPage() {
 
                         <button
                           onClick={() => openRemoveConfirm(member.teamMembershipId, member.user?.name)}
-                          className="p-1.5 text-[#8b949e] hover:text-red-400 rounded transition-colors"
+                          className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
                           title="Remove from Team"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -313,16 +313,16 @@ export default function TeamDetailPage() {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Member to Team">
         <form onSubmit={handleAddMember} className="space-y-4">
           {modalError && (
-            <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-300 text-xs">
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
               {modalError}
             </div>
           )}
 
           <div>
-            <label className="label">Select Organization Member *</label>
+            <label className="label">Select Workspace Member *</label>
             {availableOrgMembers.length === 0 ? (
-              <p className="text-xs text-[#8b949e] italic py-2">
-                All organization members are already in this team.
+              <p className="text-xs text-gray-500 italic py-2">
+                All workspace members are already in this team.
               </p>
             ) : (
               <select
@@ -342,7 +342,7 @@ export default function TeamDetailPage() {
             )}
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#30363d]">
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
             <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary text-xs" disabled={submitting}>
               Cancel
             </button>

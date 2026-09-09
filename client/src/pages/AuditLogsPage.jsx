@@ -78,10 +78,10 @@ export default function AuditLogsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <FileText className="w-5 h-5 text-brand-400" />
+            <FileText className="w-5 h-5 text-blue-400" />
             Audit Logs
           </h1>
-          <p className="page-description">Immutable log of security and management events in your organization</p>
+          <p className="page-description">Immutable log of security and management events in your workspace</p>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export default function AuditLogsPage() {
       {/* Logs Table */}
       {!error && (
         logs.length === 0 ? (
-          <EmptyState message="No audit logs recorded for this organization." />
+          <EmptyState message="No audit logs recorded for this workspace." />
         ) : (
           <div className="space-y-4">
             <div className="table-container">
@@ -108,14 +108,14 @@ export default function AuditLogsPage() {
                 <tbody>
                   {logs.map((log) => (
                     <tr key={log._id}>
-                      <td className="text-xs font-mono text-gray-400 whitespace-nowrap">
+                      <td className="text-xs font-mono text-gray-500 whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
                       <td>
                         <Badge variant="info">{log.action}</Badge>
                       </td>
                       <td>
-                        <div className="text-xs font-medium text-gray-200">{log.actor?.name || "System"}</div>
+                        <div className="text-xs font-medium text-white">{log.actor?.name || "System"}</div>
                         <div className="text-[10px] text-gray-500 font-mono">{log.actor?.email}</div>
                       </td>
                       <td>
@@ -127,7 +127,7 @@ export default function AuditLogsPage() {
                       <td>
                         <button
                           onClick={() => handleViewDetail(log._id)}
-                          className="p-1.5 hover:bg-gray-800 text-brand-400 rounded transition-colors"
+                          className="p-1.5 hover:bg-white/5 text-blue-400 hover:text-blue-300 rounded transition-colors"
                           title="View Full Metadata"
                         >
                           <Eye className="w-4 h-4" />
@@ -142,9 +142,9 @@ export default function AuditLogsPage() {
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between pt-2 text-xs">
-                <span className="text-gray-400">
-                  Page <span className="font-bold text-gray-200">{pagination.page}</span> of{" "}
-                  <span className="font-bold text-gray-200">{pagination.totalPages}</span> ({pagination.total} total logs)
+                <span className="text-gray-400 font-mono">
+                  Page <span className="font-bold text-white">{pagination.page}</span> of{" "}
+                  <span className="font-bold text-white">{pagination.totalPages}</span> ({pagination.total} total logs)
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -173,14 +173,14 @@ export default function AuditLogsPage() {
       <Modal isOpen={Boolean(selectedLog)} onClose={() => setSelectedLog(null)} title="Audit Log Entry Metadata" size="lg">
         {selectedLog && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-xs bg-gray-950 p-3 rounded border border-gray-800">
+            <div className="grid grid-cols-2 gap-4 text-xs bg-[#0d1117] p-3.5 rounded-xl border border-white/10 font-mono">
               <div>
                 <span className="text-gray-500 uppercase tracking-wider block font-semibold text-[10px]">Action</span>
-                <span className="text-brand-400 font-mono font-semibold">{selectedLog.action}</span>
+                <span className="text-blue-300 font-semibold">{selectedLog.action}</span>
               </div>
               <div>
                 <span className="text-gray-500 uppercase tracking-wider block font-semibold text-[10px]">Timestamp</span>
-                <span className="text-gray-300 font-mono">{new Date(selectedLog.createdAt).toLocaleString()}</span>
+                <span className="text-gray-300">{new Date(selectedLog.createdAt).toLocaleString()}</span>
               </div>
               <div>
                 <span className="text-gray-500 uppercase tracking-wider block font-semibold text-[10px]">Actor</span>
@@ -188,18 +188,18 @@ export default function AuditLogsPage() {
               </div>
               <div>
                 <span className="text-gray-500 uppercase tracking-wider block font-semibold text-[10px]">Entity</span>
-                <span className="text-gray-300 font-mono">{selectedLog.entity?.type}: {selectedLog.entity?.name || selectedLog.entity?.id}</span>
+                <span className="text-gray-300">{selectedLog.entity?.type}: {selectedLog.entity?.name || selectedLog.entity?.id}</span>
               </div>
             </div>
 
             <div>
               <label className="label">Raw Metadata Payload</label>
-              <pre className="bg-gray-950 p-3 rounded border border-gray-800 text-[11px] font-mono text-green-400 overflow-x-auto">
+              <pre className="bg-[#0d1117] p-3.5 rounded-xl border border-white/10 text-[11px] font-mono text-green-400 overflow-x-auto">
                 {JSON.stringify(selectedLog.metadata || {}, null, 2)}
               </pre>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-gray-800">
+            <div className="flex justify-end pt-3 border-t border-white/10">
               <button onClick={() => setSelectedLog(null)} className="btn-secondary text-xs">
                 Close
               </button>

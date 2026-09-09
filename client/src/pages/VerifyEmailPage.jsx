@@ -52,36 +52,36 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col justify-center items-center p-4">
+    <div className="min-h-screen bg-[#0d1117] text-white font-sans flex flex-col justify-center items-center p-4 selection:bg-[#2f81f7]/30 selection:text-blue-300">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#238636]/20 border border-[#238636]/40 text-[#58a6ff] mb-3">
-          <ShieldCheck className="w-7 h-7 text-[#238636]" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-950/60 border border-blue-800/40 text-white mb-3 shadow-sm shadow-blue-500/20">
+          <ShieldCheck className="w-6 h-6 text-blue-400" />
         </div>
-        <h2 className="text-2xl font-bold text-[#f0f6fc] tracking-tight">APIShield</h2>
-        <p className="text-xs text-[#8b949e] mt-1">Email Verification</p>
+        <h2 className="text-2xl font-bold text-white tracking-tight">APIShield</h2>
+        <p className="text-xs text-gray-500 font-mono mt-1">Email Verification</p>
       </div>
 
       {/* Card Content */}
-      <div className="w-full sm:max-w-md card bg-[#161b22] border border-[#30363d] p-8 shadow-2xl text-center space-y-5">
+      <div className="w-full sm:max-w-md card bg-[#161b22] border border-white/10 p-8 shadow-2xl shadow-blue-950/20 text-center space-y-5 rounded-xl">
         {/* Loading State */}
         {status === "loading" && (
           <div className="space-y-4 py-4">
-            <div className="w-10 h-10 border-2 border-[#30363d] border-t-[#58a6ff] rounded-full animate-spin mx-auto" />
-            <h3 className="text-base font-semibold text-[#f0f6fc]">Verifying your email...</h3>
-            <p className="text-xs text-[#8b949e]">Please wait while we validate your verification token.</p>
+            <div className="w-8 h-8 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin mx-auto" />
+            <h3 className="text-base font-semibold text-white">Verifying your email...</h3>
+            <p className="text-xs text-gray-400">Please wait while we validate your verification token.</p>
           </div>
         )}
 
         {/* Success State */}
         {status === "success" && (
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-full bg-green-950/60 border border-green-800/80 text-green-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-green-950/60 border border-green-800/60 text-green-400 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#f0f6fc]">Email verified successfully!</h3>
-              <p className="text-xs text-[#c9d1d9]">
+              <h3 className="text-lg font-bold text-white">Email verified successfully!</h3>
+              <p className="text-xs text-gray-400">
                 Your email has been verified. You can now log in.
               </p>
             </div>
@@ -99,12 +99,12 @@ export default function VerifyEmailPage() {
         {/* Invalid Token State */}
         {status === "invalid" && (
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-950/60 border border-red-800/80 text-red-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 mx-auto flex items-center justify-center">
               <XCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#f0f6fc]">Invalid verification link.</h3>
-              <p className="text-xs text-[#8b949e]">
+              <h3 className="text-lg font-bold text-white">Invalid verification link.</h3>
+              <p className="text-xs text-gray-400">
                 The verification token provided is invalid or corrupted.
               </p>
             </div>
@@ -122,12 +122,12 @@ export default function VerifyEmailPage() {
         {/* Expired Token State */}
         {status === "expired" && (
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-full bg-yellow-950/60 border border-yellow-800/80 text-yellow-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-yellow-950/60 border border-yellow-800/60 text-yellow-400 mx-auto flex items-center justify-center">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#f0f6fc]">This verification link has expired.</h3>
-              <p className="text-xs text-[#8b949e]">
+              <h3 className="text-lg font-bold text-white">This verification link has expired.</h3>
+              <p className="text-xs text-gray-400">
                 Your email verification token has passed its expiration time.
               </p>
             </div>
@@ -145,12 +145,12 @@ export default function VerifyEmailPage() {
         {/* Missing Token State */}
         {status === "missing" && (
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-full bg-yellow-950/60 border border-yellow-800/80 text-yellow-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-yellow-950/60 border border-yellow-800/60 text-yellow-400 mx-auto flex items-center justify-center">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#f0f6fc]">Verification token is missing.</h3>
-              <p className="text-xs text-[#8b949e]">
+              <h3 className="text-lg font-bold text-white">Verification token is missing.</h3>
+              <p className="text-xs text-gray-400">
                 No verification token was found in the URL. Please check your verification email.
               </p>
             </div>
@@ -168,11 +168,11 @@ export default function VerifyEmailPage() {
         {/* Generic Error State */}
         {status === "error" && (
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-950/60 border border-red-800/80 text-red-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 mx-auto flex items-center justify-center">
               <XCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[#f0f6fc]">Verification Failed</h3>
+              <h3 className="text-lg font-bold text-white">Verification Failed</h3>
               <p className="text-xs text-red-300 font-medium">{message}</p>
             </div>
             <div className="pt-2">

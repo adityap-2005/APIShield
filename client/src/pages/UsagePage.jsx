@@ -66,7 +66,7 @@ export default function UsagePage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <Activity className="w-5 h-5 text-yellow-400" />
+            <Activity className="w-5 h-5 text-blue-400" />
             API Usage
           </h1>
           <p className="page-description">Traffic metrics and endpoint performance overview</p>
@@ -75,50 +75,50 @@ export default function UsagePage() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Requests</p>
-            <p className="text-2xl font-bold text-gray-100 mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Total Requests</p>
+            <p className="text-2xl font-bold font-mono text-white mt-1">
               {overview?.totalRequests ? overview.totalRequests.toLocaleString() : 0}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-blue-900/30 border border-blue-800 flex items-center justify-center text-blue-400">
+          <div className="w-10 h-10 rounded-lg bg-blue-950/60 border border-blue-800/60 flex items-center justify-center text-blue-400">
             <Layers className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Successful (2xx)</p>
-            <p className="text-2xl font-bold text-green-400 mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Successful (2xx)</p>
+            <p className="text-2xl font-bold font-mono text-green-400 mt-1">
               {overview?.successfulRequests ? overview.successfulRequests.toLocaleString() : 0}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-green-900/30 border border-green-800 flex items-center justify-center text-green-400">
+          <div className="w-10 h-10 rounded-lg bg-green-950/60 border border-green-800/60 flex items-center justify-center text-green-400">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Failed (Non-2xx)</p>
-            <p className="text-2xl font-bold text-red-400 mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Failed (Non-2xx)</p>
+            <p className="text-2xl font-bold font-mono text-red-400 mt-1">
               {overview?.failedRequests ? overview.failedRequests.toLocaleString() : 0}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-red-900/30 border border-red-800 flex items-center justify-center text-red-400">
+          <div className="w-10 h-10 rounded-lg bg-red-950/60 border border-red-800/60 flex items-center justify-center text-red-400">
             <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Avg Latency</p>
-            <p className="text-2xl font-bold text-gray-100 mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Avg Latency</p>
+            <p className="text-2xl font-bold font-mono text-yellow-400 mt-1">
               {overview?.averageResponseTime || 0} ms
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-yellow-900/30 border border-yellow-800 flex items-center justify-center text-yellow-400">
+          <div className="w-10 h-10 rounded-lg bg-yellow-950/60 border border-yellow-800/60 flex items-center justify-center text-yellow-400">
             <Clock className="w-5 h-5" />
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function UsagePage() {
 
       {/* Top Endpoints Table */}
       <div className="space-y-4 pt-4">
-        <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-wider">
+        <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
           Top Endpoints Requested
         </h2>
 
@@ -151,7 +151,7 @@ export default function UsagePage() {
                       </Badge>
                     </td>
                     <td className="font-mono text-xs text-gray-200">{item.endpoint}</td>
-                    <td className="font-mono text-xs text-brand-400 font-bold">{item.requests.toLocaleString()}</td>
+                    <td className="font-mono text-xs text-blue-300 font-bold">{item.requests.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

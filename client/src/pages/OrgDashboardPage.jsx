@@ -94,13 +94,13 @@ export default function OrgDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Workspace Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 card bg-gradient-to-r from-[#161b22] to-[#21262d] p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 card bg-[#161b22] border border-white/10 p-6 rounded-xl shadow-xl shadow-blue-950/10">
         <div>
           <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[#58a6ff]" />
-            <h1 className="text-xl font-bold text-[#f0f6fc]">{currentOrg?.name}</h1>
+            <Building2 className="w-5 h-5 text-blue-400" />
+            <h1 className="text-xl font-bold text-white tracking-tight">{currentOrg?.name}</h1>
           </div>
-          <p className="text-xs text-[#8b949e] font-mono mt-1">slug: {currentOrg?.slug}</p>
+          <p className="text-xs text-gray-500 font-mono mt-1">slug: {currentOrg?.slug}</p>
         </div>
         <div className="flex gap-2">
           <Link to={`/org/${targetOrgId}/api-keys`} className="btn-primary text-xs">
@@ -116,46 +116,46 @@ export default function OrgDashboardPage() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Teams</p>
-            <p className="text-2xl font-bold text-[#f0f6fc] mt-1">{teamCount}</p>
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Teams</p>
+            <p className="text-2xl font-bold font-mono text-white mt-1">{teamCount}</p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-blue-950/60 border border-blue-800/80 flex items-center justify-center text-blue-400">
+          <div className="w-10 h-10 rounded-lg bg-blue-950/60 border border-blue-800/60 flex items-center justify-center text-blue-400">
             <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Org Members</p>
-            <p className="text-2xl font-bold text-[#f0f6fc] mt-1">{memberCount}</p>
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Members</p>
+            <p className="text-2xl font-bold font-mono text-white mt-1">{memberCount}</p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-purple-950/60 border border-purple-800/80 flex items-center justify-center text-purple-400">
+          <div className="w-10 h-10 rounded-lg bg-blue-950/60 border border-blue-800/60 flex items-center justify-center text-blue-400">
             <UserCheck className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Total Requests</p>
-            <p className="text-2xl font-bold text-[#f0f6fc] mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Total Requests</p>
+            <p className="text-2xl font-bold font-mono text-white mt-1">
               {analyticsOverview ? analyticsOverview.totalRequests.toLocaleString() : "N/A"}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-green-950/60 border border-green-800/80 flex items-center justify-center text-green-400">
+          <div className="w-10 h-10 rounded-lg bg-green-950/60 border border-green-800/60 flex items-center justify-center text-green-400">
             <Activity className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card bg-[#161b22] border-white/10 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Avg Response Time</p>
-            <p className="text-2xl font-bold text-[#f0f6fc] mt-1">
+            <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Avg Latency</p>
+            <p className="text-2xl font-bold font-mono text-white mt-1">
               {analyticsOverview ? `${analyticsOverview.averageResponseTime} ms` : "N/A"}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-yellow-950/60 border border-yellow-800/80 flex items-center justify-center text-yellow-400">
+          <div className="w-10 h-10 rounded-lg bg-yellow-950/60 border border-yellow-800/60 flex items-center justify-center text-yellow-400">
             <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
@@ -164,33 +164,33 @@ export default function OrgDashboardPage() {
       {/* Main Grid: Activity & Navigation */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Audit Activity */}
-        <div className="lg:col-span-2 card space-y-4">
-          <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
-            <h2 className="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#58a6ff]" />
-              Recent Organization Activity
+        <div className="lg:col-span-2 card bg-[#161b22] border border-white/10 space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <h2 className="text-xs font-mono font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-400" />
+              Recent Workspace Activity
             </h2>
-            <Link to={`/org/${targetOrgId}/audit-logs`} className="text-xs text-[#58a6ff] hover:underline flex items-center gap-1">
+            <Link to={`/org/${targetOrgId}/audit-logs`} className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {recentLogs.length === 0 ? (
-            <EmptyState message="No recent organization activity." />
+            <EmptyState message="No recent workspace activity." />
           ) : (
-            <div className="divide-y divide-[#30363d]/60">
+            <div className="divide-y divide-white/5">
               {recentLogs.map((log) => (
                 <div key={log._id} className="py-3 flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <Badge variant="info">{log.action}</Badge>
-                      <span className="font-medium text-[#c9d1d9]">by {log.actor?.name || "System"}</span>
+                      <span className="font-medium text-gray-300">by {log.actor?.name || "System"}</span>
                     </div>
-                    <p className="text-[#8b949e] font-mono text-[11px]">
+                    <p className="text-gray-500 font-mono text-[11px]">
                       Entity: {log.entity?.type} ({log.entity?.name || log.entity?.id})
                     </p>
                   </div>
-                  <span className="text-[11px] text-[#8b949e] font-mono">
+                  <span className="text-[11px] text-gray-500 font-mono">
                     {new Date(log.createdAt).toLocaleString()}
                   </span>
                 </div>
@@ -200,53 +200,53 @@ export default function OrgDashboardPage() {
         </div>
 
         {/* Quick Navigation */}
-        <div className="card space-y-4">
-          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider border-b border-[#30363d] pb-3">
-            Workspace Quick Links
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 pb-3">
+            Workspace Navigation
           </h2>
           <div className="space-y-2 text-xs">
             <Link
               to={`/org/${targetOrgId}/api-keys`}
-              className="flex items-center justify-between p-3 rounded-md bg-[#0d1117] border border-[#30363d] hover:bg-[#21262d] text-[#c9d1d9] transition-colors font-medium"
+              className="flex items-center justify-between p-3 rounded-lg bg-[#1c2128] border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-300 hover:text-white transition-colors font-medium"
             >
               <div className="flex items-center gap-2.5">
-                <KeyRound className="w-4 h-4 text-[#58a6ff]" />
+                <KeyRound className="w-4 h-4 text-blue-400" />
                 <span>API Keys & Secrets</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8b949e]" />
+              <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
             </Link>
 
             <Link
               to={`/org/${targetOrgId}/teams`}
-              className="flex items-center justify-between p-3 rounded-md bg-[#0d1117] border border-[#30363d] hover:bg-[#21262d] text-[#c9d1d9] transition-colors font-medium"
+              className="flex items-center justify-between p-3 rounded-lg bg-[#1c2128] border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-300 hover:text-white transition-colors font-medium"
             >
               <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-purple-400" />
+                <Users className="w-4 h-4 text-blue-400" />
                 <span>Teams & Permissions</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8b949e]" />
+              <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
             </Link>
 
             <Link
               to={`/org/${targetOrgId}/members`}
-              className="flex items-center justify-between p-3 rounded-md bg-[#0d1117] border border-[#30363d] hover:bg-[#21262d] text-[#c9d1d9] transition-colors font-medium"
+              className="flex items-center justify-between p-3 rounded-lg bg-[#1c2128] border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-300 hover:text-white transition-colors font-medium"
             >
               <div className="flex items-center gap-2.5">
                 <UserCheck className="w-4 h-4 text-green-400" />
                 <span>Members & Roles</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8b949e]" />
+              <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
             </Link>
 
             <Link
               to={`/org/${targetOrgId}/analytics`}
-              className="flex items-center justify-between p-3 rounded-md bg-[#0d1117] border border-[#30363d] hover:bg-[#21262d] text-[#c9d1d9] transition-colors font-medium"
+              className="flex items-center justify-between p-3 rounded-lg bg-[#1c2128] border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-300 hover:text-white transition-colors font-medium"
             >
               <div className="flex items-center gap-2.5">
                 <Activity className="w-4 h-4 text-yellow-400" />
                 <span>Traffic Analytics</span>
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-[#8b949e]" />
+              <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
             </Link>
           </div>
         </div>

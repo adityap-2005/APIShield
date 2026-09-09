@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-brand-400" />
+            <BarChart3 className="w-5 h-5 text-blue-400" />
             Analytics Dashboard
           </h1>
           <p className="page-description">Deep dive into API requests, status codes, environments, and usage breakdown</p>
@@ -92,44 +92,44 @@ export default function AnalyticsPage() {
 
       {/* 1. Overview Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Requests</p>
-          <p className="text-2xl font-bold text-gray-100 mt-1">{totalReqs.toLocaleString()}</p>
+        <div className="card bg-[#161b22] border-white/10">
+          <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Total Requests</p>
+          <p className="text-2xl font-bold font-mono text-white mt-1">{totalReqs.toLocaleString()}</p>
         </div>
-        <div className="card">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Successful Requests</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{(overview?.successfulRequests || 0).toLocaleString()}</p>
+        <div className="card bg-[#161b22] border-white/10">
+          <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Successful Requests</p>
+          <p className="text-2xl font-bold font-mono text-green-400 mt-1">{(overview?.successfulRequests || 0).toLocaleString()}</p>
         </div>
-        <div className="card">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Failed Requests</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{(overview?.failedRequests || 0).toLocaleString()}</p>
+        <div className="card bg-[#161b22] border-white/10">
+          <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Failed Requests</p>
+          <p className="text-2xl font-bold font-mono text-red-400 mt-1">{(overview?.failedRequests || 0).toLocaleString()}</p>
         </div>
-        <div className="card">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Avg Latency</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{overview?.averageResponseTime || 0} ms</p>
+        <div className="card bg-[#161b22] border-white/10">
+          <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Avg Latency</p>
+          <p className="text-2xl font-bold font-mono text-yellow-400 mt-1">{overview?.averageResponseTime || 0} ms</p>
         </div>
       </div>
 
       {/* 2. Requests Over Time */}
-      <div className="card space-y-4">
-        <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
-          <TrendingUp className="w-4 h-4 text-brand-400" />
+      <div className="card bg-[#161b22] border border-white/10 space-y-4">
+        <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
+          <TrendingUp className="w-4 h-4 text-blue-400" />
           Requests Over Time
         </h2>
         {requestsOverTime.length === 0 ? (
           <p className="text-xs text-gray-500 py-4 italic">No timeline data available.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {requestsOverTime.map((item) => {
               const pct = totalReqs > 0 ? Math.round((item.requests / totalReqs) * 100) : 0;
               return (
                 <div key={item.date} className="space-y-1">
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-gray-300">{item.date}</span>
-                    <span className="text-brand-400">{item.requests} requests ({pct}%)</span>
+                    <span className="text-blue-300">{item.requests} requests ({pct}%)</span>
                   </div>
-                  <div className="w-full bg-gray-950 rounded-full h-2 overflow-hidden border border-gray-800">
-                    <div className="bg-brand-500 h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 2)}%` }} />
+                  <div className="w-full bg-[#1c2128] rounded-full h-2 overflow-hidden border border-white/5">
+                    <div className="bg-[#2f81f7] h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 2)}%` }} />
                   </div>
                 </div>
               );
@@ -141,22 +141,22 @@ export default function AnalyticsPage() {
       {/* Grid: By API Key & By Team */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 3. Requests by API Key */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
-            <Key className="w-4 h-4 text-purple-400" />
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
+            <Key className="w-4 h-4 text-blue-400" />
             Requests by API Key
           </h2>
           {requestsByApiKey.length === 0 ? (
             <p className="text-xs text-gray-500 py-4 italic">No API Key request data available.</p>
           ) : (
-            <div className="divide-y divide-gray-800">
+            <div className="divide-y divide-white/5">
               {requestsByApiKey.map((item) => (
                 <div key={item.apiKeyId} className="py-2.5 flex items-center justify-between text-xs">
                   <div>
-                    <div className="font-semibold text-gray-200">{item.name}</div>
+                    <div className="font-semibold text-white">{item.name}</div>
                     <div className="text-[10px] text-gray-500 font-mono">Env: {item.environment}</div>
                   </div>
-                  <div className="font-mono text-brand-400 font-bold">{item.requests} reqs</div>
+                  <div className="font-mono text-blue-300 font-bold">{item.requests} reqs</div>
                 </div>
               ))}
             </div>
@@ -164,19 +164,19 @@ export default function AnalyticsPage() {
         </div>
 
         {/* 4. Requests by Team */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
             <Users className="w-4 h-4 text-blue-400" />
             Requests by Team
           </h2>
           {requestsByTeam.length === 0 ? (
             <p className="text-xs text-gray-500 py-4 italic">No Team request data available.</p>
           ) : (
-            <div className="divide-y divide-gray-800">
+            <div className="divide-y divide-white/5">
               {requestsByTeam.map((item) => (
                 <div key={item.teamId} className="py-2.5 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-gray-200">{item.name}</span>
-                  <span className="font-mono text-brand-400 font-bold">{item.requests} reqs</span>
+                  <span className="font-semibold text-white">{item.name}</span>
+                  <span className="font-mono text-blue-300 font-bold">{item.requests} reqs</span>
                 </div>
               ))}
             </div>
@@ -187,8 +187,8 @@ export default function AnalyticsPage() {
       {/* Grid: Method, Environment, Status Code */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 5. Requests by HTTP Method */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
             <Code className="w-4 h-4 text-green-400" />
             By HTTP Method
           </h2>
@@ -207,8 +207,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* 6. Requests by Environment */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
             <Globe className="w-4 h-4 text-yellow-400" />
             By Environment
           </h2>
@@ -227,8 +227,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* 7. Status Codes */}
-        <div className="card space-y-4">
-          <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 border-b border-gray-800 pb-3">
+        <div className="card bg-[#161b22] border border-white/10 space-y-4">
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
             <FileText className="w-4 h-4 text-red-400" />
             By Status Code
           </h2>
@@ -250,8 +250,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* 8. Top Endpoints */}
-      <div className="card space-y-4">
-        <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-800 pb-3">
+      <div className="card bg-[#161b22] border border-white/10 space-y-4">
+        <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 pb-3">
           Top Requested Endpoints
         </h2>
         {topEndpoints.length === 0 ? (
@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
                       <Badge variant="info">{ep.method}</Badge>
                     </td>
                     <td className="font-mono text-xs text-gray-200">{ep.endpoint}</td>
-                    <td className="font-mono text-xs text-brand-400 font-bold">{ep.requests}</td>
+                    <td className="font-mono text-xs text-blue-300 font-bold">{ep.requests}</td>
                   </tr>
                 ))}
               </tbody>

@@ -240,10 +240,10 @@ export default function ApiKeysPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <KeyRound className="w-5 h-5 text-[#58a6ff]" />
+            <KeyRound className="w-5 h-5 text-blue-400" />
             API Keys
           </h1>
-          <p className="page-description">Manage API keys and authentication credentials for your team</p>
+          <p className="page-description">Manage API credentials and scoped tokens for your team</p>
         </div>
 
         {selectedTeamId && (
@@ -257,11 +257,11 @@ export default function ApiKeysPage() {
       {/* Team Filter selector */}
       {teams.length === 0 ? (
         <EmptyState
-          message="No teams found in this organization. You must belong to a team to manage API keys."
+          message="No teams found in this workspace. You must belong to a team to manage API keys."
         />
       ) : (
-        <div className="flex items-center gap-3 bg-[#161b22] border border-[#30363d] p-4 rounded-lg">
-          <label className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Select Team:</label>
+        <div className="flex items-center gap-3 bg-[#161b22] border border-white/10 p-4 rounded-xl">
+          <label className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">Select Team:</label>
           <select
             className="input max-w-xs text-xs"
             value={selectedTeamId}
@@ -308,10 +308,10 @@ export default function ApiKeysPage() {
                 {apiKeys.map((key) => (
                   <tr key={key._id}>
                     <td>
-                      <div className="font-semibold text-[#f0f6fc]">{key.name}</div>
-                      <div className="font-mono text-[11px] text-[#58a6ff] mt-0.5">{key.publicKeyId}...</div>
+                      <div className="font-semibold text-white">{key.name}</div>
+                      <div className="font-mono text-[11px] text-blue-300 mt-0.5">{key.publicKeyId}...</div>
                       {key.description && (
-                        <div className="text-xs text-[#8b949e] mt-0.5">{key.description}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{key.description}</div>
                       )}
                     </td>
                     <td>
@@ -324,16 +324,16 @@ export default function ApiKeysPage() {
                       <div className="flex flex-wrap gap-1">
                         {key.scopes && key.scopes.length > 0 ? (
                           key.scopes.map((s) => (
-                            <span key={s} className="text-[10px] bg-[#21262d] text-[#8b949e] px-1.5 py-0.5 rounded font-mono">
+                            <span key={s} className="text-[10px] bg-[#1c2128] border border-white/5 text-gray-400 px-1.5 py-0.5 rounded font-mono">
                               {s}
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-[#8b949e]">All scopes</span>
+                          <span className="text-[10px] text-gray-500 font-mono">All scopes</span>
                         )}
                       </div>
                     </td>
-                    <td className="text-xs font-mono text-[#8b949e]">
+                    <td className="text-xs font-mono text-gray-400">
                       {new Date(key.createdAt).toLocaleDateString()}
                     </td>
                     <td>
@@ -342,14 +342,14 @@ export default function ApiKeysPage() {
                           <>
                             <button
                               onClick={() => openConfirmModal("rotate", key._id, key.name)}
-                              className="p-1.5 hover:bg-[#21262d] rounded text-yellow-400 transition-colors"
+                              className="p-1.5 hover:bg-white/5 rounded text-yellow-400 hover:text-yellow-300 transition-colors"
                               title="Rotate Secret"
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => openConfirmModal("revoke", key._id, key.name)}
-                              className="p-1.5 hover:bg-[#21262d] rounded text-red-400 transition-colors"
+                              className="p-1.5 hover:bg-white/5 rounded text-red-400 hover:text-red-300 transition-colors"
                               title="Revoke Key"
                             >
                               <Ban className="w-3.5 h-3.5" />
@@ -360,7 +360,7 @@ export default function ApiKeysPage() {
                         {key.status === "REVOKED" && (
                           <button
                             onClick={() => openConfirmModal("archive", key._id, key.name)}
-                            className="p-1.5 hover:bg-[#21262d] rounded text-[#8b949e] hover:text-[#f0f6fc] transition-colors"
+                            className="p-1.5 hover:bg-white/5 rounded text-gray-400 hover:text-white transition-colors"
                             title="Archive Key"
                           >
                             <Archive className="w-3.5 h-3.5" />
@@ -380,7 +380,7 @@ export default function ApiKeysPage() {
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New API Key" size="lg">
         <form onSubmit={handleCreateApiKey} className="space-y-4">
           {modalError && (
-            <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-300 text-xs">
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
               {modalError}
             </div>
           )}
@@ -440,12 +440,12 @@ export default function ApiKeysPage() {
             <label className="label">API Scopes (Optional)</label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               {availableScopes.map((scope) => (
-                <label key={scope} className="flex items-center gap-2 text-xs text-[#c9d1d9] cursor-pointer">
+                <label key={scope} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedScopes.includes(scope)}
                     onChange={() => handleScopeToggle(scope)}
-                    className="rounded bg-[#0d1117] border-[#30363d] text-[#238636] focus:ring-[#2ea043]"
+                    className="rounded bg-[#0e131b] border-white/10 text-[#2f81f7] focus:ring-blue-500"
                   />
                   <span className="font-mono">{scope}</span>
                 </label>
@@ -453,7 +453,7 @@ export default function ApiKeysPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#30363d]">
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
             <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary text-xs" disabled={submitting}>
               Cancel
             </button>
@@ -467,7 +467,7 @@ export default function ApiKeysPage() {
       {/* Modal: Display One-Time Created Secret */}
       <Modal isOpen={Boolean(createdSecret)} onClose={() => setCreatedSecret(null)} title="API Key Generated Successfully">
         <div className="space-y-4">
-          <div className="p-3 bg-yellow-950/40 border border-yellow-800/80 rounded-lg flex items-start gap-3 text-yellow-300 text-xs">
+          <div className="p-3 bg-yellow-950/40 border border-yellow-800/60 rounded-xl flex items-start gap-3 text-yellow-300 text-xs">
             <ShieldAlert className="w-5 h-5 shrink-0 text-yellow-400 mt-0.5" />
             <div>
               <span className="font-bold block">Save this key in a secure location!</span>
@@ -482,7 +482,7 @@ export default function ApiKeysPage() {
                 type="text"
                 readOnly
                 value={createdSecret || ""}
-                className="input font-mono text-xs select-all text-[#79c0ff] bg-[#0d1117]"
+                className="input font-mono text-xs select-all text-blue-300 bg-[#0d1117]"
               />
               <button
                 onClick={() => copyToClipboard(createdSecret)}
@@ -494,7 +494,7 @@ export default function ApiKeysPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2 border-t border-[#30363d]">
+          <div className="flex justify-end pt-3 border-t border-white/10">
             <button onClick={() => setCreatedSecret(null)} className="btn-secondary text-xs">
               Done & Close
             </button>

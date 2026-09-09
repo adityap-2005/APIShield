@@ -14,15 +14,15 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="sticky top-0 z-50 border-b border-white/10 bg-[#050505]/90 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-white/10 bg-[#0d1117]/90 backdrop-blur-md"
     >
       {/* Announcement Bar */}
-      <div className="border-b border-purple-500/20 bg-purple-950/40 px-4 py-1.5 text-center text-xs text-purple-200">
+      <div className="border-b border-blue-500/20 bg-blue-950/40 px-4 py-1.5 text-center text-xs text-blue-200">
         <span>APIShield V1 is now live</span>
-        <span className="mx-2 text-purple-400">→</span>
+        <span className="mx-2 text-blue-400">→</span>
         <a
           href="#features"
-          className="font-medium text-purple-300 hover:text-white transition-colors underline-offset-2 hover:underline"
+          className="font-medium text-blue-300 hover:text-white transition-colors underline-offset-2 hover:underline"
         >
           Explore the platform &rarr;
         </a>
@@ -32,7 +32,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white shadow-sm shadow-purple-500/30 group-hover:bg-purple-500 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-[#2f81f7] flex items-center justify-center text-white shadow-sm shadow-blue-500/30 group-hover:bg-[#58a6ff] transition-colors">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <span className="font-bold text-white text-base tracking-tight">
@@ -59,12 +59,12 @@ export default function Navbar() {
         {/* Right Action Buttons */}
         <div className="hidden md:flex items-center gap-3">
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white/20 border-t-purple-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin" />
           ) : user ? (
             <div className="flex items-center gap-3">
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1.5 rounded-md bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-500/20 hover:bg-purple-500 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#2f81f7] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-blue-500/20 hover:bg-[#58a6ff] transition-colors"
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 Dashboard
@@ -86,7 +86,7 @@ export default function Navbar() {
               >
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-1 rounded-md bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-purple-500/20 hover:bg-purple-500 transition-colors"
+                  className="inline-flex items-center gap-1 rounded-md bg-[#2f81f7] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm shadow-blue-500/20 hover:bg-[#58a6ff] transition-colors"
                 >
                   Get Started
                   <ArrowRight className="w-3 h-3" />
@@ -112,7 +112,7 @@ export default function Navbar() {
 
       {/* Mobile Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-[#0a0a0c] px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-white/10 bg-[#161b22] px-4 py-4 space-y-3">
           <nav className="flex flex-col gap-2.5 text-sm text-gray-300">
             <a
               href="#features"
@@ -149,7 +149,7 @@ export default function Navbar() {
               <Link
                 to="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center py-2 rounded-md bg-purple-600 text-xs font-semibold text-white"
+                className="w-full text-center py-2 rounded-md bg-[#2f81f7] text-xs font-semibold text-white"
               >
                 Go to Dashboard
               </Link>
@@ -165,7 +165,7 @@ export default function Navbar() {
                 <Link
                   to="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center py-2 rounded-md bg-purple-600 text-xs font-semibold text-white"
+                  className="w-full text-center py-2 rounded-md bg-[#2f81f7] text-xs font-semibold text-white"
                 >
                   Get Started
                 </Link>

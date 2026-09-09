@@ -1,7 +1,7 @@
 /**
  * OrgSelector.jsx
  *
- * GitHub-inspired Organization/Workspace Selector dropdown in top navigation.
+ * Organization/Workspace Selector dropdown in top navigation.
  * Displays real user organizations, indicates active organization with a checkmark,
  * and provides an option to create a new organization.
  */
@@ -50,24 +50,24 @@ export default function OrgSelector() {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#30363d] bg-[#0d1117] text-xs font-semibold text-[#f0f6fc] hover:bg-[#21262d] transition-colors focus:outline-none"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-[#0e131b] text-xs font-medium text-white hover:border-white/20 hover:bg-[#1c2128] transition-colors focus:outline-none"
         >
-          <Building2 className="w-4 h-4 text-[#58a6ff]" />
+          <Building2 className="w-3.5 h-3.5 text-blue-400" />
           <span className="truncate max-w-[140px] sm:max-w-[200px]">
             {activeOrg ? activeOrg.name : "Select Workspace"}
           </span>
-          <ChevronDown className="w-3.5 h-3.5 text-[#8b949e]" />
+          <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
         </button>
 
         {isOpen && (
-          <div className="absolute left-0 mt-2 w-72 bg-[#161b22] border border-[#30363d] rounded-lg shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-            <div className="px-3 py-2 text-[10px] font-bold text-[#8b949e] uppercase tracking-wider border-b border-[#30363d]">
-              Your Organizations
+          <div className="absolute left-0 mt-2 w-72 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-blue-950/20 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-3 py-2 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider border-b border-white/5">
+              Your Workspaces
             </div>
 
             <div className="max-h-60 overflow-y-auto py-1">
               {organizations.length === 0 ? (
-                <div className="px-3 py-3 text-xs text-[#8b949e] italic text-center">
+                <div className="px-3 py-3 text-xs text-gray-500 italic text-center">
                   No organizations found
                 </div>
               ) : (
@@ -77,31 +77,31 @@ export default function OrgSelector() {
                     <button
                       key={org._id}
                       onClick={() => handleSelectOrg(org)}
-                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#21262d] transition-colors ${
-                        isActive ? "text-[#58a6ff] font-semibold bg-[#1f6feb]/10" : "text-[#c9d1d9]"
+                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-white/5 transition-colors ${
+                        isActive ? "text-blue-300 font-semibold bg-blue-950/40" : "text-gray-300"
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <Building2 className="w-3.5 h-3.5 shrink-0 text-[#8b949e]" />
+                        <Building2 className="w-3.5 h-3.5 shrink-0 text-gray-500" />
                         <span className="truncate">{org.name}</span>
                       </div>
-                      {isActive && <Check className="w-4 h-4 text-[#58a6ff] shrink-0" />}
+                      {isActive && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
                     </button>
                   );
                 })
               )}
             </div>
 
-            <div className="border-t border-[#30363d] pt-1 mt-1">
+            <div className="border-t border-white/5 pt-1 mt-1">
               <button
                 onClick={() => {
                   setIsOpen(false);
                   setShowCreateModal(true);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#58a6ff] font-medium flex items-center gap-2 hover:bg-[#21262d] transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-2 hover:bg-white/5 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create Organization</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create Workspace</span>
               </button>
             </div>
           </div>

@@ -25,7 +25,7 @@ export default function Metrics() {
   ];
 
   return (
-    <section id="value" className="py-20 bg-[#08080b] border-t border-white/5 text-left">
+    <section id="value" className="py-20 bg-[#0e131b] border-t border-white/5 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
         <motion.div
@@ -35,7 +35,7 @@ export default function Metrics() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="space-y-2 text-center max-w-2xl mx-auto"
         >
-          <p className="text-xs font-mono text-purple-400 uppercase tracking-widest">
+          <p className="text-xs font-mono text-blue-400 uppercase tracking-widest">
             // RELIABLE BY DESIGN
           </p>
           <h2 className="text-3xl font-extrabold text-white tracking-tight">
@@ -46,7 +46,7 @@ export default function Metrics() {
           </p>
         </motion.div>
 
-        {/* 4 Cards Grid with Staggered Entry and Subtle Hover */}
+        {/* 4 Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {metrics.map((m, index) => (
             <motion.div
@@ -56,9 +56,9 @@ export default function Metrics() {
               viewport={{ once: true }}
               transition={{ duration: 0.45, delay: index * 0.1, ease: "easeOut" }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="rounded-xl border border-white/10 bg-[#0d0d10] p-6 space-y-3 hover:border-purple-500/30 transition-colors"
+              className="rounded-xl border border-white/10 bg-[#161b22] p-6 space-y-3 hover:border-blue-500/30 transition-colors"
             >
-              <div className="text-3xl font-extrabold font-mono text-purple-300">
+              <div className="text-3xl font-extrabold font-mono text-blue-300">
                 {m.value}
               </div>
               <h3 className="text-sm font-bold text-white tracking-tight">

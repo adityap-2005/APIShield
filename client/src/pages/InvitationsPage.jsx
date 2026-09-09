@@ -105,13 +105,13 @@ export default function InvitationsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <Mail className="w-5 h-5 text-[#58a6ff]" />
-            {isOrgContext ? "Organization Invitations" : "My Personal Invitations"}
+            <Mail className="w-5 h-5 text-blue-400" />
+            {isOrgContext ? "Workspace Invitations" : "My Personal Invitations"}
           </h1>
           <p className="page-description">
             {isOrgContext
-              ? "Manage invitations sent to developers for this organization"
-              : "Review and respond to organization invitations sent to you"}
+              ? "Manage invitations sent to developers for this workspace"
+              : "Review and respond to workspace invitations sent to you"}
           </p>
         </div>
       </div>
@@ -121,26 +121,26 @@ export default function InvitationsPage() {
       {/* USER PERSONAL INVITATIONS VIEW */}
       {!isOrgContext && !error && (
         <div className="space-y-4">
-          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-[#58a6ff]" />
+          <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-blue-400" />
             Pending Invitations Sent to You ({invitations.length})
           </h2>
 
           {invitations.length === 0 ? (
-            <EmptyState message="You have no pending organization invitations." />
+            <EmptyState message="You have no pending workspace invitations." />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {invitations.map((inv) => (
-                <div key={inv._id} className="card flex items-center justify-between">
+                <div key={inv._id} className="card bg-[#161b22] border-white/10 flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-[#f0f6fc] text-sm">
-                      {inv.organizationId?.name || "Organization"}
+                    <h3 className="font-bold text-white text-sm">
+                      {inv.organizationId?.name || "Workspace"}
                     </h3>
-                    <p className="text-xs text-[#8b949e] mt-0.5">
-                      Invited by <span className="text-[#c9d1d9] font-medium">{inv.invitedBy?.name || inv.invitedBy?.email}</span> as{" "}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Invited by <span className="text-white font-medium">{inv.invitedBy?.name || inv.invitedBy?.email}</span> as{" "}
                       <Badge variant="info">{inv.role}</Badge>
                     </p>
-                    <p className="text-[11px] text-[#8b949e] font-mono mt-1">
+                    <p className="text-[11px] text-gray-500 font-mono mt-1">
                       Expires: {new Date(inv.expiresAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -154,7 +154,7 @@ export default function InvitationsPage() {
                     </button>
                     <button
                       onClick={() => handleRejectMyInvitation(inv._id)}
-                      className="btn-secondary text-xs px-3 py-1.5 text-red-400 border-red-900/50 hover:bg-red-950/30"
+                      className="btn-secondary text-xs px-3 py-1.5 text-red-400 border-red-800/60 hover:bg-red-950/40"
                     >
                       <X className="w-3.5 h-3.5" /> Reject
                     </button>
@@ -169,12 +169,12 @@ export default function InvitationsPage() {
       {/* ORGANIZATION INVITATIONS MANAGEMENT VIEW */}
       {isOrgContext && !error && (
         <div className="space-y-4">
-          <h2 className="text-xs font-bold text-[#8b949e] uppercase tracking-wider">
-            Invitations Sent by Organization ({invitations.length})
+          <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
+            Invitations Sent by Workspace ({invitations.length})
           </h2>
 
           {invitations.length === 0 ? (
-            <EmptyState message="No invitations sent for this organization." />
+            <EmptyState message="No invitations sent for this workspace." />
           ) : (
             <div className="table-container">
               <table className="table">
@@ -191,24 +191,24 @@ export default function InvitationsPage() {
                 <tbody>
                   {invitations.map((inv) => (
                     <tr key={inv._id}>
-                      <td className="font-medium text-[#f0f6fc] font-mono text-xs">{inv.email}</td>
+                      <td className="font-medium text-white font-mono text-xs">{inv.email}</td>
                       <td>
                         <Badge variant="info">{inv.role}</Badge>
                       </td>
                       <td>
                         <Badge variant={getInvitationStatusVariant(inv.status)}>{inv.status}</Badge>
                       </td>
-                      <td className="text-xs text-[#8b949e]">
+                      <td className="text-xs text-gray-400">
                         {inv.invitedBy?.name || inv.invitedBy?.email}
                       </td>
-                      <td className="text-xs text-[#8b949e] font-mono">
+                      <td className="text-xs text-gray-400 font-mono">
                         {new Date(inv.expiresAt).toLocaleDateString()}
                       </td>
                       <td>
                         {inv.status === "PENDING" && (
                           <button
                             onClick={() => openCancelConfirm(inv._id)}
-                            className="p-1.5 text-[#8b949e] hover:text-red-400 rounded transition-colors"
+                            className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
                             title="Cancel Invitation"
                           >
                             <Ban className="w-3.5 h-3.5" />

@@ -179,13 +179,13 @@ export default function MembersPage() {
             <UserCheck className="w-5 h-5 text-green-400" />
             Members & Roles
           </h1>
-          <p className="page-description">Manage organization members and role permissions</p>
+          <p className="page-description">Manage workspace members and role-based access control</p>
         </div>
 
         <div className="flex gap-2">
-          <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-900/50 hover:bg-red-950/30">
+          <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-800/60 hover:bg-red-950/40">
             <LogOut className="w-3.5 h-3.5" />
-            Leave Organization
+            Leave Workspace
           </button>
           <button onClick={() => setShowInviteModal(true)} className="btn-primary text-xs">
             <UserPlus className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export default function MembersPage() {
       </div>
 
       {successMessage && (
-        <div className="p-3 bg-green-950/50 border border-green-800 rounded-lg text-green-300 text-xs font-medium">
+        <div className="p-3 bg-green-950/60 border border-green-800/60 rounded-lg text-green-300 text-xs font-medium">
           {successMessage}
         </div>
       )}
@@ -224,15 +224,15 @@ export default function MembersPage() {
                   return (
                     <tr key={member.membershipId}>
                       <td>
-                        <div className="font-semibold text-[#f0f6fc] flex items-center gap-2">
+                        <div className="font-semibold text-white flex items-center gap-2">
                           {member.user?.name}
                           {isSelf && (
-                            <span className="text-[10px] bg-[#1f6feb]/20 text-[#58a6ff] border border-[#58a6ff]/30 px-1.5 py-0.2 rounded font-mono">
+                            <span className="text-[10px] bg-blue-950/60 text-blue-300 border border-blue-800/40 px-1.5 py-0.2 rounded font-mono">
                               You
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-[#8b949e] font-mono">{member.user?.email}</div>
+                        <div className="text-xs text-gray-400 font-mono">{member.user?.email}</div>
                       </td>
                       <td>
                         <Badge variant={getRoleVariant(member.role)}>{member.role}</Badge>
@@ -240,7 +240,7 @@ export default function MembersPage() {
                       <td>
                         <Badge variant="success">{member.status}</Badge>
                       </td>
-                      <td className="text-xs text-[#8b949e] font-mono">
+                      <td className="text-xs text-gray-400 font-mono">
                         {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : "N/A"}
                       </td>
                       <td>
@@ -267,7 +267,7 @@ export default function MembersPage() {
                           {!isSelf && member.role !== "OWNER" && (
                             <button
                               onClick={() => openRemoveConfirm(member.membershipId, member.user?.name)}
-                              className="p-1.5 text-[#8b949e] hover:text-red-400 rounded transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
                               title="Remove Member"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -285,10 +285,10 @@ export default function MembersPage() {
       )}
 
       {/* Modal: Invite Member */}
-      <Modal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Invite Member to Organization">
+      <Modal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Invite Member to Workspace">
         <form onSubmit={handleInvite} className="space-y-4">
           {modalError && (
-            <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-300 text-xs">
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
               {modalError}
             </div>
           )}
@@ -317,12 +317,12 @@ export default function MembersPage() {
               <option value="DEVELOPER">DEVELOPER (Default permissions)</option>
               <option value="ADMIN">ADMIN (Can manage team & members)</option>
             </select>
-            <span className="text-[11px] text-[#8b949e] mt-1 block">
+            <span className="text-[10px] text-gray-500 font-mono mt-1 block">
               Note: OWNER role cannot be assigned via invitation.
             </span>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#30363d]">
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
             <button type="button" onClick={() => setShowInviteModal(false)} className="btn-secondary text-xs" disabled={submitting}>
               Cancel
             </button>

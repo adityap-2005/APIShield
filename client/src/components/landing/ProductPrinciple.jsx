@@ -3,25 +3,25 @@ import { ShieldCheck, Quote } from "lucide-react";
 
 export default function ProductPrinciple() {
   return (
-    <section id="principle" className="py-20 bg-[#050505] border-t border-white/5">
+    <section id="principle" className="py-20 bg-[#0d1117] border-t border-white/5">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative rounded-2xl border border-white/10 bg-[#0d0d12] p-8 sm:p-12 text-center space-y-6 shadow-2xl overflow-hidden"
+          className="relative rounded-2xl border border-white/10 bg-[#161b22] p-8 sm:p-12 text-center space-y-6 shadow-2xl overflow-hidden"
         >
           {/* Subtle animated background glow */}
           <motion.div
             animate={{ opacity: [0.1, 0.2, 0.1] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-purple-900/20 blur-[80px] rounded-full pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-blue-900/20 blur-[80px] rounded-full pointer-events-none"
           />
 
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/60 border border-purple-800/40 text-purple-300 text-xs font-mono">
-            <Quote className="w-3.5 h-3.5 text-purple-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/40 text-blue-300 text-xs font-mono">
+            <Quote className="w-3.5 h-3.5 text-blue-400" />
             <span>APIShield Product Principle</span>
           </div>
 
@@ -36,7 +36,7 @@ export default function ProductPrinciple() {
           </p>
 
           <div className="pt-2 flex items-center justify-center gap-2 text-xs text-gray-500 font-mono">
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
+            <ShieldCheck className="w-4 h-4 text-blue-400" />
             <span>Security First • Transparent By Design</span>
           </div>
         </motion.div>

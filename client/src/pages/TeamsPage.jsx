@@ -116,7 +116,7 @@ export default function TeamsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <Users className="w-5 h-5 text-purple-400" />
+            <Users className="w-5 h-5 text-blue-400" />
             Teams
           </h1>
           <p className="page-description">Manage workgroups and developer team assignments</p>
@@ -145,34 +145,34 @@ export default function TeamsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team) => (
-              <div key={team._id} className="card hover:border-[#58a6ff]/50 transition-colors flex flex-col justify-between">
+              <div key={team._id} className="card bg-[#161b22] border-white/10 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-950/20 transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-bold text-[#f0f6fc] text-base">{team.name}</h3>
-                      <p className="font-mono text-[11px] text-[#8b949e] mt-0.5">slug: {team.slug}</p>
+                      <h3 className="font-bold text-white text-base tracking-tight">{team.name}</h3>
+                      <p className="font-mono text-[11px] text-gray-500 mt-0.5">slug: {team.slug}</p>
                     </div>
                     <button
                       onClick={() => openDeleteConfirm(team._id, team.name)}
-                      className="p-1.5 text-[#8b949e] hover:text-red-400 rounded transition-colors"
+                      className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
                       title="Delete Team"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <p className="text-xs text-[#8b949e] mt-3 line-clamp-2">
+                  <p className="text-xs text-gray-400 mt-3 line-clamp-2">
                     {team.description || "No description provided."}
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-[#30363d] flex items-center justify-between">
-                  <span className="text-[11px] text-[#8b949e] font-mono">
+                <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] text-gray-500 font-mono">
                     Created {new Date(team.createdAt).toLocaleDateString()}
                   </span>
                   <Link
                     to={`/org/${activeOrg._id}/teams/${team._id}`}
-                    className="text-xs text-[#58a6ff] hover:text-blue-400 font-semibold flex items-center gap-1"
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 transition-colors"
                   >
                     Manage Team <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -187,7 +187,7 @@ export default function TeamsPage() {
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Team">
         <form onSubmit={handleCreateTeam} className="space-y-4">
           {modalError && (
-            <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-300 text-xs">
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
               {modalError}
             </div>
           )}
@@ -216,7 +216,7 @@ export default function TeamsPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#30363d]">
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
             <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary text-xs" disabled={submitting}>
               Cancel
             </button>

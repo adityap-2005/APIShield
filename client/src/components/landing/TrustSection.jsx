@@ -16,7 +16,7 @@ export default function TrustSection() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="border-y border-white/5 bg-[#08080a] py-8"
+      className="border-y border-white/5 bg-[#0e131b] py-8"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <p className="text-[11px] font-mono tracking-widest text-gray-500 uppercase">
@@ -34,9 +34,9 @@ export default function TrustSection() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}
                 whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                className="flex items-center gap-2 text-xs font-mono text-gray-400 px-3 py-1.5 rounded-md border border-white/5 bg-[#0f0f13] hover:border-purple-500/30 hover:text-purple-300 transition-colors"
+                className="flex items-center gap-2 text-xs font-mono text-gray-400 px-3 py-1.5 rounded-md border border-white/5 bg-[#161b22] hover:border-blue-500/30 hover:text-blue-300 transition-colors"
               >
-                <Icon className="w-3.5 h-3.5 text-purple-400" />
+                <Icon className="w-3.5 h-3.5 text-blue-400" />
                 <span>{item.label}</span>
               </motion.div>
             );

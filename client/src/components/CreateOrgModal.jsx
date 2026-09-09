@@ -47,16 +47,16 @@ export default function CreateOrgModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create New Organization">
+    <Modal isOpen={isOpen} onClose={onClose} title="Create New Workspace">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-300 text-xs">
+          <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
             {error}
           </div>
         )}
 
         <div>
-          <label className="label">Organization Name *</label>
+          <label className="label">Workspace Name *</label>
           <input
             type="text"
             className="input"
@@ -72,7 +72,7 @@ export default function CreateOrgModal({ isOpen, onClose }) {
           <label className="label">Description (Optional)</label>
           <textarea
             className="input resize-none h-20"
-            placeholder="Brief description of your organization"
+            placeholder="Brief description of your workspace"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={loading}
@@ -89,15 +89,15 @@ export default function CreateOrgModal({ isOpen, onClose }) {
             onChange={(e) => setWebsite(e.target.value)}
             disabled={loading}
           />
-          <span className="text-[11px] text-gray-500 mt-1 block">Must start with http:// or https://</span>
+          <span className="text-[10px] text-gray-500 font-mono mt-1 block">Must start with http:// or https://</span>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
+        <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
           <button type="button" onClick={onClose} className="btn-secondary text-xs" disabled={loading}>
             Cancel
           </button>
           <button type="submit" className="btn-primary text-xs" disabled={loading}>
-            {loading ? "Creating..." : "Create Organization"}
+            {loading ? "Creating..." : "Create Workspace"}
           </button>
         </div>
       </form>
