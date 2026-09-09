@@ -4,12 +4,12 @@ import cors from "cors";
 const app = express();
 
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://apishield-theta.vercel.app"
-    ],
-    credentials: true
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://apishield-app.vercel.app"
+  ],
+  credentials: true
 }));
 
 app.use(express.json());
