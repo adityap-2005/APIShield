@@ -10,6 +10,7 @@ import Membership from "../models/membership.model.js";
 
 import ApiError from "../utils/ApiError.js";
 import auditLogService from "./auditLog.service.js";
+import { _getOrganizationById } from "../helpers/organization.helper.js";
 
 import { MEMBERSHIP_ROLES } from "../constants/membershipRoles.js";
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
@@ -146,16 +147,9 @@ class OrganizationService {
 
     async updateOrganization(userId, organizationId, organizationData) {
 
-        const organization = await Organization.findById(
+        const organization = await _getOrganizationById(
             organizationId
         );
-
-        if (!organization) {
-            throw new ApiError(
-                404,
-                "Organization not found."
-            );
-        }
 
         const membership = await Membership.findOne({
             userId,
@@ -203,16 +197,9 @@ class OrganizationService {
 
     async deleteOrganization(userId, organizationId) {
 
-        const organization = await Organization.findById(
+        const organization = await _getOrganizationById(
             organizationId
         );
-
-        if (!organization) {
-            throw new ApiError(
-                404,
-                "Organization not found."
-            );
-        }
 
         const membership = await Membership.findOne({
             userId,

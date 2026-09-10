@@ -1,17 +1,33 @@
 import Team from "../models/team.model.js";
 import TeamMembership from "../models/teamMembership.model.js"
-import Organization from "../models/organization.model.js";
-import Membership from "../models/membership.model.js";
 
 import auditLogService from "./auditLog.service.js";
 
 import ApiError from "../utils/ApiError.js";
 
-import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js";
 import { TEAM_ROLES } from "../constants/teamRoles.js";
 import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
+
+import {
+    _getTeamById,
+    _getTeamBySlug,
+    _validateTeamRole,
+    _validateTeamRoleValue,
+    _validateLastTeamAdmin
+} from "../helpers/team.helper.js"
+
+import {
+    _getOrganizationById
+} from "../helpers/organization.helper.js"
+
+import { 
+    _getActiveMembership,
+    _getMembershipById,
+    _getTeamMembership,
+    _getActiveTeamMembership
+} from "../helpers/membership.helper.js"
 
 class TeamService {
 
@@ -22,11 +38,11 @@ class TeamService {
     ) {
         const { name, description } = teamData;
 
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
-        const requesterMembership = await this._getActiveMembership(
+        const requesterMembership = await _getActiveMembership(
             userId,
             organizationId
         )
@@ -38,7 +54,7 @@ class TeamService {
             .replace(/[^a-z0-9-]/g, "");
 
         const existingTeam =
-            await this._getTeamBySlug(
+            await _getTeamBySlug(
                 slug,
                 organizationId
             );
@@ -97,11 +113,11 @@ class TeamService {
         organizationId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
-        await this._getActiveMembership(
+        await _getActiveMembership(
             userId,
             organizationId
         );
@@ -119,16 +135,16 @@ class TeamService {
         teamId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
-        await this._getActiveMembership(
+        await _getActiveMembership(
             userId,
             organizationId
         );
 
-        const team = await this._getTeamById(
+        const team = await _getTeamById(
             teamId,
             organizationId
         );
@@ -144,30 +160,30 @@ class TeamService {
     ) {
         const { name, description } = teamData;
 
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._validateTeamRole(
+        _validateTeamRole(
             teamMembership,
             [
                 TEAM_ROLES.TEAM_ADMIN
             ]
         );
 
-        const team = await this._getTeamById(
+        const team = await _getTeamById(
             teamId,
             organizationId
         );
@@ -181,7 +197,7 @@ class TeamService {
                 .replace(/[^a-z0-9-]/g, "");
 
             const existingTeam =
-                await this._getTeamBySlug(
+                await _getTeamBySlug(
                     slug,
                     organizationId
                 );
@@ -212,18 +228,17 @@ class TeamService {
         return team;
     }
 
-
     async deleteTeam(
         organizationId,
         teamId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
@@ -237,12 +252,12 @@ class TeamService {
         if (!isOrganizationAdmin) {
 
             const teamMembership =
-                await this._getActiveTeamMembership(
+                await _getActiveTeamMembership(
                     teamId,
                     organizationMembership._id
                 );
 
-            this._validateTeamRole(
+            _validateTeamRole(
                 teamMembership,
                 [
                     TEAM_ROLES.TEAM_ADMIN
@@ -250,7 +265,7 @@ class TeamService {
             );
         }
 
-        const team = await this._getTeamById(
+        const team = await _getTeamById(
             teamId,
             organizationId
         );
@@ -293,35 +308,35 @@ class TeamService {
         membershipId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const requesterTeamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._validateTeamRole(
+        _validateTeamRole(
             requesterTeamMembership,
             [
                 TEAM_ROLES.TEAM_ADMIN
             ]
         );
 
-        const team = await this._getTeamById(
+        const team = await _getTeamById(
             teamId,
             organizationId
         );
 
-        const membership = await this._getMembershipById(
+        const membership = await _getMembershipById(
             membershipId,
             organizationId
         );
@@ -382,12 +397,12 @@ class TeamService {
         teamId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
@@ -399,13 +414,13 @@ class TeamService {
             ].includes(organizationMembership.role);
 
         if (!isOrganizationAdmin) {
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
         }
 
-        await this._getTeamById(
+        await _getTeamById(
             teamId,
             organizationId
         );
@@ -442,12 +457,12 @@ class TeamService {
         membershipId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
@@ -459,12 +474,12 @@ class TeamService {
 
         if (!isOrganizationAdmin) {
             const requesterTeamMembership =
-                await this._getActiveTeamMembership(
+                await _getActiveTeamMembership(
                     teamId,
                     organizationMembership._id
                 );
 
-            this._validateTeamRole(
+            _validateTeamRole(
                 requesterTeamMembership,
                 [
                     TEAM_ROLES.TEAM_ADMIN
@@ -472,18 +487,18 @@ class TeamService {
             );
         }
 
-        const team = await this._getTeamById(
+        const team = await _getTeamById(
             teamId,
             organizationId
         );
 
-        const membership = await this._getMembershipById(
+        const membership = await _getMembershipById(
             membershipId,
             organizationId
         );
 
         const teamMembership =
-            await this._getTeamMembership(
+            await _getTeamMembership(
                 teamId,
                 membershipId
             );
@@ -535,14 +550,14 @@ class TeamService {
         userId,
         role
     ) {
-        await this._validateTeamRoleValue(role);
+        await _validateTeamRoleValue(role);
 
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
@@ -556,12 +571,12 @@ class TeamService {
         if (!isOrganizationAdmin) {
 
             const requesterTeamMembership =
-                await this._getActiveTeamMembership(
+                await _getActiveTeamMembership(
                     teamId,
                     organizationMembership._id
                 );
 
-            this._validateTeamRole(
+            _validateTeamRole(
                 requesterTeamMembership,
                 [
                     TEAM_ROLES.TEAM_ADMIN
@@ -569,18 +584,18 @@ class TeamService {
             );
         }
 
-        await this._getTeamById(
+        await _getTeamById(
             teamId,
             organizationId
         );
 
-        await this._getMembershipById(
+        await _getMembershipById(
             membershipId,
             organizationId
         );
 
         const teamMembership =
-            await this._getTeamMembership(
+            await _getTeamMembership(
                 teamId,
                 membershipId
             );
@@ -624,7 +639,7 @@ class TeamService {
             teamMembership.role === TEAM_ROLES.TEAM_ADMIN &&
             role === TEAM_ROLES.MEMBER
         ) {
-            await this._validateLastTeamAdmin(
+            await _validateLastTeamAdmin(
                 teamMembership
             );
         }
@@ -641,7 +656,7 @@ class TeamService {
                 await auditLogService.getActor(userId);
 
             const team =
-                await this._getTeamById(
+                await _getTeamById(
                     teamId,
                     organizationId
                 );
@@ -674,7 +689,7 @@ class TeamService {
                 }
             });
         }
-        
+
         return {
             teamMembershipId: teamMembership._id,
             membershipId: teamMembership.membershipId,
@@ -687,203 +702,34 @@ class TeamService {
         teamId,
         userId
     ) {
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
-        await this._getTeamById(
+        await _getTeamById(
             teamId,
             organizationId
         );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        await this._validateLastTeamAdmin(
+        await _validateLastTeamAdmin(
             teamMembership
         );
 
         await teamMembership.deleteOne();
 
         return;
-    }
-
-    // ======================
-    // Helper Methods
-    // ======================
-
-    async _getOrganizationById(organizationId) {
-        const organization = await Organization.findById(organizationId);
-
-        if (!organization) {
-            throw new ApiError(404, "Organization not found.");
-        }
-
-        return organization;
-    }
-
-    async _getTeamById(teamId, organizationId) {
-        const team = await Team.findOne({
-            _id: teamId,
-            organizationId,
-        });
-
-        if (!team) {
-            throw new ApiError(404, "Team not found.");
-        }
-
-        return team;
-    }
-
-    async _getTeamBySlug(slug, organizationId) {
-
-        return await Team.findOne({
-            organizationId,
-            slug,
-        });
-    }
-
-    async _getTeamMembership(teamId, membershipId) {
-        const teamMembership = await TeamMembership.findOne({
-            teamId,
-            membershipId,
-        });
-
-        if (!teamMembership) {
-            throw new ApiError(404, "Team membership not found.");
-        }
-
-        return teamMembership;
-    }
-
-    async _getMembershipById(
-        memberId,
-        organizationId
-    ) {
-
-        const membership = await Membership.findOne({
-            _id: memberId,
-            organizationId,
-            status: MEMBERSHIP_STATUS.ACTIVE
-        }).populate(
-            "userId",
-            "name email avatar"
-        );
-
-        if (!membership) {
-            throw new ApiError(
-                404,
-                "Member not found."
-            );
-        }
-
-        return membership;
-    }
-
-    async _getActiveMembership(userId, organizationId) {
-
-        await this._getOrganizationById(
-            organizationId
-        );
-
-        const membership = await Membership.findOne({
-            userId,
-            organizationId,
-            status: MEMBERSHIP_STATUS.ACTIVE
-        });
-
-        if (!membership) {
-            throw new ApiError(
-                403,
-                "You are not an active member of this organization."
-            );
-        }
-
-        return membership;
-    }
-
-    async _validateOrganizationRole(
-        membership,
-        allowedRoles
-    ) {
-        if (!allowedRoles.includes(membership.role)) {
-            throw new ApiError(
-                403,
-                "You are not authorized to perform this action."
-            );
-        }
-    }
-
-    _validateTeamRole(teamMembership, allowedRoles) {
-        if (!allowedRoles.includes(teamMembership.role)) {
-            throw new ApiError(
-                403,
-                "You are not authorized to perform this action."
-            );
-        }
-    }
-
-    async _getActiveTeamMembership(
-        teamId,
-        membershipId
-    ) {
-        const teamMembership =
-            await TeamMembership.findOne({
-                teamId,
-                membershipId
-            });
-
-        if (!teamMembership) {
-            throw new ApiError(
-                403,
-                "You are not a member of this team."
-            );
-        }
-
-        return teamMembership;
-    }
-
-    async _validateLastTeamAdmin(
-        teamMembership
-    ) {
-        if (
-            teamMembership.role !== TEAM_ROLES.TEAM_ADMIN
-        ) {
-            return;
-        }
-
-        const adminCount =
-            await TeamMembership.countDocuments({
-                teamId: teamMembership.teamId,
-                role: TEAM_ROLES.TEAM_ADMIN,
-            });
-
-        if (adminCount <= 1) {
-            throw new ApiError(
-                409,
-                "Cannot remove the last Team Admin."
-            );
-        }
-    }
-
-    _validateTeamRoleValue(role) {
-        if (
-            !Object.values(TEAM_ROLES).includes(role)
-        ) {
-            throw new ApiError(
-                400,
-                "Invalid team role."
-            );
-        }
     }
 }
 

@@ -41,6 +41,13 @@ const apiKeySchema = new mongoose.Schema({
         index: true,
     },
 
+    integrationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Integration",
+        required: true,
+        index: true
+    },
+
     keyHash: {
         type: String,
         required: true,

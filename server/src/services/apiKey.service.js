@@ -1,21 +1,25 @@
 import ApiKey from "../models/apiKey.model.js";
 import Team from "../models/team.model.js";
-import Organization from "../models/organization.model.js";
-import Membership from "../models/membership.model.js";
 import TeamMembership from "../models/teamMembership.model.js";
-import AuditLog from "../models/auditLog.model.js";
-import User from "../models/user.model.js";
 
 import auditLogService from "./auditLog.service.js";
 
 import ApiError from "../utils/ApiError.js";
 import { generateApiKey } from "../utils/apiKey.util.js";
 
-import { TEAM_ROLES } from "../constants/teamRoles.js";
-import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
 import { API_KEY_STATUS } from "../constants/apiKey.js";
 import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
+
+import { _getOrganizationById } from "../helpers/organization.helper.js";
+import {
+    _getActiveMembership,
+    _getActiveTeamMembership
+} from "../helpers/membership.helper.js";
+import {
+    _getApiKeyById,
+    _authorizeApiKeyManagement
+} from "../helpers/apiKey.helper.js";
 
 class ApiKeyService {
 
@@ -36,12 +40,12 @@ class ApiKeyService {
 
         // Check Active Organization Membership
 
-        await this._getOrganizationById(
+        await _getOrganizationById(
             organizationId
         );
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
@@ -61,13 +65,13 @@ class ApiKeyService {
 
         // Check Active Team Membership
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
         // Authorization
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
@@ -151,18 +155,18 @@ class ApiKeyService {
         userId
     ) {
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
@@ -175,22 +179,6 @@ class ApiKeyService {
         return apiKeys;
     }
 
-    _authorizeApiKeyManagement(
-        teamMembership
-    ) {
-
-        if (
-            teamMembership.role !==
-            TEAM_ROLES.TEAM_ADMIN
-        ) {
-            throw new ApiError(
-                403,
-                "Only Team Admin can manage API Keys."
-            );
-        }
-
-    }
-
     async getApiKeyById(
         organizationId,
         teamId,
@@ -198,23 +186,23 @@ class ApiKeyService {
         userId
     ) {
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
         const apiKey =
-            await this._getApiKeyById(
+            await _getApiKeyById(
                 apiKeyId,
                 teamId,
                 organizationId
@@ -238,23 +226,23 @@ class ApiKeyService {
         } = apiKeyData;
 
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
         const apiKey =
-            await this._getApiKeyById(
+            await _getApiKeyById(
                 apiKeyId,
                 teamId,
                 organizationId
@@ -333,23 +321,23 @@ class ApiKeyService {
         userId
     ) {
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
         const apiKey =
-            await this._getApiKeyById(
+            await _getApiKeyById(
                 apiKeyId,
                 teamId,
                 organizationId
@@ -421,23 +409,23 @@ class ApiKeyService {
         userId
     ) {
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
         const apiKey =
-            await this._getApiKeyById(
+            await _getApiKeyById(
                 apiKeyId,
                 teamId,
                 organizationId
@@ -496,23 +484,23 @@ class ApiKeyService {
         userId
     ) {
         const organizationMembership =
-            await this._getActiveMembership(
+            await _getActiveMembership(
                 userId,
                 organizationId
             );
 
         const teamMembership =
-            await this._getActiveTeamMembership(
+            await _getActiveTeamMembership(
                 teamId,
                 organizationMembership._id
             );
 
-        this._authorizeApiKeyManagement(
+        _authorizeApiKeyManagement(
             teamMembership
         );
 
         const apiKey =
-            await this._getApiKeyById(
+            await _getApiKeyById(
                 apiKeyId,
                 teamId,
                 organizationId
@@ -571,111 +559,6 @@ class ApiKeyService {
             status: apiKey.status,
             archivedAt: apiKey.archivedAt
         };
-    }
-
-    async _getActiveMembership(userId, organizationId) {
-
-        await this._validateOrganization(
-            organizationId
-        );
-
-        const membership = await Membership.findOne({
-            userId,
-            organizationId,
-            status: MEMBERSHIP_STATUS.ACTIVE
-        });
-
-        if (!membership) {
-            throw new ApiError(
-                403,
-                "You are not an active member of this organization."
-            );
-        }
-
-        return membership;
-    }
-
-    async _getTeamMembership(teamId, membershipId) {
-        const teamMembership = await TeamMembership.findOne({
-            teamId,
-            membershipId,
-        });
-
-        if (!teamMembership) {
-            throw new ApiError(404, "Team membership not found.");
-        }
-
-        return teamMembership;
-    }
-
-    async _getApiKeyById(
-        apiKeyId,
-        teamId,
-        organizationId
-    ) {
-        const apiKey = await ApiKey.findOne({
-            _id: apiKeyId,
-            teamId,
-            organizationId
-        });
-
-        if (!apiKey) {
-            throw new ApiError(
-                404,
-                "API key not found."
-            );
-        }
-
-        return apiKey;
-    }
-
-    async _validateOrganization(organizationId) {
-
-        const organization = await Organization.findById(
-            organizationId
-        );
-
-        if (!organization) {
-            throw new ApiError(
-                404,
-                "Organization not found.");
-        }
-
-        return organization;
-    }
-
-    async _getOrganizationById(organizationId) {
-        const organization =
-            await Organization.findById(organizationId);
-
-        if (!organization) {
-            throw new ApiError(
-                404,
-                "Organization not found."
-            );
-        }
-
-        return organization;
-    }
-
-    async _getActiveTeamMembership(
-        teamId,
-        membershipId
-    ) {
-        const teamMembership =
-            await TeamMembership.findOne({
-                teamId,
-                membershipId
-            });
-
-        if (!teamMembership) {
-            throw new ApiError(
-                403,
-                "You are not a member of this team."
-            );
-        }
-
-        return teamMembership;
     }
 }
 
