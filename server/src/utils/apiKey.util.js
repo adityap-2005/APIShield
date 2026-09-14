@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { API_KEY_PREFIX, API_KEY_ENVIRONMENT } from "../constants/apiKey.js";
+import { API_KEY_PREFIX } from "../constants/apiKey.js";
 import ApiError from "./ApiError.js";
 
 const PUBLIC_KEY_SUFFIX_LENGTH = 4;

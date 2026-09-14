@@ -1,6 +1,6 @@
 import ApiKey from "../models/apiKey.model.js";
 import Team from "../models/team.model.js";
-import TeamMembership from "../models/teamMembership.model.js";
+import Environment from "../models/environment.model.js";
 
 import auditLogService from "./auditLog.service.js";
 
@@ -33,9 +33,9 @@ class ApiKeyService {
         const {
             name,
             description,
-            environment,
             scopes,
-            expiresAt
+            expiresAt,
+            environmentId
         } = apiKeyData;
 
         // Check Active Organization Membership
@@ -70,6 +70,21 @@ class ApiKeyService {
                 organizationMembership._id
             );
 
+        const environment =
+            await Environment.findOne({
+                _id: environmentId,
+                organizationId,
+                teamId,
+                status: "ACTIVE"
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found or is disabled."
+            );
+        }
+
         // Authorization
         _authorizeApiKeyManagement(
             teamMembership
@@ -91,7 +106,7 @@ class ApiKeyService {
             apiKey,
             publicKeyId,
             keyHash
-        } = generateApiKey(environment);
+        } = generateApiKey(environment.name);
 
         // Save API Key
         const createdApiKey =
@@ -101,11 +116,11 @@ class ApiKeyService {
 
                 teamId,
 
+                environmentId,
+
                 name,
 
                 description,
-
-                environment,
 
                 scopes,
 
@@ -136,7 +151,8 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: createdApiKey.environment
+                environment: environment.name,
+                environmentId: environment._id
             }
         });
 
@@ -343,6 +359,21 @@ class ApiKeyService {
                 organizationId
             );
 
+        const environment =
+            await Environment.findOne({
+                _id: apiKey.environmentId,
+                organizationId,
+                teamId,
+                status: "ACTIVE"
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found or is disabled."
+            );
+        }
+
         if (apiKey.status === API_KEY_STATUS.REVOKED) {
             throw new ApiError(
                 400,
@@ -365,7 +396,7 @@ class ApiKeyService {
             publicKeyId,
             keyHash
         } = generateApiKey(
-            apiKey.environment
+            environment.name
         );
 
         apiKey.publicKeyId = publicKeyId;
@@ -391,7 +422,8 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: apiKey.environment,
+                environment: environment.name,
+                environmentId: environment._id,
                 publicKeyId: apiKey.publicKeyId
             }
         });
@@ -431,6 +463,20 @@ class ApiKeyService {
                 organizationId
             );
 
+        const environment =
+            await Environment.findOne({
+                _id: apiKey.environmentId,
+                organizationId,
+                teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
+            );
+        }
+
         if (
             apiKey.status === API_KEY_STATUS.REVOKED
         ) {
@@ -464,7 +510,8 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: apiKey.environment,
+                environment: environment.name,
+                environmentId: environment._id,
                 publicKeyId: apiKey.publicKeyId
             }
         });
@@ -505,6 +552,20 @@ class ApiKeyService {
                 teamId,
                 organizationId
             );
+
+        const environment =
+            await Environment.findOne({
+                _id: apiKey.environmentId,
+                organizationId,
+                teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
+            );
+        }
 
         if (
             apiKey.status === API_KEY_STATUS.ARCHIVED
@@ -548,7 +609,8 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: apiKey.environment,
+                environment: environment.name,
+                environmentId: environment._id,
                 publicKeyId: apiKey.publicKeyId
             }
         });

@@ -57,19 +57,18 @@ export const authenticateApiKey = async (
 
             apiKeyId:
                 apiKeyDocument._id,
-
+        
             organizationId:
                 apiKeyDocument.organizationId,
-
+        
             teamId:
                 apiKeyDocument.teamId,
-
+        
             scopes:
                 apiKeyDocument.scopes,
-
-            environment:
-                apiKeyDocument.environment
-
+        
+            environmentId:
+                apiKeyDocument.environmentId
         };
 
         next();

@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-import { API_KEY_ENVIRONMENT } from "../constants/apiKey";
-
 const integrationSchema = new mongoose.Schema({
     organizationId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,18 +22,6 @@ const integrationSchema = new mongoose.Schema({
         maxlength: 100
     },
 
-    baseUrl: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-    environment: {
-        type: String,
-        required: true,
-        enum: Object.values(API_KEY_ENVIRONMENT)
-    },
-
     status: {
         type: String,
         enum: ["ACTIVE", "DISABLED"],
@@ -51,6 +37,19 @@ const integrationSchema = new mongoose.Schema({
     timestamps: true
 });
 
-const Integration = mongoose.model("Integration", integrationSchema);
+integrationSchema.index(
+    {
+        teamId: 1,
+        name: 1
+    },
+    {
+        unique: true
+    }
+);
+
+const Integration = mongoose.model(
+    "Integration",
+    integrationSchema
+);
 
 export default Integration;

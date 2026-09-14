@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { API_KEY_STATUS, API_KEY_ENVIRONMENT } from "../constants/apiKey.js";
+import { API_KEY_STATUS } from "../constants/apiKey.js";
 
 const apiKeySchema = new mongoose.Schema({
     organizationId: {
@@ -8,12 +8,14 @@ const apiKeySchema = new mongoose.Schema({
         required: true,
         index: true
     },
+
     teamId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Team",
         required: true,
         index: true
     },
+
     name: {
         type: String,
         required: true,
@@ -28,12 +30,6 @@ const apiKeySchema = new mongoose.Schema({
         default: "",
     },
 
-    environment: {
-        type: String,
-        enum: Object.values(API_KEY_ENVIRONMENT),
-        default: API_KEY_ENVIRONMENT.DEVELOPMENT,
-    },
-
     publicKeyId: {
         type: String,
         required: true,
@@ -41,9 +37,9 @@ const apiKeySchema = new mongoose.Schema({
         index: true,
     },
 
-    integrationId: {
+    environmentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Integration",
+        ref: "Environment",
         required: true,
         index: true
     },
@@ -64,6 +60,17 @@ const apiKeySchema = new mongoose.Schema({
         type: String,
         enum: Object.values(API_KEY_STATUS),
         default: API_KEY_STATUS.ACTIVE,
+    },
+
+    revokedAt: {
+        type: Date,
+        default: null,
+    },
+    
+    revokedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
     },
 
     expiresAt: {
@@ -97,4 +104,5 @@ const apiKeySchema = new mongoose.Schema({
 });
 
 const ApiKey = mongoose.model("ApiKey", apiKeySchema);
+
 export default ApiKey;
