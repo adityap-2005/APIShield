@@ -7,13 +7,7 @@ import gatewayController from "../controllers/gateway.controller.js";
 const router = express.Router();
 
 router.get(
-    "/organizations/:organizationId/teams/:teamId/gateway/:environmentId/test",
-    protect,
-    gatewayController.testGateway
-);
-
-router.get(
-    "/organizations/:organizationId/teams/:teamId/gateway/weather",
+    "/organizations/:organizationId/teams/:teamId/gateway/upstream/:upstreamApiId/weather",
     authenticateApiKey,
     gatewayController.callOpenWeather
 );

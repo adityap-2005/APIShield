@@ -1,6 +1,9 @@
+import UpstreamApi from "../models/upstreamApi.model.js";
 import Environment from "../models/environment.model.js";
 import Integration from "../models/integration.model.js";
 import ApiError from "../utils/ApiError.js";
+
+import { encrypt } from "../utils/encryption.js";
 
 import {
     _getOrganizationById
@@ -24,214 +27,9 @@ import {
 } from "../constants/teamRoles.js";
 
 
-class EnvironmentService {
+class UpstreamApiService {
 
-    async createEnvironment(
-        userId,
-        organizationId,
-        teamId,
-        integrationId,
-        data
-    ) {
-
-        const { name } = data;
-
-        await _getOrganizationById(
-            organizationId
-        );
-
-        const membership =
-            await _getActiveMembership(
-                userId,
-                organizationId
-            );
-
-        await _getTeamById(
-            teamId,
-            organizationId
-        );
-
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
-                membership._id
-            );
-
-        const isOrgAdmin =
-            membership.role === ORGANIZATION_ROLES.OWNER ||
-            membership.role === ORGANIZATION_ROLES.ADMIN;
-
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
-
-        if (!isOrgAdmin && !isTeamAdmin) {
-            throw new ApiError(
-                403,
-                "You do not have permission to create an environment."
-            );
-        }
-
-        const integration =
-            await Integration.findOne({
-                _id: integrationId,
-                organizationId,
-                teamId
-            });
-
-        if (!integration) {
-            throw new ApiError(
-                404,
-                "Integration not found."
-            );
-        }
-
-        let environment;
-
-        try {
-            const createdEnvironment =
-                await Environment.create({
-                    organizationId,
-                    teamId,
-                    integrationId,
-                    name,
-                    createdBy: userId
-                });
-
-            environment = createdEnvironment;
-
-        } catch (error) {
-
-            if (error.code === 11000) {
-                throw new ApiError(
-                    409,
-                    `${name} environment already exists for this integration.`
-                );
-            }
-
-            throw error;
-        }
-
-        return environment;
-    }
-
-    async getEnvironments(
-        userId,
-        organizationId,
-        teamId,
-        integrationId
-    ) {
-        await _getOrganizationById(
-            organizationId
-        );
-
-        const membership =
-            await _getActiveMembership(
-                userId,
-                organizationId
-            );
-
-        await _getTeamById(
-            teamId,
-            organizationId
-        );
-
-        await _getActiveTeamMembership(
-            teamId,
-            membership._id
-        );
-
-        const integration =
-            await Integration.findOne({
-                _id: integrationId,
-                organizationId,
-                teamId
-            });
-
-        if (!integration) {
-            throw new ApiError(
-                404,
-                "Integration not found."
-            );
-        }
-
-        const environments =
-            await Environment.find({
-                integrationId,
-                organizationId,
-                teamId
-            })
-                .select(
-                    "_id integrationId name status createdAt updatedAt"
-                )
-                .sort({
-                    createdAt: -1
-                });
-
-        return environments;
-    }
-
-    async getEnvironment(
-        userId,
-        organizationId,
-        teamId,
-        integrationId,
-        environmentId
-    ) {
-        await _getOrganizationById(
-            organizationId
-        );
-
-        const membership =
-            await _getActiveMembership(
-                userId,
-                organizationId
-            );
-
-        await _getTeamById(
-            teamId,
-            organizationId
-        );
-
-        await _getActiveTeamMembership(
-            teamId,
-            membership._id
-        );
-
-        const integration =
-            await Integration.findOne({
-                _id: integrationId,
-                organizationId,
-                teamId
-            });
-
-        if (!integration) {
-            throw new ApiError(
-                404,
-                "Integration not found."
-            );
-        }
-
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                integrationId,
-                organizationId,
-                teamId
-            }).select(
-                "_id integrationId name status createdAt updatedAt"
-            );
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
-        return environment;
-    }
-
-    async updateEnvironment(
+    async createUpstreamApi(
         userId,
         organizationId,
         teamId,
@@ -239,6 +37,14 @@ class EnvironmentService {
         environmentId,
         data
     ) {
+
+        const {
+            name,
+            baseUrl,
+            path,
+            upstreamCredential
+        } = data;
+
         await _getOrganizationById(
             organizationId
         );
@@ -270,7 +76,21 @@ class EnvironmentService {
         if (!isOrgAdmin && !isTeamAdmin) {
             throw new ApiError(
                 403,
-                "You do not have permission to update this environment."
+                "You do not have permission to create an upstream API."
+            );
+        }
+
+        const integration =
+            await Integration.findOne({
+                _id: integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!integration) {
+            throw new ApiError(
+                404,
+                "Integration not found."
             );
         }
 
@@ -289,41 +109,228 @@ class EnvironmentService {
             );
         }
 
-        const allowedFields = [
-            "name",
-            "status"
-        ];
-
-        for (const field of allowedFields) {
-            if (data[field] !== undefined) {
-                environment[field] = data[field];
-            }
+        if (!upstreamCredential) {
+            throw new ApiError(
+                400,
+                "Upstream credential is required."
+            );
         }
 
+        const encryptedCredentialData =
+            encrypt(upstreamCredential);
+
+        let upstreamApi;
+
         try {
-            await environment.save();
+
+            upstreamApi =
+                await UpstreamApi.create({
+                    organizationId,
+                    teamId,
+                    integrationId,
+                    environmentId,
+                    name,
+                    baseUrl,
+                    path,
+
+                    encryptedCredential:
+                        encryptedCredentialData.encryptedData,
+
+                    encryptionIv:
+                        encryptedCredentialData.iv,
+
+                    encryptionAuthTag:
+                        encryptedCredentialData.authTag,
+
+                    createdBy: userId
+                });
+
         } catch (error) {
 
             if (error.code === 11000) {
                 throw new ApiError(
                     409,
-                    `${environment.name} environment already exists for this integration.`
+                    `${name} upstream API already exists in this environment.`
                 );
             }
 
             throw error;
         }
 
-        return environment;
+        upstreamApi.encryptedCredential = undefined;
+        upstreamApi.encryptionIv = undefined;
+        upstreamApi.encryptionAuthTag = undefined;
+
+        return upstreamApi;
     }
 
-    async disableEnvironment(
+
+    async getUpstreamApis(
         userId,
         organizationId,
         teamId,
         integrationId,
         environmentId
     ) {
+
+        await _getOrganizationById(
+            organizationId
+        );
+
+        const membership =
+            await _getActiveMembership(
+                userId,
+                organizationId
+            );
+
+        await _getTeamById(
+            teamId,
+            organizationId
+        );
+
+        await _getActiveTeamMembership(
+            teamId,
+            membership._id
+        );
+
+        const integration =
+            await Integration.findOne({
+                _id: integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!integration) {
+            throw new ApiError(
+                404,
+                "Integration not found."
+            );
+        }
+
+        const environment =
+            await Environment.findOne({
+                _id: environmentId,
+                integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
+            );
+        }
+
+        const upstreamApis =
+            await UpstreamApi.find({
+                environmentId,
+                integrationId,
+                organizationId,
+                teamId
+            })
+                .select(
+                    "_id environmentId name baseUrl path status createdAt updatedAt"
+                )
+                .sort({
+                    createdAt: -1
+                });
+
+        return upstreamApis;
+    }
+
+
+    async getUpstreamApi(
+        userId,
+        organizationId,
+        teamId,
+        integrationId,
+        environmentId,
+        upstreamApiId
+    ) {
+
+        await _getOrganizationById(
+            organizationId
+        );
+
+        const membership =
+            await _getActiveMembership(
+                userId,
+                organizationId
+            );
+
+        await _getTeamById(
+            teamId,
+            organizationId
+        );
+
+        await _getActiveTeamMembership(
+            teamId,
+            membership._id
+        );
+
+        const integration =
+            await Integration.findOne({
+                _id: integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!integration) {
+            throw new ApiError(
+                404,
+                "Integration not found."
+            );
+        }
+
+        const environment =
+            await Environment.findOne({
+                _id: environmentId,
+                integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
+            );
+        }
+
+        const upstreamApi =
+            await UpstreamApi.findOne({
+                _id: upstreamApiId,
+                environmentId,
+                integrationId,
+                organizationId,
+                teamId
+            })
+                .select(
+                    "_id environmentId name baseUrl path status createdAt updatedAt"
+                );
+
+        if (!upstreamApi) {
+            throw new ApiError(
+                404,
+                "Upstream API not found."
+            );
+        }
+
+        return upstreamApi;
+    }
+
+
+    async updateUpstreamApi(
+        userId,
+        organizationId,
+        teamId,
+        integrationId,
+        environmentId,
+        upstreamApiId,
+        data
+    ) {
+
         await _getOrganizationById(
             organizationId
         );
@@ -355,7 +362,7 @@ class EnvironmentService {
         if (!isOrgAdmin && !isTeamAdmin) {
             throw new ApiError(
                 403,
-                "You do not have permission to disable this environment."
+                "You do not have permission to update this upstream API."
             );
         }
 
@@ -374,14 +381,85 @@ class EnvironmentService {
             );
         }
 
-        environment.status = "DISABLED";
+        const upstreamApi =
+            await UpstreamApi.findOne({
+                _id: upstreamApiId,
+                environmentId,
+                integrationId,
+                organizationId,
+                teamId
+            });
 
-        await environment.save();
+        if (!upstreamApi) {
+            throw new ApiError(
+                404,
+                "Upstream API not found."
+            );
+        }
 
-        return environment;
+        const allowedFields = [
+            "name",
+            "baseUrl",
+            "path",
+            "status"
+        ];
+
+        for (const field of allowedFields) {
+            if (data[field] !== undefined) {
+                upstreamApi[field] = data[field];
+            }
+        }
+
+        if (data.upstreamCredential !== undefined) {
+
+            if (!data.upstreamCredential) {
+                throw new ApiError(
+                    400,
+                    "Upstream credential cannot be empty."
+                );
+            }
+
+            const encryptedCredentialData =
+                encrypt(
+                    data.upstreamCredential
+                );
+
+            upstreamApi.encryptedCredential =
+                encryptedCredentialData.encryptedData;
+
+            upstreamApi.encryptionIv =
+                encryptedCredentialData.iv;
+
+            upstreamApi.encryptionAuthTag =
+                encryptedCredentialData.authTag;
+        }
+
+        try {
+
+            await upstreamApi.save();
+
+        } catch (error) {
+
+            if (error.code === 11000) {
+                throw new ApiError(
+                    409,
+                    `${upstreamApi.name} upstream API already exists in this environment.`
+                );
+            }
+
+            throw error;
+        }
+
+        upstreamApi.encryptedCredential = undefined;
+        upstreamApi.encryptionIv = undefined;
+        upstreamApi.encryptionAuthTag = undefined;
+
+        return upstreamApi;
     }
 }
 
-const environmentService = new EnvironmentService();
 
-export default environmentService;
+const upstreamApiService =
+    new UpstreamApiService();
+
+export default upstreamApiService;

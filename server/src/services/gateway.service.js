@@ -1,27 +1,46 @@
 import axios from "axios";
 
 import Integration from "../models/integration.model.js";
+import Environment from "../models/environment.model.js";
 
 import {
-    _getEnvironmentWithCredential
-} from "../helpers/environment.helper.js";
+    _getUpstreamApiWithCredential
+} from "../helpers/upstreamApi.helper.js";
 
 import { decrypt } from "../utils/encryption.js";
 import ApiError from "../utils/ApiError.js";
 
+
 class GatewayService {
 
-    async getEnvironmentCredential(
-        environmentId,
+    async getUpstreamApiCredential(
+        upstreamApiId,
         organizationId,
-        teamId
+        teamId,
+        environmentId
     ) {
+
+        const upstreamApi =
+            await _getUpstreamApiWithCredential(
+                upstreamApiId,
+                organizationId,
+                teamId,
+                environmentId
+            );
+
         const environment =
-            await _getEnvironmentWithCredential(
-                environmentId,
+            await Environment.findOne({
+                _id: environmentId,
                 organizationId,
                 teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
             );
+        }
 
         if (environment.status !== "ACTIVE") {
             throw new ApiError(
@@ -32,7 +51,7 @@ class GatewayService {
 
         const integration =
             await Integration.findOne({
-                _id: environment.integrationId,
+                _id: upstreamApi.integrationId,
                 organizationId,
                 teamId
             });
@@ -51,26 +70,37 @@ class GatewayService {
             );
         }
 
+        if (upstreamApi.status !== "ACTIVE") {
+            throw new ApiError(
+                400,
+                "Upstream API is disabled."
+            );
+        }
+
         const credential =
             decrypt(
-                environment.encryptedCredential,
-                environment.encryptionIv,
-                environment.encryptionAuthTag
+                upstreamApi.encryptedCredential,
+                upstreamApi.encryptionIv,
+                upstreamApi.encryptionAuthTag
             );
 
         return {
+            upstreamApi,
             environment,
             integration,
             credential
         };
     }
 
+
     async callOpenWeather(
         organizationId,
         teamId,
+        upstreamApiId,
         city,
         apiKeyContext
     ) {
+
         if (!city || !city.trim()) {
             throw new ApiError(
                 400,
@@ -106,28 +136,43 @@ class GatewayService {
         }
 
         const {
-            environment,
+            upstreamApi,
             credential
-        } = await this.getEnvironmentCredential(
-            apiKeyContext.environmentId,
+        } = await this.getUpstreamApiCredential(
+            upstreamApiId,
             organizationId,
-            teamId
+            teamId,
+            apiKeyContext.environmentId
         );
+
+        if (
+            upstreamApi.environmentId.toString() !==
+            apiKeyContext.environmentId.toString()
+        ) {
+            throw new ApiError(
+                403,
+                "Upstream API does not belong to the API key environment."
+            );
+        }
 
         let response;
 
         try {
-            response = await axios.get(
-                `${environment.baseUrl}/data/2.5/weather`,
-                {
-                    params: {
-                        q: city.trim(),
-                        appid: credential
-                    },
-                    timeout: 5000
-                }
-            );
+
+            response =
+                await axios.get(
+                    `${upstreamApi.baseUrl}${upstreamApi.path}`,
+                    {
+                        params: {
+                            q: city.trim(),
+                            appid: credential
+                        },
+                        timeout: 5000
+                    }
+                );
+
         } catch (error) {
+
             if (
                 error.code === "ECONNABORTED" ||
                 error.code === "ETIMEDOUT"

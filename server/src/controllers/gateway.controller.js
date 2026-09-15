@@ -1,42 +1,12 @@
 import gatewayService from "../services/gateway.service.js";
-
 class GatewayController {
-    async testGateway(req, res) {
+
+    async callOpenWeather(req, res) {
+
         const {
             organizationId,
             teamId,
-            environmentId
-        } = req.params;
-
-        const result =
-            await gatewayService.getEnvironmentCredential(
-                environmentId,
-                organizationId,
-                teamId
-            );
-
-        return res.status(200).json({
-            success: true,
-            data: {
-                integrationId:
-                    result.integration._id,
-
-                environmentId:
-                    result.environment._id,
-
-                integrationName:
-                    result.integration.name,
-
-                environmentName:
-                    result.environment.name
-            }
-        });
-    }
-
-    async callOpenWeather(req, res) {
-        const {
-            organizationId,
-            teamId
+            upstreamApiId
         } = req.params;
 
         const { city } = req.query;
@@ -45,6 +15,7 @@ class GatewayController {
             await gatewayService.callOpenWeather(
                 organizationId,
                 teamId,
+                upstreamApiId,
                 city,
                 req.apiKeyContext
             );
@@ -56,5 +27,7 @@ class GatewayController {
     }
 }
 
+
 const gatewayController = new GatewayController();
+
 export default gatewayController;

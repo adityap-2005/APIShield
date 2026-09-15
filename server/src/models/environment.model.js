@@ -29,30 +29,6 @@ const environmentSchema = new mongoose.Schema({
         enum: Object.values(API_KEY_ENVIRONMENT)
     },
 
-    baseUrl: {
-        type: String,
-        required: true,
-        trim: true
-    },
-
-    encryptedCredential: {
-        type: String,
-        required: false,
-        select: false
-    },
-
-    encryptionIv: {
-        type: String,
-        required: false,
-        select: false
-    },
-
-    encryptionAuthTag: {
-        type: String,
-        required: false,
-        select: false
-    },
-
     status: {
         type: String,
         enum: ["ACTIVE", "DISABLED"],

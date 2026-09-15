@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Integration from "../models/integration.model.js";
 import Environment from "../models/environment.model.js";
 import ApiError from "../utils/ApiError.js";
-
+import UpstreamApi from "../models/upstreamApi.model.js";
 import { encrypt } from "../utils/encryption.js";
 
 import {
@@ -38,9 +38,32 @@ class IntegrationService {
         const {
             name,
             environment: environmentName,
+            upstreamApiName,
             baseUrl,
+            path,
             upstreamCredential
         } = data;
+
+        if (!upstreamApiName) {
+            throw new ApiError(
+                400,
+                "Upstream API name is required."
+            );
+        }
+
+        if (!baseUrl) {
+            throw new ApiError(
+                400,
+                "Upstream API base URL is required."
+            );
+        }
+
+        if (!path) {
+            throw new ApiError(
+                400,
+                "Upstream API path is required."
+            );
+        }
 
         if (!upstreamCredential) {
             throw new ApiError(
@@ -117,9 +140,6 @@ class IntegrationService {
                 throw error;
             }
 
-            const encryptedCredentialData =
-                encrypt(upstreamCredential);
-
             const environment =
                 await Environment.create(
                     [{
@@ -128,39 +148,69 @@ class IntegrationService {
                         integrationId:
                             createdIntegration._id,
                         name: environmentName,
-                        baseUrl,
-
-                        encryptedCredential:
-                            encryptedCredentialData.encryptedData,
-
-                        encryptionIv:
-                            encryptedCredentialData.iv,
-
-                        encryptionAuthTag:
-                            encryptedCredentialData.authTag,
-
                         createdBy: userId
                     }],
                     { session }
                 );
 
-            await session.commitTransaction();
-
             const createdEnvironment =
                 environment[0];
 
-            createdEnvironment.encryptedCredential =
-                undefined;
+            const encryptedCredentialData =
+                encrypt(upstreamCredential);
 
-            createdEnvironment.encryptionIv =
-                undefined;
+            let createdUpstreamApi;
 
-            createdEnvironment.encryptionAuthTag =
-                undefined;
+            try {
+
+                const upstreamApi =
+                    await UpstreamApi.create(
+                        [{
+                            organizationId,
+                            teamId,
+                            integrationId:
+                                createdIntegration._id,
+                            environmentId:
+                                createdEnvironment._id,
+                            name: upstreamApiName,
+                            baseUrl,
+                            path,
+
+                            encryptedCredential:
+                                encryptedCredentialData.encryptedData,
+
+                            encryptionIv:
+                                encryptedCredentialData.iv,
+
+                            encryptionAuthTag:
+                                encryptedCredentialData.authTag,
+
+                            createdBy: userId
+                        }],
+                        { session }
+                    );
+
+                createdUpstreamApi =
+                    upstreamApi[0];
+
+            } catch (error) {
+
+                if (error.code === 11000) {
+                    throw new ApiError(
+                        409,
+                        `${upstreamApiName} upstream API already exists in this environment.`
+                    );
+                }
+
+                throw error;
+            }
+
+            await session.commitTransaction();
 
             return {
                 integration: createdIntegration,
-                environment: createdEnvironment
+                environment: createdEnvironment,
+                upstreamApi: createdUpstreamApi
             };
 
         } catch (error) {
@@ -224,15 +274,45 @@ class IntegrationService {
                 "_id integrationId name status"
             );
 
+        const environmentIds =
+            environments.map(
+                (environment) => environment._id
+            );
+
+        const upstreamApis =
+            await UpstreamApi.find({
+                environmentId: {
+                    $in: environmentIds
+                },
+                organizationId,
+                teamId
+            }).select(
+                "_id environmentId name baseUrl path status createdAt updatedAt"
+            );
+
         return integrations.map(
             (integration) => ({
                 ...integration.toObject(),
+
                 environments:
-                    environments.filter(
-                        (environment) =>
-                            environment.integrationId.toString() ===
-                            integration._id.toString()
-                    )
+                    environments
+                        .filter(
+                            (environment) =>
+                                environment.integrationId.toString() ===
+                                integration._id.toString()
+                        )
+                        .map(
+                            (environment) => ({
+                                ...environment.toObject(),
+
+                                upstreamApis:
+                                    upstreamApis.filter(
+                                        (upstreamApi) =>
+                                            upstreamApi.environmentId.toString() ===
+                                            environment._id.toString()
+                                    )
+                            })
+                        )
             })
         );
     }
@@ -286,9 +366,38 @@ class IntegrationService {
                 "_id integrationId name status"
             );
 
+        const environmentIds =
+            environments.map(
+                (environment) => environment._id
+            );
+
+        const upstreamApis =
+            await UpstreamApi.find({
+                environmentId: {
+                    $in: environmentIds
+                },
+                organizationId,
+                teamId
+            }).select(
+                "_id environmentId name baseUrl path status createdAt updatedAt"
+            );
+
         return {
             ...integration.toObject(),
-            environments
+
+            environments:
+                environments.map(
+                    (environment) => ({
+                        ...environment.toObject(),
+
+                        upstreamApis:
+                            upstreamApis.filter(
+                                (upstreamApi) =>
+                                    upstreamApi.environmentId.toString() ===
+                                    environment._id.toString()
+                            )
+                    })
+                )
         };
     }
 
