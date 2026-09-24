@@ -19,7 +19,7 @@ import Badge, { getRoleVariant } from "../components/Badge";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 
-import { Users, ArrowLeft, UserPlus, Trash2, LogOut } from "lucide-react";
+import { Users, ArrowLeft, UserPlus, Trash2, LogOut, Blocks, KeyRound } from "lucide-react";
 
 export default function TeamDetailPage() {
   const { teamId, organizationId } = useParams();
@@ -205,14 +205,28 @@ export default function TeamDetailPage() {
             </h1>
             <p className="font-mono text-xs text-gray-500 mt-1">slug: {team.slug}</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-800/60 hover:bg-red-950/40">
-              <LogOut className="w-3.5 h-3.5" />
-              Leave Team
-            </button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={`/org/${targetOrgId}/integrations?teamId=${teamId}`}
+              className="btn-secondary text-xs"
+            >
+              <Blocks className="w-3.5 h-3.5 text-blue-400" />
+              Integrations
+            </Link>
+            <Link
+              to={`/org/${targetOrgId}/api-keys?teamId=${teamId}`}
+              className="btn-secondary text-xs"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-blue-400" />
+              API Keys
+            </Link>
             <button onClick={() => setShowAddModal(true)} className="btn-primary text-xs">
               <UserPlus className="w-3.5 h-3.5" />
               Add Member
+            </button>
+            <button onClick={openLeaveConfirm} className="btn-secondary text-xs text-red-400 border-red-800/60 hover:bg-red-950/40">
+              <LogOut className="w-3.5 h-3.5" />
+              Leave
             </button>
           </div>
         </div>

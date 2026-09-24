@@ -15,7 +15,9 @@ import {
   ChevronRight,
   X,
   ArrowLeft,
-  Building2
+  Building2,
+  Blocks,
+  Shield
 } from "lucide-react";
 
 export default function Sidebar({
@@ -32,31 +34,57 @@ export default function Sidebar({
   const isOrgContext = Boolean(params.organizationId) || location.pathname.startsWith("/org/");
   const currentOrgId = params.organizationId || activeOrg?._id;
 
-  // Navigation Items for User Personal Area vs Organization Workspace
-  const userNavItems = [
-    { to: "/dashboard", label: "My Dashboard", icon: LayoutDashboard },
-    { to: "/invitations", label: "My Invitations", icon: Mail },
-    { to: "/profile", label: "My Profile", icon: UserCheck },
-    { to: "/settings/personal", label: "Personal Settings", icon: Settings },
+  // Personal Area Navigation
+  const userNavSections = [
+    {
+      title: "Personal Area",
+      items: [
+        { to: "/dashboard", label: "My Dashboard", icon: LayoutDashboard },
+        { to: "/invitations", label: "My Invitations", icon: Mail },
+        { to: "/profile", label: "My Profile", icon: UserCheck },
+        { to: "/settings/personal", label: "Personal Settings", icon: Settings },
+      ]
+    }
   ];
 
-  const orgNavItems = currentOrgId ? [
-    { to: `/org/${currentOrgId}`, label: "Overview", icon: LayoutDashboard },
-    { to: `/org/${currentOrgId}/api-keys`, label: "API Keys", icon: KeyRound },
-    { to: `/org/${currentOrgId}/teams`, label: "Teams", icon: Users },
-    { to: `/org/${currentOrgId}/members`, label: "Members", icon: UserCheck },
-    { to: `/org/${currentOrgId}/invitations`, label: "Org Invitations", icon: Mail },
-    { to: `/org/${currentOrgId}/usage`, label: "Usage", icon: Activity },
-    { to: `/org/${currentOrgId}/audit-logs`, label: "Audit Logs", icon: FileText },
-    { to: `/org/${currentOrgId}/analytics`, label: "Analytics", icon: BarChart3 },
-    { to: `/org/${currentOrgId}/settings`, label: "Org Settings", icon: Settings },
+  // Organization Workspace structured into professional sections
+  const orgNavSections = currentOrgId ? [
+    {
+      title: "Overview",
+      items: [
+        { to: `/org/${currentOrgId}`, label: "Dashboard", icon: LayoutDashboard },
+      ]
+    },
+    {
+      title: "Platform Workspace",
+      items: [
+        { to: `/org/${currentOrgId}/integrations`, label: "Integrations & APIs", icon: Blocks },
+        { to: `/org/${currentOrgId}/teams`, label: "Teams", icon: Users },
+        { to: `/org/${currentOrgId}/members`, label: "Members", icon: UserCheck },
+        { to: `/org/${currentOrgId}/invitations`, label: "Invitations", icon: Mail },
+      ]
+    },
+    {
+      title: "Security & Gateway",
+      items: [
+        { to: `/org/${currentOrgId}/api-keys`, label: "APIShield Keys", icon: KeyRound },
+        { to: `/org/${currentOrgId}/audit-logs`, label: "Audit Logs", icon: FileText },
+      ]
+    },
+    {
+      title: "Observability & Admin",
+      items: [
+        { to: `/org/${currentOrgId}/usage`, label: "Usage", icon: Activity },
+        { to: `/org/${currentOrgId}/analytics`, label: "Analytics", icon: BarChart3 },
+        { to: `/org/${currentOrgId}/settings`, label: "Settings", icon: Settings },
+      ]
+    }
   ] : [];
 
-  const navItems = isOrgContext ? orgNavItems : userNavItems;
-  const sectionTitle = isOrgContext ? "Organization Workspace" : "Personal Area";
+  const navSections = isOrgContext ? orgNavSections : userNavSections;
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#131822] border-r border-white/10">
+    <div className="flex flex-col h-full bg-[#131822] border-r border-white/10 select-none">
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
         <Link to="/" className="flex items-center gap-2.5 group">
@@ -83,50 +111,55 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Navigation Items */}
-      <nav className="flex-1 p-2.5 space-y-1 overflow-y-auto">
-        {(!isCollapsed || isMobileOpen) && (
-          <div className="px-3 py-1.5 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-            {isOrgContext ? <Building2 className="w-3 h-3 text-blue-400" /> : null}
-            <span>{sectionTitle}</span>
+      {/* Navigation Sections */}
+      <nav className="flex-1 p-2.5 space-y-4 overflow-y-auto">
+        {navSections.map((section, idx) => (
+          <div key={section.title || idx} className="space-y-1">
+            {(!isCollapsed || isMobileOpen) && (
+              <div className="px-3 pt-2 pb-1 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                {idx === 0 && isOrgContext && <Building2 className="w-3 h-3 text-blue-400" />}
+                {idx === 2 && isOrgContext && <Shield className="w-3 h-3 text-blue-400" />}
+                <span>{section.title}</span>
+              </div>
+            )}
+
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => isMobileOpen && setIsMobileOpen(false)}
+                  end={item.to === `/org/${currentOrgId}` || item.to === "/dashboard"}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-md transition-all relative group ${
+                      isActive
+                        ? "bg-blue-950/40 text-blue-300 border-l-2 border-blue-500"
+                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                    } ${isCollapsed && !isMobileOpen ? "justify-center px-2" : ""}`
+                  }
+                  title={isCollapsed && !isMobileOpen ? item.label : undefined}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {(!isCollapsed || isMobileOpen) && (
+                    <span className="truncate">{item.label}</span>
+                  )}
+
+                  {/* Tooltip for collapsed desktop view */}
+                  {isCollapsed && !isMobileOpen && (
+                    <div className="absolute left-full ml-2 px-2.5 py-1 bg-[#1c2128] text-white text-[11px] font-medium rounded border border-white/10 shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
+                      {item.label}
+                    </div>
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
-        )}
-
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              onClick={() => isMobileOpen && setIsMobileOpen(false)}
-              end={item.to === `/org/${currentOrgId}` || item.to === "/dashboard"}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-md transition-all relative group ${
-                  isActive
-                    ? "bg-blue-950/40 text-blue-300 border-l-2 border-blue-500"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                } ${isCollapsed && !isMobileOpen ? "justify-center px-2" : ""}`
-              }
-              title={isCollapsed && !isMobileOpen ? item.label : undefined}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {(!isCollapsed || isMobileOpen) && (
-                <span className="truncate">{item.label}</span>
-              )}
-
-              {/* Tooltip for collapsed desktop view */}
-              {isCollapsed && !isMobileOpen && (
-                <div className="absolute left-full ml-2 px-2.5 py-1 bg-[#1c2128] text-white text-[11px] font-medium rounded border border-white/10 shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50 whitespace-nowrap">
-                  {item.label}
-                </div>
-              )}
-            </NavLink>
-          );
-        })}
+        ))}
 
         {/* Back to Personal Area Link when inside Org Context */}
         {isOrgContext && (!isCollapsed || isMobileOpen) && (
-          <div className="pt-4 mt-2 border-t border-white/5">
+          <div className="pt-3 mt-2 border-t border-white/5">
             <Link
               to="/dashboard"
               onClick={() => isMobileOpen && setIsMobileOpen(false)}

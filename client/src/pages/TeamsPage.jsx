@@ -16,7 +16,7 @@ import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 
-import { Users, Plus, ArrowRight, Trash2 } from "lucide-react";
+import { Users, Plus, ArrowRight, Trash2, Blocks, KeyRound } from "lucide-react";
 
 export default function TeamsPage() {
   const { activeOrg } = useOrg();
@@ -167,14 +167,29 @@ export default function TeamsPage() {
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] text-gray-500 font-mono">
-                    Created {new Date(team.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to={`/org/${activeOrg._id}/integrations?teamId=${team._id}`}
+                      className="text-[11px] text-gray-400 hover:text-blue-300 font-mono flex items-center gap-1 transition-colors"
+                      title="Manage Integrations & Environments"
+                    >
+                      <Blocks className="w-3.5 h-3.5 text-blue-400" />
+                      Integrations
+                    </Link>
+                    <Link
+                      to={`/org/${activeOrg._id}/api-keys?teamId=${team._id}`}
+                      className="text-[11px] text-gray-400 hover:text-blue-300 font-mono flex items-center gap-1 transition-colors"
+                      title="Manage API Keys"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-blue-400" />
+                      Keys
+                    </Link>
+                  </div>
                   <Link
                     to={`/org/${activeOrg._id}/teams/${team._id}`}
                     className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 transition-colors"
                   >
-                    Manage Team <ArrowRight className="w-3.5 h-3.5" />
+                    Manage <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>

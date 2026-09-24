@@ -11,8 +11,8 @@ import axiosInstance from "./axiosInstance";
 
 const apiKeysApi = {
   // POST /api/v1/organizations/:organizationId/teams/:teamId/api-keys
-  // Body: { name, description?, environment, scopes?, expiresAt? }
-  // environment: "PRODUCTION" | "STAGING" | "DEVELOPMENT" | "TEST"
+  // Body: { name, description?, environmentId, scopes?, expiresAt? }
+  // environmentId: MongoDB ObjectId string of an Environment belonging to this team
   // scopes: array of scope strings e.g. ["users:read", "teams:read"]
   // Returns: { success, message, data: { apiKey (full secret — show once!), apiKeyDetails } }
   create: (organizationId, teamId, data) =>

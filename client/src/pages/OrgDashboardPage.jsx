@@ -28,7 +28,8 @@ import {
   ArrowRight,
   FileText,
   ShieldCheck,
-  Plus
+  Plus,
+  Blocks
 } from "lucide-react";
 
 export default function OrgDashboardPage() {
@@ -212,6 +213,17 @@ export default function OrgDashboardPage() {
               <div className="flex items-center gap-2.5">
                 <KeyRound className="w-4 h-4 text-blue-400" />
                 <span>API Keys & Secrets</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
+            </Link>
+
+            <Link
+              to={`/org/${targetOrgId}/integrations`}
+              className="flex items-center justify-between p-3 rounded-lg bg-[#1c2128] border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-300 hover:text-white transition-colors font-medium"
+            >
+              <div className="flex items-center gap-2.5">
+                <Blocks className="w-4 h-4 text-blue-400" />
+                <span>Integrations & Environments</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-gray-500" />
             </Link>

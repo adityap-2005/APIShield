@@ -26,6 +26,7 @@ import InvitationsPage from "./pages/InvitationsPage";
 import UsagePage from "./pages/UsagePage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
                 <Route path="/org/:organizationId/usage" element={<UsagePage />} />
                 <Route path="/org/:organizationId/audit-logs" element={<AuditLogsPage />} />
                 <Route path="/org/:organizationId/analytics" element={<AnalyticsPage />} />
+                <Route path="/org/:organizationId/integrations" element={<IntegrationsPage />} />
                 <Route path="/org/:organizationId/settings" element={<SettingsPage />} />
 
                 {/* ── BACKWARDS COMPATIBLE SHORTCUT ROUTES ────────────── */}
@@ -70,6 +72,7 @@ export default function App() {
                 <Route path="/usage" element={<UsagePage />} />
                 <Route path="/audit-logs" element={<AuditLogsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
