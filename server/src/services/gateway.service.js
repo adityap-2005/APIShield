@@ -9,6 +9,7 @@ import {
 
 import { decrypt } from "../utils/encryption.js";
 import ApiError from "../utils/ApiError.js";
+import usageService from "./usage.service.js";
 
 
 class GatewayService {
@@ -98,7 +99,8 @@ class GatewayService {
         teamId,
         upstreamApiId,
         city,
-        apiKeyContext
+        apiKeyContext,
+        requestContext
     ) {
 
         if (!city || !city.trim()) {
@@ -156,6 +158,28 @@ class GatewayService {
         }
 
         let response;
+        const startedAt = Date.now();
+        const endpoint =
+            requestContext?.endpoint ||
+            `${upstreamApi.baseUrl}${upstreamApi.path}`;
+
+        const recordUsage = async (statusCode) => {
+            try {
+                await usageService.recordUsage({
+                    apiKeyId: apiKeyContext.apiKeyId,
+                    organizationId,
+                    teamId,
+                    environmentId: apiKeyContext.environmentId,
+                    upstreamApiId: upstreamApi._id,
+                    method: requestContext?.method || "GET",
+                    endpoint,
+                    statusCode,
+                    responseTime: Date.now() - startedAt
+                });
+            } catch (usageError) {
+                console.error("Failed to record gateway API usage.");
+            }
+        };
 
         try {
 
@@ -171,7 +195,17 @@ class GatewayService {
                     }
                 );
 
+            await recordUsage(response.status);
+
         } catch (error) {
+
+            const statusCode =
+                error.response?.status ||
+                (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT"
+                    ? 504
+                    : 502);
+
+            await recordUsage(statusCode);
 
             if (
                 error.code === "ECONNABORTED" ||
@@ -196,7 +230,10 @@ class GatewayService {
             );
         }
 
-        return response.data;
+        return {
+            data: response.data,
+            statusCode: response.status
+        };
     }
 }
 

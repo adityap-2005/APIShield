@@ -7,7 +7,6 @@ import authRoutes from "./routes/auth.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
 import apiKeyRoutes from "./routes/apiKey.routes.js";
-import demoRoutes from "./routes/demo.routes.js";
 import auditLogRoutes from "./routes/auditLog.routes.js";
 import analyticsRouter from "./routes/analytics.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
@@ -22,6 +21,7 @@ app.use(
         origin: [
             "http://localhost:5173",
             "http://localhost:3000",
+            "http://127.0.0.1:5500",
             "https://apishield-app.vercel.app"
         ],
         credentials: true
@@ -57,11 +57,6 @@ app.use(
 app.use(
     "/api/v1/organizations/:organizationId/teams/:teamId/api-keys",
     apiKeyRoutes
-);
-
-app.use(
-    "/api/v1/demo",
-    demoRoutes
 );
 
 app.use(

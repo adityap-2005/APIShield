@@ -1,22 +1,20 @@
 /**
  * IntegrationsPage.jsx
  *
- * Full Integration, Environment & Upstream API management page.
- * Hierarchy: Organization -> Team -> Integration -> Environment -> Upstream APIs
+ * Primary Operational Workspace for Environments, Integrations & Gateway Access.
  *
- * Capabilities:
- * - Select Team
- * - View Integrations list with Environment badges & status
- * - Create Integration + initial Environment + initial Upstream API atomically
- * - Select / inspect an Integration
- * - Add additional Environments (PRODUCTION, STAGING, DEVELOPMENT, TEST) to an Integration
- * - Manage Upstream APIs per Environment:
- *     - List upstream APIs (name, baseUrl, path, status, encrypted credentials)
- *     - Add Upstream API with credentials encrypted on backend
- *     - Edit Upstream API (name, baseUrl, path, rotate credential, status)
- *     - Toggle status (ACTIVE / REVOKED)
- * - Test Gateway live with APIShield Access Key (x-api-key) against /gateway/upstream/:upstreamApiId/weather
- * - Direct link to manage APIShield Access Keys for any Environment
+ * Conceptual Hierarchy:
+ * Organization -> Team -> Environment -> (Integrations -> Upstream APIs) & (APIShield Access Keys)
+ *
+ * UX Model:
+ * The user experiences Environment as the primary operational workspace:
+ * - Environment workspace tabs (TEST, PRODUCTION, STAGING, DEVELOPMENT)
+ * - Under selected Environment:
+ *     1. Integrations (e.g. OpenWeather) -> Upstream APIs (Current Weather, Forecast)
+ *     2. Gateway Access (Environment-scoped APIShield Access Keys)
+ *
+ * Security Guarantee:
+ * Never displays provider credentials, encrypted strings, IVs, or auth tags.
  */
 
 import { useState, useEffect } from "react";
@@ -25,12 +23,13 @@ import { useOrg } from "../context/OrgContext";
 import teamsApi from "../api/teams";
 import integrationsApi from "../api/integrations";
 import upstreamApisApi from "../api/upstreamApis";
+import apiKeysApi from "../api/apiKeys";
 import gatewayApi from "../api/gateway";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import EmptyState from "../components/EmptyState";
-import Badge from "../components/Badge";
+import Badge, { getApiKeyStatusVariant } from "../components/Badge";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -41,8 +40,6 @@ import {
   KeyRound,
   Ban,
   Activity,
-  ChevronRight,
-  ChevronDown,
   Edit2,
   CheckCircle2,
   AlertTriangle,
@@ -54,43 +51,58 @@ import {
   Copy,
   Check,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Clock
 } from "lucide-react";
 
-const ENV_OPTIONS = ["PRODUCTION", "STAGING", "DEVELOPMENT", "TEST"];
+const ENV_LIST = ["TEST", "DEVELOPMENT", "STAGING", "PRODUCTION"];
 
 export default function IntegrationsPage() {
   const { activeOrg } = useOrg();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Team state
   const [teams, setTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState(searchParams.get("teamId") || "");
   const [loadingTeams, setLoadingTeams] = useState(true);
 
-  // Integrations state
-  const [integrations, setIntegrations] = useState([]);
-  const [loadingIntegrations, setLoadingIntegrations] = useState(false);
-  const [error, setError] = useState("");
+  // Active Environment workspace tab
+  const [activeEnvName, setActiveEnvName] = useState("TEST");
 
-  // Selected Integration for detailed drawer/view
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState(null);
+  // Data state
+  const [integrations, setIntegrations] = useState([]);
+  const [apiKeys, setApiKeys] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [error, setError] = useState("");
 
   // Modals state
   const [showCreateIntegrationModal, setShowCreateIntegrationModal] = useState(false);
   const [showAddEnvModal, setShowAddEnvModal] = useState(false);
+  const [selectedIntegrationForEnv, setSelectedIntegrationForEnv] = useState(null);
+
   const [showAddUpstreamModal, setShowAddUpstreamModal] = useState(false);
+  const [targetIntegrationIdForUpstream, setTargetIntegrationIdForUpstream] = useState(null);
+  const [targetEnvIdForUpstream, setTargetEnvIdForUpstream] = useState(null);
+
   const [showEditUpstreamModal, setShowEditUpstreamModal] = useState(false);
-  const [showGatewayTestModal, setShowGatewayTestModal] = useState(false);
-
-  // Target Environment for Add Upstream Modal
-  const [targetEnvForUpstream, setTargetEnvForUpstream] = useState(null);
-
-  // Target Upstream API for Edit Modal
   const [editingUpstreamApi, setEditingUpstreamApi] = useState(null);
-  const [editingUpstreamEnvId, setEditingUpstreamEnvId] = useState(null);
+  const [editingIntegrationId, setEditingIntegrationId] = useState(null);
+  const [editingEnvId, setEditingEnvId] = useState(null);
 
-  // Target Upstream API for Gateway Test Modal
+  // Quick Create Access Key Modal scoped to active environment
+  const [showCreateKeyModal, setShowCreateKeyModal] = useState(false);
+  const [targetEnvIdForKey, setTargetEnvIdForKey] = useState(null);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyDesc, setNewKeyDesc] = useState("");
+  const [newKeyExpiration, setNewKeyExpiration] = useState("NEVER");
+  const [createKeySubmitting, setCreateKeySubmitting] = useState(false);
+  const [createKeyError, setCreateKeyError] = useState("");
+  const [createdSecret, setCreatedSecret] = useState(null);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  // Gateway Test Modal state
+  const [showGatewayTestModal, setShowGatewayTestModal] = useState(false);
   const [testUpstreamApi, setTestUpstreamApi] = useState(null);
   const [testEnv, setTestEnv] = useState(null);
   const [testApiKey, setTestApiKey] = useState("");
@@ -99,9 +111,9 @@ export default function IntegrationsPage() {
   const [gatewayTestResult, setGatewayTestResult] = useState(null);
   const [copiedTestResponse, setCopiedTestResponse] = useState(false);
 
-  // Create Integration Form State (Atomic: Integration + Env + Upstream API)
+  // Forms state
+  // 1. Create Integration (Atomic)
   const [newIntegrationName, setNewIntegrationName] = useState("");
-  const [newIntegrationEnv, setNewIntegrationEnv] = useState("DEVELOPMENT");
   const [newUpstreamName, setNewUpstreamName] = useState("");
   const [newBaseUrl, setNewBaseUrl] = useState("");
   const [newPath, setNewPath] = useState("");
@@ -109,12 +121,7 @@ export default function IntegrationsPage() {
   const [createIntegrationSubmitting, setCreateIntegrationSubmitting] = useState(false);
   const [createIntegrationError, setCreateIntegrationError] = useState("");
 
-  // Add Environment Form State
-  const [newEnvName, setNewEnvName] = useState("PRODUCTION");
-  const [addEnvSubmitting, setAddEnvSubmitting] = useState(false);
-  const [addEnvError, setAddEnvError] = useState("");
-
-  // Add Upstream API Form State
+  // 2. Add Upstream API
   const [addApiName, setAddApiName] = useState("");
   const [addApiBaseUrl, setAddApiBaseUrl] = useState("");
   const [addApiPath, setAddApiPath] = useState("");
@@ -122,7 +129,7 @@ export default function IntegrationsPage() {
   const [addApiSubmitting, setAddApiSubmitting] = useState(false);
   const [addApiError, setAddApiError] = useState("");
 
-  // Edit Upstream API Form State
+  // 3. Edit Upstream API
   const [editApiName, setEditApiName] = useState("");
   const [editApiBaseUrl, setEditApiBaseUrl] = useState("");
   const [editApiPath, setEditApiPath] = useState("");
@@ -134,7 +141,7 @@ export default function IntegrationsPage() {
   // Confirmation Modal State
   const [confirmState, setConfirmState] = useState({
     isOpen: false,
-    type: null, // "disableIntegration" | "disableEnv" | "toggleUpstreamStatus"
+    type: null,
     targetId: null,
     meta: null,
     title: "",
@@ -150,15 +157,23 @@ export default function IntegrationsPage() {
     loadTeams();
   }, [activeOrg]);
 
-  // Load Integrations when Team changes
+  // Load Integrations and Keys when team changes
   useEffect(() => {
     if (selectedTeamId) {
-      loadIntegrations(selectedTeamId);
+      loadWorkspaceData(selectedTeamId);
     } else {
       setIntegrations([]);
-      setSelectedIntegrationId(null);
+      setApiKeys([]);
     }
   }, [selectedTeamId]);
+
+  // Handle URL query actions
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (action === "create") {
+      handleOpenCreateIntegrationModal();
+    }
+  }, [searchParams]);
 
   const loadTeams = async () => {
     try {
@@ -175,43 +190,60 @@ export default function IntegrationsPage() {
         setSelectedTeamId("");
       }
     } catch (err) {
-      setError("Failed to load teams.");
+      setError("Failed to load workspace teams.");
     } finally {
       setLoadingTeams(false);
     }
   };
 
-  const loadIntegrations = async (teamId) => {
+  const loadWorkspaceData = async (teamId) => {
     try {
-      setLoadingIntegrations(true);
+      setLoadingData(true);
       setError("");
-      const response = await integrationsApi.getAll(activeOrg._id, teamId);
-      const data = response.data?.data || [];
-      setIntegrations(data);
+      const [integrationsRes, keysRes] = await Promise.all([
+        integrationsApi.getAll(activeOrg._id, teamId).catch(() => ({ data: { data: [] } })),
+        apiKeysApi.getAll(activeOrg._id, teamId).catch(() => ({ data: { data: [] } })),
+      ]);
 
-      // Auto-select first integration if none or invalid
-      if (data.length > 0) {
-        setSelectedIntegrationId((prev) => {
-          if (prev && data.some((i) => i._id === prev)) return prev;
-          return data[0]._id;
-        });
-      } else {
-        setSelectedIntegrationId(null);
-      }
+      setIntegrations(integrationsRes.data?.data || []);
+      setApiKeys(keysRes.data?.data || []);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load integrations for this team.");
+      setError("Failed to load workspace environment data.");
     } finally {
-      setLoadingIntegrations(false);
+      setLoadingData(false);
     }
   };
 
-  // Find currently selected integration
-  const selectedIntegration = integrations.find((i) => i._id === selectedIntegrationId) || null;
+  // ── Derived Data for Active Environment Workspace ──────────────────────────
+  // Filter integrations that have the currently selected environment configured
+  const envIntegrations = [];
+  const envIdMap = {}; // envName -> envId
 
-  // ── Create Integration (Atomic) ──────────────────────────────────────────────
+  integrations.forEach((item) => {
+    const matchedEnv = (item.environments || []).find((e) => e.name === activeEnvName);
+    if (matchedEnv) {
+      envIdMap[activeEnvName] = matchedEnv._id;
+      envIntegrations.push({
+        integrationId: item._id,
+        integrationName: item.name,
+        integrationStatus: item.status,
+        createdAt: item.createdAt,
+        envId: matchedEnv._id,
+        envStatus: matchedEnv.status,
+        upstreamApis: matchedEnv.upstreamApis || [],
+      });
+    }
+  });
+
+  // Collect all unique environment IDs for the active environment name
+  const activeEnvIds = envIntegrations.map((ei) => ei.envId);
+
+  // Access Keys scoped to active environment
+  const envAccessKeys = apiKeys.filter((key) => activeEnvIds.includes(key.environmentId));
+
+  // ── Modal Openers ──────────────────────────────────────────────────────────
   const handleOpenCreateIntegrationModal = () => {
     setNewIntegrationName("");
-    setNewIntegrationEnv("DEVELOPMENT");
     setNewUpstreamName("");
     setNewBaseUrl("");
     setNewPath("");
@@ -239,20 +271,16 @@ export default function IntegrationsPage() {
 
       const payload = {
         name: newIntegrationName.trim(),
-        environment: newIntegrationEnv,
+        environment: activeEnvName,
         upstreamApiName: newUpstreamName.trim(),
         baseUrl: newBaseUrl.trim(),
         path: newPath.trim(),
         upstreamCredential: newUpstreamCredential.trim(),
       };
 
-      const res = await integrationsApi.create(activeOrg._id, selectedTeamId, payload);
+      await integrationsApi.create(activeOrg._id, selectedTeamId, payload);
       setShowCreateIntegrationModal(false);
-
-      await loadIntegrations(selectedTeamId);
-      if (res.data?.data?.integration?._id) {
-        setSelectedIntegrationId(res.data.data.integration._id);
-      }
+      await loadWorkspaceData(selectedTeamId);
     } catch (err) {
       setCreateIntegrationError(err.response?.data?.message || "Failed to create integration.");
     } finally {
@@ -260,46 +288,9 @@ export default function IntegrationsPage() {
     }
   };
 
-  // ── Add Environment to Integration ──────────────────────────────────────────
-  const handleOpenAddEnvModal = () => {
-    // Choose first available env not already present in selected integration
-    const existingEnvNames = (selectedIntegration?.environments || []).map((e) => e.name);
-    const available = ENV_OPTIONS.filter((opt) => !existingEnvNames.includes(opt));
-    setNewEnvName(available[0] || "PRODUCTION");
-    setAddEnvError("");
-    setShowAddEnvModal(true);
-  };
-
-  const handleAddEnvironment = async (e) => {
-    e.preventDefault();
-    if (!newEnvName) {
-      setAddEnvError("Environment name is required.");
-      return;
-    }
-
-    try {
-      setAddEnvSubmitting(true);
-      setAddEnvError("");
-
-      await integrationsApi.createEnvironment(
-        activeOrg._id,
-        selectedTeamId,
-        selectedIntegration._id,
-        { name: newEnvName }
-      );
-
-      setShowAddEnvModal(false);
-      await loadIntegrations(selectedTeamId);
-    } catch (err) {
-      setAddEnvError(err.response?.data?.message || "Failed to add environment.");
-    } finally {
-      setAddEnvSubmitting(false);
-    }
-  };
-
-  // ── Add Upstream API to Environment ─────────────────────────────────────────
-  const handleOpenAddUpstreamModal = (env) => {
-    setTargetEnvForUpstream(env);
+  const handleOpenAddUpstreamModal = (integrationId, envId) => {
+    setTargetIntegrationIdForUpstream(integrationId);
+    setTargetEnvIdForUpstream(envId);
     setAddApiName("");
     setAddApiBaseUrl("");
     setAddApiPath("");
@@ -334,14 +325,13 @@ export default function IntegrationsPage() {
       await upstreamApisApi.create(
         activeOrg._id,
         selectedTeamId,
-        selectedIntegration._id,
-        targetEnvForUpstream._id,
+        targetIntegrationIdForUpstream,
+        targetEnvIdForUpstream,
         payload
       );
 
       setShowAddUpstreamModal(false);
-      setTargetEnvForUpstream(null);
-      await loadIntegrations(selectedTeamId);
+      await loadWorkspaceData(selectedTeamId);
     } catch (err) {
       setAddApiError(err.response?.data?.message || "Failed to add Upstream API.");
     } finally {
@@ -349,9 +339,9 @@ export default function IntegrationsPage() {
     }
   };
 
-  // ── Edit Upstream API ───────────────────────────────────────────────────────
-  const handleOpenEditUpstreamModal = (envId, api) => {
-    setEditingUpstreamEnvId(envId);
+  const handleOpenEditUpstreamModal = (integrationId, envId, api) => {
+    setEditingIntegrationId(integrationId);
+    setEditingEnvId(envId);
     setEditingUpstreamApi(api);
     setEditApiName(api.name || "");
     setEditApiBaseUrl(api.baseUrl || "");
@@ -387,15 +377,14 @@ export default function IntegrationsPage() {
       await upstreamApisApi.update(
         activeOrg._id,
         selectedTeamId,
-        selectedIntegration._id,
-        editingUpstreamEnvId,
+        editingIntegrationId,
+        editingEnvId,
         editingUpstreamApi._id,
         payload
       );
 
       setShowEditUpstreamModal(false);
-      setEditingUpstreamApi(null);
-      await loadIntegrations(selectedTeamId);
+      await loadWorkspaceData(selectedTeamId);
     } catch (err) {
       setEditApiError(err.response?.data?.message || "Failed to update Upstream API.");
     } finally {
@@ -403,97 +392,57 @@ export default function IntegrationsPage() {
     }
   };
 
-  // ── Status Confirmations ───────────────────────────────────────────────────
-  const openDisableIntegrationConfirm = (integration) => {
-    setConfirmState({
-      isOpen: true,
-      type: "disableIntegration",
-      targetId: integration._id,
-      meta: null,
-      title: `Disable Integration "${integration.name}"?`,
-      description: `Disabling this integration will block all gateway requests across all environments and upstream APIs under it.`,
-      confirmText: "Disable Integration",
-      variant: "danger",
-      loading: false,
-    });
+  // Quick Create Access Key scoped to this environment
+  const handleOpenQuickCreateKey = (envId) => {
+    setTargetEnvIdForKey(envId);
+    setNewKeyName("");
+    setNewKeyDesc("");
+    setNewKeyExpiration("NEVER");
+    setCreateKeyError("");
+    setShowCreateKeyModal(true);
   };
 
-  const openDisableEnvConfirm = (env) => {
-    setConfirmState({
-      isOpen: true,
-      type: "disableEnv",
-      targetId: env._id,
-      meta: null,
-      title: `Disable Environment "${env.name}"?`,
-      description: `Disabling this environment will stop all traffic routed through ${env.name}.`,
-      confirmText: "Disable Environment",
-      variant: "danger",
-      loading: false,
-    });
-  };
+  const handleCreateAccessKey = async (e) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) {
+      setCreateKeyError("Key name is required.");
+      return;
+    }
 
-  const openToggleUpstreamStatusConfirm = (envId, api) => {
-    const isActivating = api.status === "REVOKED";
-    setConfirmState({
-      isOpen: true,
-      type: "toggleUpstreamStatus",
-      targetId: api._id,
-      meta: { envId, currentStatus: api.status, name: api.name },
-      title: isActivating
-        ? `Activate Upstream API "${api.name}"?`
-        : `Revoke Upstream API "${api.name}"?`,
-      description: isActivating
-        ? `This will restore gateway traffic forwarding to ${api.name}.`
-        : `Revoking this Upstream API will block incoming gateway traffic routed to it immediately.`,
-      confirmText: isActivating ? "Activate API" : "Revoke API",
-      variant: isActivating ? "primary" : "danger",
-      loading: false,
-    });
-  };
+    let calculatedExpiresAt = undefined;
+    if (newKeyExpiration === "30_DAYS") {
+      calculatedExpiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+    } else if (newKeyExpiration === "90_DAYS") {
+      calculatedExpiresAt = new Date(Date.now() + 90 * 86400000).toISOString();
+    } else if (newKeyExpiration === "365_DAYS") {
+      calculatedExpiresAt = new Date(Date.now() + 365 * 86400000).toISOString();
+    }
 
-  const handleConfirmAction = async () => {
-    const { type, targetId, meta } = confirmState;
     try {
-      setConfirmState((prev) => ({ ...prev, loading: true }));
-      if (type === "disableIntegration") {
-        await integrationsApi.disable(activeOrg._id, selectedTeamId, targetId);
-      } else if (type === "disableEnv") {
-        await integrationsApi.disableEnvironment(
-          activeOrg._id,
-          selectedTeamId,
-          selectedIntegration._id,
-          targetId
-        );
-      } else if (type === "toggleUpstreamStatus") {
-        const nextStatus = meta.currentStatus === "ACTIVE" ? "REVOKED" : "ACTIVE";
-        await upstreamApisApi.update(
-          activeOrg._id,
-          selectedTeamId,
-          selectedIntegration._id,
-          meta.envId,
-          targetId,
-          { status: nextStatus }
-        );
-      }
-      setConfirmState({
-        isOpen: false,
-        type: null,
-        targetId: null,
-        meta: null,
-        title: "",
-        description: "",
-        confirmText: "",
-        variant: "danger",
-        loading: false,
-      });
-      await loadIntegrations(selectedTeamId);
+      setCreateKeySubmitting(true);
+      setCreateKeyError("");
+
+      const payload = {
+        name: newKeyName.trim(),
+        description: newKeyDesc.trim() || undefined,
+        environmentId: targetEnvIdForKey,
+        expiresAt: calculatedExpiresAt,
+      };
+
+      const response = await apiKeysApi.create(activeOrg._id, selectedTeamId, payload);
+      const secret = response.data?.data?.apiKey;
+
+      setShowCreateKeyModal(false);
+      setCreatedSecret(secret);
+      await loadWorkspaceData(selectedTeamId);
     } catch (err) {
-      alert(err.response?.data?.message || "Action failed.");
-      setConfirmState((prev) => ({ ...prev, loading: false }));
+      setCreateKeyError(err.response?.data?.message || "Failed to create Access Key.");
+    } finally {
+      setCreateKeySubmitting(false);
     }
   };
 
-  // ── Live Gateway Test Modal ────────────────────────────────────────────────
+  // ── Gateway Live Testing ───────────────────────────────────────────────────
   const handleOpenGatewayTestModal = (env, api) => {
     setTestEnv(env);
     setTestUpstreamApi(api);
@@ -552,6 +501,59 @@ export default function IntegrationsPage() {
     setTimeout(() => setCopiedTestResponse(false), 2000);
   };
 
+  // ── Status Confirmations ───────────────────────────────────────────────────
+  const openDisableIntegrationConfirm = (integrationId, name) => {
+    setConfirmState({
+      isOpen: true,
+      type: "disableIntegration",
+      targetId: integrationId,
+      title: `Disable Integration "${name}"?`,
+      description: `Disabling this integration will stop all gateway requests routing through its upstream APIs.`,
+      confirmText: "Disable Integration",
+      variant: "danger",
+      loading: false,
+    });
+  };
+
+  const openRevokeKeyConfirm = (apiKeyId, name) => {
+    setConfirmState({
+      isOpen: true,
+      type: "revokeKey",
+      targetId: apiKeyId,
+      title: `Revoke Access Key "${name}"?`,
+      description: `This key will immediately stop working. Client applications using this key will be rejected at the gateway.`,
+      confirmText: "Revoke Key",
+      variant: "danger",
+      loading: false,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { type, targetId } = confirmState;
+    try {
+      setConfirmState((prev) => ({ ...prev, loading: true }));
+      if (type === "disableIntegration") {
+        await integrationsApi.disable(activeOrg._id, selectedTeamId, targetId);
+      } else if (type === "revokeKey") {
+        await apiKeysApi.revoke(activeOrg._id, selectedTeamId, targetId);
+      }
+      setConfirmState({
+        isOpen: false,
+        type: null,
+        targetId: null,
+        title: "",
+        description: "",
+        confirmText: "",
+        variant: "danger",
+        loading: false,
+      });
+      await loadWorkspaceData(selectedTeamId);
+    } catch (err) {
+      alert(err.response?.data?.message || "Action failed.");
+      setConfirmState((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   if (loadingTeams) {
     return <LoadingSpinner message="Loading workspace teams..." />;
   }
@@ -562,11 +564,11 @@ export default function IntegrationsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <Blocks className="w-5 h-5 text-blue-400" />
-            Integrations & Environments
+            <Globe className="w-5 h-5 text-blue-400" />
+            Environments & Integrations
           </h1>
           <p className="page-description">
-            Configure upstream API providers, manage environments, and orchestrate secure upstream endpoints
+            Operational workspace for managing upstream API connections and gateway access
           </p>
         </div>
 
@@ -578,137 +580,239 @@ export default function IntegrationsPage() {
         )}
       </div>
 
-      {/* Team Filter selector */}
+      {/* Team Filter & Environment Workspace Tabs */}
       {teams.length === 0 ? (
         <EmptyState
-          message="No teams found in this workspace. You must belong to a team to configure integrations."
+          message="No teams found in this workspace. You must belong to a team to access environments."
         />
       ) : (
-        <div className="flex items-center gap-3 bg-[#161b22] border border-white/10 p-4 rounded-xl">
-          <label className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
-            Select Team:
-          </label>
-          <select
-            className="input max-w-xs text-xs"
-            value={selectedTeamId}
-            onChange={(e) => {
-              setSelectedTeamId(e.target.value);
-              setSelectedIntegrationId(null);
-            }}
-          >
-            {teams.map((team) => (
-              <option key={team._id} value={team._id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-4">
+          {/* Team selector bar */}
+          <div className="flex items-center gap-3 bg-[#161b22] border border-white/10 p-4 rounded-xl">
+            <label className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
+              Working Team:
+            </label>
+            <select
+              className="input max-w-xs text-xs"
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+            >
+              {teams.map((team) => (
+                <option key={team._id} value={team._id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Environment Operational Tabs */}
+          <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+            <span className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider mr-2 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-blue-400" />
+              Environment:
+            </span>
+            {ENV_LIST.map((env) => {
+              const isSelected = activeEnvName === env;
+              return (
+                <button
+                  key={env}
+                  onClick={() => setActiveEnvName(env)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                    isSelected
+                      ? "bg-[#1c2128] text-white border-blue-500 shadow-sm shadow-blue-950/40"
+                      : "text-gray-400 hover:text-white hover:bg-white/5 border-transparent"
+                  }`}
+                >
+                  {env}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {error && <ErrorMessage message={error} onRetry={() => loadIntegrations(selectedTeamId)} />}
+      {error && <ErrorMessage message={error} onRetry={() => loadWorkspaceData(selectedTeamId)} />}
 
-      {/* Main Hierarchy UI */}
-      {selectedTeamId && !loadingIntegrations && !error && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Integrations List */}
-          <div className={`${selectedIntegration ? "lg:col-span-4" : "lg:col-span-12"} space-y-4`}>
+      {/* Environment Operational Content */}
+      {selectedTeamId && !loadingData && !error && (
+        <div className="space-y-8">
+          {/* ── SECTION 1: Integrations in this Environment ─────────────────── */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-400" />
-                Integrations ({integrations.length})
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Server className="w-4 h-4 text-blue-400" />
+                  Integrations ({activeEnvName})
+                </h2>
+                <p className="text-xs text-gray-500">
+                  External provider connections configured for the {activeEnvName} environment
+                </p>
+              </div>
+
+              <button
+                onClick={handleOpenCreateIntegrationModal}
+                className="btn-secondary text-xs flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5 text-blue-400" />
+                Add Integration to {activeEnvName}
+              </button>
             </div>
 
-            {integrations.length === 0 ? (
+            {envIntegrations.length === 0 ? (
               <EmptyState
-                message="No integrations configured for this team yet."
+                message={`No integrations configured in ${activeEnvName} yet.`}
                 action={
-                  <button onClick={handleOpenCreateIntegrationModal} className="btn-primary text-xs">
-                    <Plus className="w-4 h-4" />
-                    Create First Integration
+                  <button
+                    onClick={handleOpenCreateIntegrationModal}
+                    className="btn-primary text-xs flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Create Integration in {activeEnvName}
                   </button>
                 }
               />
             ) : (
-              <div className="space-y-3">
-                {integrations.map((item) => {
-                  const isSelected = selectedIntegration?._id === item._id;
-                  const isIntegrationRevoked = item.status === "REVOKED";
-                  const totalUpstreams = (item.environments || []).reduce(
-                    (acc, env) => acc + (env.upstreamApis || []).length,
-                    0
-                  );
+              <div className="space-y-4">
+                {envIntegrations.map((item) => {
+                  const isRevoked = item.integrationStatus === "REVOKED";
 
                   return (
                     <div
-                      key={item._id}
-                      onClick={() => setSelectedIntegrationId(item._id)}
-                      className={`card p-4 cursor-pointer transition-all border ${
-                        isSelected
-                          ? "border-blue-500 bg-[#1c2128] shadow-lg shadow-blue-950/20"
-                          : "bg-[#161b22] border-white/10 hover:border-white/20 hover:bg-[#1c2128]/60"
-                      }`}
+                      key={item.integrationId}
+                      className="card bg-[#161b22] border border-white/10 rounded-xl overflow-hidden shadow-sm"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      {/* Integration Card Header */}
+                      <div className="p-4 bg-[#1c2128]/80 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-white text-sm tracking-tight">
-                              {item.name}
-                            </h3>
-                            <Badge variant={isIntegrationRevoked ? "danger" : "success"}>
-                              {item.status}
+                            <span className="font-bold text-white text-sm">
+                              {item.integrationName}
+                            </span>
+                            <Badge variant={isRevoked ? "danger" : "success"}>
+                              {item.integrationStatus}
                             </Badge>
+                            <span className="text-[11px] font-mono text-gray-500">
+                              {item.upstreamApis.length} Upstream{" "}
+                              {item.upstreamApis.length === 1 ? "API" : "APIs"}
+                            </span>
                           </div>
-                          <p className="text-[11px] text-gray-500 font-mono">
-                            {item.environments?.length || 0} envs • {totalUpstreams} upstream APIs
-                          </p>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          {item.status === "ACTIVE" && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              handleOpenAddUpstreamModal(item.integrationId, item.envId)
+                            }
+                            className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1"
+                            title="Add endpoint to this integration"
+                          >
+                            <Plus className="w-3 h-3 text-blue-400" />
+                            Add Upstream API
+                          </button>
+
+                          {item.integrationStatus === "ACTIVE" && (
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDisableIntegrationConfirm(item);
-                              }}
+                              onClick={() =>
+                                openDisableIntegrationConfirm(
+                                  item.integrationId,
+                                  item.integrationName
+                                )
+                              }
                               className="p-1.5 text-gray-400 hover:text-red-400 rounded hover:bg-white/5 transition-colors"
                               title="Disable Integration"
                             >
                               <Ban className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <ChevronRight
-                            className={`w-4 h-4 text-gray-400 transition-transform ${
-                              isSelected ? "text-blue-400 translate-x-0.5" : ""
-                            }`}
-                          />
                         </div>
                       </div>
 
-                      {/* Environments pill summary */}
-                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {item.environments && item.environments.length > 0 ? (
-                            item.environments.map((env) => (
-                              <span
-                                key={env._id}
-                                className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
-                                  env.status === "ACTIVE"
-                                    ? "bg-blue-950/40 text-blue-300 border-blue-800/40"
-                                    : "bg-red-950/40 text-red-400 border-red-800/40"
-                                }`}
-                              >
-                                {env.name}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[10px] text-gray-500 font-mono">No envs</span>
-                          )}
-                        </div>
+                      {/* Upstream APIs List */}
+                      <div className="p-4 space-y-3">
+                        {item.upstreamApis.length === 0 ? (
+                          <div className="text-center py-6 text-xs text-gray-500 font-mono space-y-2">
+                            <p>No Upstream APIs defined for this integration in {activeEnvName}.</p>
+                            <button
+                              onClick={() =>
+                                handleOpenAddUpstreamModal(item.integrationId, item.envId)
+                              }
+                              className="btn-secondary text-xs inline-flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3 text-blue-400" /> Add Upstream API
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-white/5">
+                            {item.upstreamApis.map((api) => {
+                              const isApiRevoked =
+                                api.status === "REVOKED" || isRevoked;
 
-                        <span className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-0.5">
-                          View details
-                        </span>
+                              return (
+                                <div
+                                  key={api._id}
+                                  className="py-3 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-3"
+                                >
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-white text-xs">
+                                        {api.name}
+                                      </span>
+                                      <Badge
+                                        variant={api.status === "ACTIVE" ? "success" : "danger"}
+                                      >
+                                        {api.status}
+                                      </Badge>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+                                      <code className="text-blue-300 bg-[#0d1117] px-2 py-0.5 rounded border border-white/5 truncate max-w-lg">
+                                        {api.baseUrl}
+                                        {api.path}
+                                      </code>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
+                                      <Lock className="w-3 h-3 text-green-400" />
+                                      <span>Provider Credential: •••••••• (AES-256-GCM Secured)</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {/* Test Gateway */}
+                                    <button
+                                      onClick={() =>
+                                        handleOpenGatewayTestModal(
+                                          { name: activeEnvName, _id: item.envId },
+                                          api
+                                        )
+                                      }
+                                      disabled={isApiRevoked}
+                                      className="btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5"
+                                      title="Test gateway connectivity"
+                                    >
+                                      <Play className="w-3 h-3 text-green-400 fill-green-400" />
+                                      Test Gateway
+                                    </button>
+
+                                    {/* Edit Upstream API */}
+                                    <button
+                                      onClick={() =>
+                                        handleOpenEditUpstreamModal(
+                                          item.integrationId,
+                                          item.envId,
+                                          api
+                                        )
+                                      }
+                                      className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 transition-colors"
+                                      title="Edit Upstream API"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -717,229 +821,117 @@ export default function IntegrationsPage() {
             )}
           </div>
 
-          {/* Right Column: Selected Integration -> Environments -> Upstream APIs */}
-          {selectedIntegration && (
-            <div className="lg:col-span-8 space-y-6">
-              {/* Integration Header Card */}
-              <div className="card bg-[#161b22] border border-white/10 p-5 rounded-xl space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Server className="w-5 h-5 text-blue-400" />
-                      <h2 className="text-lg font-bold text-white">{selectedIntegration.name}</h2>
-                      <Badge variant={selectedIntegration.status === "ACTIVE" ? "success" : "danger"}>
-                        {selectedIntegration.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1 font-mono">
-                      Integration ID: {selectedIntegration._id}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {selectedIntegration.status === "ACTIVE" && (
-                      <button onClick={handleOpenAddEnvModal} className="btn-primary text-xs">
-                        <Plus className="w-3.5 h-3.5" />
-                        Add Environment
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {selectedIntegration.status === "REVOKED" && (
-                  <div className="p-3 bg-red-950/40 border border-red-800/40 rounded-lg text-red-300 text-xs flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
-                    <span>
-                      This integration is disabled. All upstream APIs and APIShield Access Keys under
-                      it will be blocked by the gateway proxy.
-                    </span>
-                  </div>
-                )}
+          {/* ── SECTION 2: Gateway Access (APIShield Access Keys) ─────────── */}
+          <div className="space-y-4 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-blue-400" />
+                  Gateway Access ({activeEnvName})
+                </h2>
+                <p className="text-xs text-gray-500">
+                  APIShield Access Keys permitted to make gateway requests to {activeEnvName}
+                </p>
               </div>
 
-              {/* Environments Hierarchy */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-blue-400" />
-                    Environments & Upstream Endpoints ({selectedIntegration.environments?.length || 0})
-                  </h3>
-                </div>
-
-                {!selectedIntegration.environments || selectedIntegration.environments.length === 0 ? (
-                  <EmptyState
-                    message="No environments configured for this integration yet."
-                    action={
-                      selectedIntegration.status === "ACTIVE" ? (
-                        <button onClick={handleOpenAddEnvModal} className="btn-primary text-xs">
-                          <Plus className="w-4 h-4" /> Add Environment
-                        </button>
-                      ) : null
-                    }
-                  />
-                ) : (
-                  <div className="space-y-5">
-                    {selectedIntegration.environments.map((env) => {
-                      const isEnvRevoked =
-                        env.status === "REVOKED" || selectedIntegration.status === "REVOKED";
-                      const upstreams = env.upstreamApis || [];
-
-                      return (
-                        <div
-                          key={env._id}
-                          className="card bg-[#161b22] border border-white/10 rounded-xl overflow-hidden shadow-sm"
-                        >
-                          {/* Environment Header */}
-                          <div className="p-4 bg-[#1c2128]/80 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono text-sm font-bold text-white">
-                                {env.name}
-                              </span>
-                              <Badge variant={env.status === "ACTIVE" ? "success" : "danger"}>
-                                {env.status}
-                              </Badge>
-                              <span className="text-[11px] font-mono text-gray-400">
-                                {upstreams.length} Upstream {upstreams.length === 1 ? "API" : "APIs"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              {env.status === "ACTIVE" && selectedIntegration.status === "ACTIVE" && (
-                                <>
-                                  <button
-                                    onClick={() => handleOpenAddUpstreamModal(env)}
-                                    className="btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1"
-                                    title="Add Upstream API endpoint"
-                                  >
-                                    <Plus className="w-3 h-3 text-blue-400" />
-                                    Add Upstream API
-                                  </button>
-                                  <button
-                                    onClick={() => openDisableEnvConfirm(env)}
-                                    className="p-1 text-gray-400 hover:text-red-400 rounded hover:bg-white/5 transition-colors"
-                                    title="Disable Environment"
-                                  >
-                                    <Ban className="w-3.5 h-3.5" />
-                                  </button>
-                                </>
-                              )}
-
-                              <Link
-                                to={`/org/${activeOrg._id}/api-keys?teamId=${selectedTeamId}&envId=${env._id}`}
-                                className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors pl-2 border-l border-white/10"
-                                title="Manage APIShield Access Keys for this environment"
-                              >
-                                <KeyRound className="w-3.5 h-3.5" />
-                                Access Keys <ArrowRight className="w-3 h-3" />
-                              </Link>
-                            </div>
-                          </div>
-
-                          {/* Upstream APIs List */}
-                          <div className="p-4 space-y-3">
-                            {upstreams.length === 0 ? (
-                              <div className="text-center py-6 text-xs text-gray-500 font-mono space-y-2">
-                                <p>No Upstream APIs defined for {env.name}.</p>
-                                {env.status === "ACTIVE" && selectedIntegration.status === "ACTIVE" && (
-                                  <button
-                                    onClick={() => handleOpenAddUpstreamModal(env)}
-                                    className="btn-secondary text-[11px] inline-flex items-center gap-1"
-                                  >
-                                    <Plus className="w-3 h-3" /> Add Upstream API
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="divide-y divide-white/5">
-                                {upstreams.map((api) => {
-                                  const isApiRevoked =
-                                    api.status === "REVOKED" || isEnvRevoked;
-
-                                  return (
-                                    <div
-                                      key={api._id}
-                                      className="py-3 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-center justify-between gap-3"
-                                    >
-                                      <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-semibold text-white text-xs">
-                                            {api.name}
-                                          </span>
-                                          <Badge
-                                            variant={api.status === "ACTIVE" ? "success" : "danger"}
-                                          >
-                                            {api.status}
-                                          </Badge>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
-                                          <code className="text-blue-300 bg-[#0d1117] px-2 py-0.5 rounded border border-white/5 truncate max-w-lg">
-                                            {api.baseUrl}
-                                            {api.path}
-                                          </code>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
-                                          <Lock className="w-3 h-3 text-green-400" />
-                                          <span>Upstream Secret: •••••••• (AES-256-GCM Secured)</span>
-                                        </div>
-                                      </div>
-
-                                      {/* Upstream API Actions */}
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        {/* Test Gateway */}
-                                        <button
-                                          onClick={() => handleOpenGatewayTestModal(env, api)}
-                                          disabled={isApiRevoked}
-                                          className="btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5"
-                                          title="Test calling this upstream via APIShield Gateway"
-                                        >
-                                          <Play className="w-3 h-3 text-green-400 fill-green-400" />
-                                          Test Gateway
-                                        </button>
-
-                                        {/* Edit Upstream API */}
-                                        <button
-                                          onClick={() => handleOpenEditUpstreamModal(env._id, api)}
-                                          className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 transition-colors"
-                                          title="Edit Upstream API"
-                                        >
-                                          <Edit2 className="w-3.5 h-3.5" />
-                                        </button>
-
-                                        {/* Revoke / Activate Upstream API */}
-                                        <button
-                                          onClick={() =>
-                                            openToggleUpstreamStatusConfirm(env._id, api)
-                                          }
-                                          className={`p-1.5 rounded hover:bg-white/5 transition-colors ${
-                                            api.status === "ACTIVE"
-                                              ? "text-gray-400 hover:text-red-400"
-                                              : "text-gray-400 hover:text-green-400"
-                                          }`}
-                                          title={
-                                            api.status === "ACTIVE"
-                                              ? "Revoke Upstream API"
-                                              : "Activate Upstream API"
-                                          }
-                                        >
-                                          <Ban className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              {activeEnvIds.length > 0 && (
+                <button
+                  onClick={() => handleOpenQuickCreateKey(activeEnvIds[0])}
+                  className="btn-primary text-xs flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Create Access Key
+                </button>
+              )}
             </div>
-          )}
+
+            {envAccessKeys.length === 0 ? (
+              <EmptyState
+                message={`No Access Keys created for ${activeEnvName} yet.`}
+                action={
+                  activeEnvIds.length > 0 ? (
+                    <button
+                      onClick={() => handleOpenQuickCreateKey(activeEnvIds[0])}
+                      className="btn-primary text-xs flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" /> Create {activeEnvName} Access Key
+                    </button>
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">
+                      Configure an integration first to create Access Keys for {activeEnvName}.
+                    </p>
+                  )
+                }
+              />
+            ) : (
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Key Name</th>
+                      <th>Public Key ID</th>
+                      <th>Status</th>
+                      <th>Expires</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {envAccessKeys.map((key) => (
+                      <tr key={key._id}>
+                        <td>
+                          <div className="font-semibold text-white text-xs">{key.name}</div>
+                          {key.description && (
+                            <div className="text-[11px] text-gray-500 mt-0.5 truncate max-w-xs">
+                              {key.description}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <code className="text-[11px] font-mono text-blue-300 bg-[#0d1117] px-2 py-0.5 rounded border border-white/5">
+                            {key.publicKeyId}
+                          </code>
+                        </td>
+                        <td>
+                          <Badge variant={getApiKeyStatusVariant(key.status)}>{key.status}</Badge>
+                        </td>
+                        <td className="text-xs font-mono text-gray-400">
+                          {key.expiresAt ? (
+                            new Date(key.expiresAt).toLocaleDateString()
+                          ) : (
+                            <span className="text-gray-500">Never</span>
+                          )}
+                        </td>
+                        <td className="text-xs font-mono text-gray-500">
+                          {new Date(key.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            {key.status === "ACTIVE" && (
+                              <button
+                                onClick={() => openRevokeKeyConfirm(key._id, key.name)}
+                                className="p-1.5 hover:bg-white/5 rounded text-red-400 hover:text-red-300 transition-colors"
+                                title="Revoke Key"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <Link
+                              to={`/org/${activeOrg._id}/api-keys?teamId=${selectedTeamId}&envId=${key.environmentId}`}
+                              className="p-1.5 hover:bg-white/5 rounded text-gray-400 hover:text-white transition-colors"
+                              title="Manage in API Keys"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -947,7 +939,7 @@ export default function IntegrationsPage() {
       <Modal
         isOpen={showCreateIntegrationModal}
         onClose={() => setShowCreateIntegrationModal(false)}
-        title="Add Integration & Initial Upstream API"
+        title={`Add Integration & Initial Endpoint (${activeEnvName})`}
         size="lg"
       >
         <form onSubmit={handleCreateIntegration} className="space-y-4">
@@ -957,35 +949,17 @@ export default function IntegrationsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="label">Integration Name *</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="e.g. OpenWeather Service, Stripe"
-                value={newIntegrationName}
-                onChange={(e) => setNewIntegrationName(e.target.value)}
-                disabled={createIntegrationSubmitting}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="label">Initial Environment *</label>
-              <select
-                className="input"
-                value={newIntegrationEnv}
-                onChange={(e) => setNewIntegrationEnv(e.target.value)}
-                disabled={createIntegrationSubmitting}
-              >
-                {ENV_OPTIONS.map((env) => (
-                  <option key={env} value={env}>
-                    {env}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="label">Integration Name *</label>
+            <input
+              type="text"
+              className="input text-xs"
+              placeholder="e.g. OpenWeather Service, Stripe, GitHub"
+              value={newIntegrationName}
+              onChange={(e) => setNewIntegrationName(e.target.value)}
+              disabled={createIntegrationSubmitting}
+              required
+            />
           </div>
 
           <div className="pt-2 border-t border-white/5 space-y-3">
@@ -998,7 +972,7 @@ export default function IntegrationsPage() {
               <label className="label">Upstream API Name *</label>
               <input
                 type="text"
-                className="input"
+                className="input text-xs"
                 placeholder="e.g. Current Weather Endpoint"
                 value={newUpstreamName}
                 onChange={(e) => setNewUpstreamName(e.target.value)}
@@ -1036,7 +1010,7 @@ export default function IntegrationsPage() {
             </div>
 
             <div>
-              <label className="label">Upstream API Credential / Secret Key *</label>
+              <label className="label">Upstream Provider Credential / Secret Key *</label>
               <input
                 type="password"
                 className="input font-mono text-xs"
@@ -1048,7 +1022,7 @@ export default function IntegrationsPage() {
               />
               <p className="text-[11px] text-gray-500 font-mono mt-1 flex items-center gap-1">
                 <Lock className="w-3 h-3 text-green-400" />
-                Encrypted with AES-256-GCM on the backend before storage. Never returned to clients.
+                Encrypted with AES-256-GCM on the backend. Never exposed in the UI.
               </p>
             </div>
           </div>
@@ -1073,65 +1047,11 @@ export default function IntegrationsPage() {
         </form>
       </Modal>
 
-      {/* ── Modal: Add Environment ─────────────────────────────────────────── */}
-      <Modal
-        isOpen={showAddEnvModal}
-        onClose={() => setShowAddEnvModal(false)}
-        title={`Add Environment to ${selectedIntegration?.name}`}
-      >
-        <form onSubmit={handleAddEnvironment} className="space-y-4">
-          {addEnvError && (
-            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
-              {addEnvError}
-            </div>
-          )}
-
-          <div>
-            <label className="label">Select Environment *</label>
-            <select
-              className="input"
-              value={newEnvName}
-              onChange={(e) => setNewEnvName(e.target.value)}
-              disabled={addEnvSubmitting}
-            >
-              {ENV_OPTIONS.map((env) => {
-                const alreadyExists = (selectedIntegration?.environments || []).some(
-                  (e) => e.name === env
-                );
-                return (
-                  <option key={env} value={env} disabled={alreadyExists}>
-                    {env} {alreadyExists ? "(Already added)" : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
-            <button
-              type="button"
-              onClick={() => setShowAddEnvModal(false)}
-              className="btn-secondary text-xs"
-              disabled={addEnvSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary text-xs"
-              disabled={addEnvSubmitting}
-            >
-              {addEnvSubmitting ? "Adding..." : "Add Environment"}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
       {/* ── Modal: Add Upstream API ────────────────────────────────────────── */}
       <Modal
         isOpen={showAddUpstreamModal}
         onClose={() => setShowAddUpstreamModal(false)}
-        title={`Add Upstream API to ${targetEnvForUpstream?.name}`}
+        title="Add Upstream API Endpoint"
         size="lg"
       >
         <form onSubmit={handleAddUpstreamApi} className="space-y-4">
@@ -1145,7 +1065,7 @@ export default function IntegrationsPage() {
             <label className="label">Upstream API Name *</label>
             <input
               type="text"
-              className="input"
+              className="input text-xs"
               placeholder="e.g. 5-Day Forecast API"
               value={addApiName}
               onChange={(e) => setAddApiName(e.target.value)}
@@ -1183,7 +1103,7 @@ export default function IntegrationsPage() {
           </div>
 
           <div>
-            <label className="label">Upstream API Credential / Secret Key *</label>
+            <label className="label">Provider Credential / Secret Key *</label>
             <input
               type="password"
               className="input font-mono text-xs"
@@ -1237,7 +1157,7 @@ export default function IntegrationsPage() {
             <label className="label">API Name *</label>
             <input
               type="text"
-              className="input"
+              className="input text-xs"
               value={editApiName}
               onChange={(e) => setEditApiName(e.target.value)}
               disabled={editApiSubmitting}
@@ -1285,17 +1205,17 @@ export default function IntegrationsPage() {
           </div>
 
           <div>
-            <label className="label">Rotate Upstream Credential (Optional)</label>
+            <label className="label">Replace Provider Credential (Optional)</label>
             <input
               type="password"
               className="input font-mono text-xs"
-              placeholder="Leave blank to preserve existing encrypted credential"
+              placeholder="Leave blank to preserve existing credential [••••••••]"
               value={editApiCredential}
               onChange={(e) => setEditApiCredential(e.target.value)}
               disabled={editApiSubmitting}
             />
             <p className="text-[11px] text-gray-500 font-mono mt-1">
-              Only provide a new value if you wish to rotate the upstream secret.
+              Existing credentials remain encrypted on the backend. Only enter a value to replace.
             </p>
           </div>
 
@@ -1319,7 +1239,138 @@ export default function IntegrationsPage() {
         </form>
       </Modal>
 
-      {/* ── Modal: Live Gateway Test ───────────────────────────────────────── */}
+      {/* ── Modal: Quick Create Access Key Scoped to Environment ──────────── */}
+      <Modal
+        isOpen={showCreateKeyModal}
+        onClose={() => setShowCreateKeyModal(false)}
+        title={`Create Access Key (${activeEnvName})`}
+        size="md"
+      >
+        <form onSubmit={handleCreateAccessKey} className="space-y-4">
+          {createKeyError && (
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
+              {createKeyError}
+            </div>
+          )}
+
+          <div>
+            <label className="label">Key Name *</label>
+            <input
+              type="text"
+              className="input text-xs"
+              placeholder="e.g. Backend Test Key"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              disabled={createKeySubmitting}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="label">Description (Optional)</label>
+            <input
+              type="text"
+              className="input text-xs"
+              placeholder="e.g. Service testing machine key"
+              value={newKeyDesc}
+              onChange={(e) => setNewKeyDesc(e.target.value)}
+              disabled={createKeySubmitting}
+            />
+          </div>
+
+          <div>
+            <label className="label">Expiration</label>
+            <select
+              className="input text-xs"
+              value={newKeyExpiration}
+              onChange={(e) => setNewKeyExpiration(e.target.value)}
+              disabled={createKeySubmitting}
+            >
+              <option value="NEVER">Never expires</option>
+              <option value="30_DAYS">30 days</option>
+              <option value="90_DAYS">90 days</option>
+              <option value="365_DAYS">1 year</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowCreateKeyModal(false)}
+              className="btn-secondary text-xs"
+              disabled={createKeySubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary text-xs"
+              disabled={createKeySubmitting}
+            >
+              {createKeySubmitting ? "Generating..." : "Generate Access Key"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Modal: One-Time Secret Display ─────────────────────────────────── */}
+      <Modal
+        isOpen={Boolean(createdSecret)}
+        onClose={() => setCreatedSecret(null)}
+        title="Access Key Created"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-gray-300">
+            Your access key will only be shown once. Copy and store this secret securely.
+          </p>
+
+          <div className="flex items-center gap-2 p-3 bg-[#0d1117] border border-white/10 rounded-lg">
+            <code className="text-blue-300 font-mono text-xs break-all flex-1 select-all">
+              {createdSecret}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(createdSecret);
+                setCopiedSecret(true);
+                setTimeout(() => setCopiedSecret(false), 2000);
+              }}
+              className="btn-primary text-xs py-1.5 px-3 shrink-0 flex items-center gap-1.5"
+            >
+              {copiedSecret ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-green-300" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="p-3 bg-yellow-950/40 border border-yellow-800/60 rounded-lg text-yellow-300 text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-yellow-400 mt-0.5" />
+            <span>
+              <strong>Warning:</strong> Store this key securely. APIShield cannot display it
+              again.
+            </span>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-white/10">
+            <button
+              onClick={() => setCreatedSecret(null)}
+              className="btn-secondary text-xs"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Modal: Live Gateway Execution Test ─────────────────────────────── */}
       <Modal
         isOpen={showGatewayTestModal}
         onClose={() => setShowGatewayTestModal(false)}
@@ -1352,14 +1403,14 @@ export default function IntegrationsPage() {
             <input
               type="password"
               className="input font-mono text-xs"
-              placeholder="e.g. apishield_dev_..."
+              placeholder="e.g. apishield_test_..."
               value={testApiKey}
               onChange={(e) => setTestApiKey(e.target.value)}
               disabled={testingGateway}
               required
             />
             <p className="text-[11px] text-gray-400 font-mono mt-1">
-              Provide an active APIShield Access Key assigned to the{" "}
+              Provide an active Access Key generated for the{" "}
               <strong className="text-white">{testEnv?.name}</strong> environment.
             </p>
           </div>
@@ -1378,12 +1429,12 @@ export default function IntegrationsPage() {
 
           <div className="flex items-center justify-between pt-2 border-t border-white/10">
             <Link
-              to={`/org/${activeOrg._id}/api-keys?teamId=${selectedTeamId}&envId=${testEnv?._id}`}
+              to={`/org/${activeOrg._id}/api-keys?teamId=${selectedTeamId}`}
               className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
               target="_blank"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Need an Access Key for {testEnv?.name}?
+              Manage Access Keys
             </Link>
 
             <div className="flex items-center gap-2">

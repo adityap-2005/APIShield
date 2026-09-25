@@ -69,7 +69,7 @@ export async function _getRequestsByApiKey(organizationId) {
         { $sort: { requests: -1 } },
         { $lookup: { from: "apikeys", localField: "_id", foreignField: "_id", as: "apiKey" } },
         { $unwind: "$apiKey" },
-        { $project: { _id: 0, apiKeyId: "$_id", requests: 1, name: "$apiKey.name", environment: "$apiKey.environment" } }
+        { $project: { _id: 0, apiKeyId: "$_id", requests: 1, name: "$apiKey.name", environmentId: "$apiKey.environmentId" } }
     ]);
 }
 
@@ -96,9 +96,11 @@ export async function _getRequestsByMethod(organizationId) {
 export async function _getRequestsByEnvironment(organizationId) {
     return ApiUsage.aggregate([
         { $match: { organizationId: new mongoose.Types.ObjectId(organizationId) } },
-        { $group: { _id: "$environment", requests: { $sum: 1 } } },
+        { $group: { _id: "$environmentId", requests: { $sum: 1 } } },
         { $sort: { requests: -1 } },
-        { $project: { _id: 0, environment: "$_id", requests: 1 } }
+        { $lookup: { from: "environments", localField: "_id", foreignField: "_id", as: "environment" } },
+        { $unwind: "$environment" },
+        { $project: { _id: 0, environmentId: "$_id", name: "$environment.name", requests: 1 } }
     ]);
 }
 

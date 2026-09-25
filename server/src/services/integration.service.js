@@ -207,6 +207,10 @@ class IntegrationService {
 
             await session.commitTransaction();
 
+            createdUpstreamApi.encryptedCredential = undefined;
+            createdUpstreamApi.encryptionIv = undefined;
+            createdUpstreamApi.encryptionAuthTag = undefined;
+
             return {
                 integration: createdIntegration,
                 environment: createdEnvironment,

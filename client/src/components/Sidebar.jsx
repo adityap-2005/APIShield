@@ -52,30 +52,35 @@ export default function Sidebar({
     {
       title: "Overview",
       items: [
-        { to: `/org/${currentOrgId}`, label: "Dashboard", icon: LayoutDashboard },
+        { to: `/org/${currentOrgId}`, label: "Overview", icon: LayoutDashboard },
       ]
     },
     {
-      title: "Platform Workspace",
+      title: "Workspace",
       items: [
-        { to: `/org/${currentOrgId}/integrations`, label: "Integrations & APIs", icon: Blocks },
+        { to: `/org/${currentOrgId}/integrations`, label: "Environments & APIs", icon: Blocks },
         { to: `/org/${currentOrgId}/teams`, label: "Teams", icon: Users },
         { to: `/org/${currentOrgId}/members`, label: "Members", icon: UserCheck },
         { to: `/org/${currentOrgId}/invitations`, label: "Invitations", icon: Mail },
       ]
     },
     {
-      title: "Security & Gateway",
+      title: "Security",
       items: [
-        { to: `/org/${currentOrgId}/api-keys`, label: "APIShield Keys", icon: KeyRound },
+        { to: `/org/${currentOrgId}/api-keys`, label: "API Keys", icon: KeyRound },
         { to: `/org/${currentOrgId}/audit-logs`, label: "Audit Logs", icon: FileText },
       ]
     },
     {
-      title: "Observability & Admin",
+      title: "Analytics",
       items: [
         { to: `/org/${currentOrgId}/usage`, label: "Usage", icon: Activity },
         { to: `/org/${currentOrgId}/analytics`, label: "Analytics", icon: BarChart3 },
+      ]
+    },
+    {
+      title: "Organization",
+      items: [
         { to: `/org/${currentOrgId}/settings`, label: "Settings", icon: Settings },
       ]
     }

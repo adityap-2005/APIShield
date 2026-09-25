@@ -68,7 +68,7 @@ const upstreamApiSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["ACTIVE", "DISABLED"],
+        enum: ["ACTIVE", "REVOKED"],
         default: "ACTIVE"
     },
 

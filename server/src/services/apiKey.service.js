@@ -33,7 +33,6 @@ class ApiKeyService {
         const {
             name,
             description,
-            scopes,
             expiresAt,
             environmentId
         } = apiKeyData;
@@ -121,8 +120,6 @@ class ApiKeyService {
                 name,
 
                 description,
-
-                scopes,
 
                 expiresAt,
 
@@ -237,7 +234,6 @@ class ApiKeyService {
         const {
             name,
             description,
-            scopes,
             expiresAt
         } = apiKeyData;
 
@@ -277,7 +273,6 @@ class ApiKeyService {
         const previousValues = {
             name: apiKey.name,
             description: apiKey.description,
-            scopes: [...apiKey.scopes],
             expiresAt: apiKey.expiresAt
         };
 
@@ -287,10 +282,6 @@ class ApiKeyService {
 
         if (description !== undefined) {
             apiKey.description = description;
-        }
-
-        if (scopes !== undefined) {
-            apiKey.scopes = scopes;
         }
 
         if (expiresAt !== undefined) {
@@ -321,7 +312,6 @@ class ApiKeyService {
                 updatedValues: {
                     name: apiKey.name,
                     description: apiKey.description,
-                    scopes: apiKey.scopes,
                     expiresAt: apiKey.expiresAt
                 }
             }
@@ -399,8 +389,22 @@ class ApiKeyService {
             environment.name
         );
 
-        apiKey.publicKeyId = publicKeyId;
-        apiKey.keyHash = keyHash;
+        const rotatedApiKey =
+            await ApiKey.create({
+                organizationId,
+                teamId,
+                environmentId: apiKey.environmentId,
+                name: apiKey.name,
+                description: apiKey.description,
+                expiresAt: apiKey.expiresAt,
+                publicKeyId,
+                keyHash,
+                createdBy: userId
+            });
+
+        apiKey.status = API_KEY_STATUS.REVOKED;
+        apiKey.revokedAt = new Date();
+        apiKey.revokedBy = userId;
 
         await apiKey.save();
 
@@ -416,21 +420,23 @@ class ApiKeyService {
             action: AUDIT_ACTIONS.API_KEY_ROTATED,
 
             entity: {
-                id: apiKey._id,
+                id: rotatedApiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
-                name: apiKey.name
+                name: rotatedApiKey.name
             },
 
             metadata: {
                 environment: environment.name,
                 environmentId: environment._id,
-                publicKeyId: apiKey.publicKeyId
+                previousApiKeyId: apiKey._id,
+                previousPublicKeyId: apiKey.publicKeyId,
+                publicKeyId: rotatedApiKey.publicKeyId
             }
         });
 
         return {
             apiKey: newPlainApiKey,
-            apiKeyDetails: apiKey
+            apiKeyDetails: rotatedApiKey
         };
     }
 

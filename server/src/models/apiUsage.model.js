@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-import { API_KEY_ENVIRONMENT } from "../constants/apiKey.js";
 import { HTTP_METHODS } from "../constants/http.js";
 
 const apiUsageSchema = new mongoose.Schema(
@@ -23,9 +22,15 @@ const apiUsageSchema = new mongoose.Schema(
             required: true,
         },
 
-        environment: {
-            type: String,
-            enum: Object.values(API_KEY_ENVIRONMENT),
+        environmentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Environment",
+            required: true,
+        },
+
+        upstreamApiId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UpstreamApi",
             required: true,
         },
 
@@ -67,6 +72,16 @@ apiUsageSchema.index({
 
 apiUsageSchema.index({
     apiKeyId: 1,
+    createdAt: -1
+});
+
+apiUsageSchema.index({
+    environmentId: 1,
+    createdAt: -1
+});
+
+apiUsageSchema.index({
+    upstreamApiId: 1,
     createdAt: -1
 });
 

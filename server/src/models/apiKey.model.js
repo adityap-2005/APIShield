@@ -51,11 +51,6 @@ const apiKeySchema = new mongoose.Schema({
         select: false,
     },
 
-    scopes: {
-        type: [String],
-        default: [],
-    },
-
     status: {
         type: String,
         enum: Object.values(API_KEY_STATUS),

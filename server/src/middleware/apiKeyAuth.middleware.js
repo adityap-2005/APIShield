@@ -53,6 +53,11 @@ export const authenticateApiKey = async (
             );
         }
 
+        await ApiKey.updateOne(
+            { _id: apiKeyDocument._id },
+            { $set: { lastUsedAt: new Date() } }
+        );
+
         req.apiKeyContext = {
 
             apiKeyId:
@@ -63,9 +68,6 @@ export const authenticateApiKey = async (
         
             teamId:
                 apiKeyDocument.teamId,
-        
-            scopes:
-                apiKeyDocument.scopes,
         
             environmentId:
                 apiKeyDocument.environmentId

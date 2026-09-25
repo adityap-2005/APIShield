@@ -17,12 +17,16 @@ class GatewayController {
                 teamId,
                 upstreamApiId,
                 city,
-                req.apiKeyContext
+                req.apiKeyContext,
+                {
+                    method: req.method,
+                    endpoint: req.originalUrl
+                }
             );
 
-        return res.status(200).json({
+        return res.status(weather.statusCode).json({
             success: true,
-            data: weather
+            data: weather.data
         });
     }
 }
