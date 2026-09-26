@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -15,11 +15,6 @@ import {
 
 export default function RegisterPage() {
   const { user, isLoading, register } = useAuth();
-  const navigate = useNavigate();
-
-  if (!isLoading && user) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +25,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
+
+  if (!isLoading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

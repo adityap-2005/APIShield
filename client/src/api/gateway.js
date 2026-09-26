@@ -4,7 +4,6 @@
  * API functions for APIShield Gateway testing and execution.
  */
 
-import axiosInstance from "./axiosInstance";
 import axios from "axios";
 
 const gatewayApi = {

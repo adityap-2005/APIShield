@@ -16,16 +16,16 @@ export default function LoginPage() {
   const { user, isLoading, login } = useAuth();
   const navigate = useNavigate();
 
-  if (!isLoading && user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isUnverified, setIsUnverified] = useState(false);
+
+  if (!isLoading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
