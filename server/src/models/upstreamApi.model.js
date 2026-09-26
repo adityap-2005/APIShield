@@ -48,6 +48,25 @@ const upstreamApiSchema = new mongoose.Schema({
         trim: true
     },
 
+    authentication: {
+        type: {
+            type: String,
+            enum: [
+                "NONE",
+                "API_KEY_QUERY",
+                "API_KEY_HEADER",
+                "BEARER_TOKEN"
+            ],
+            default: "NONE",
+            required: true
+        },
+    
+        keyName: {
+            type: String,
+            trim: true
+        }
+    },
+
     encryptedCredential: {
         type: String,
         required: true,

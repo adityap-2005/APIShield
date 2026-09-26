@@ -7,20 +7,22 @@
 import axios from "axios";
 
 const gatewayApi = {
-  // GET /api/v1/organizations/:organizationId/teams/:teamId/gateway/upstream/:upstreamApiId/weather?city=:city
-  // Executes proxy request through APIShield gateway to upstream provider (e.g. OpenWeather).
-  // Authenticates with x-api-key header.
-  callWeather: (organizationId, teamId, upstreamApiId, apiKey, city = "London") => {
+  // Any HTTP method is forwarded through the configured Upstream API.
+  call: (organizationId, teamId, upstreamApiId, apiKey, {
+    method = "GET",
+    queryParams = {},
+    body,
+  } = {}) => {
     const baseURL = import.meta.env.VITE_API_BASE_URL;
-    return axios.get(
-      `${baseURL}/organizations/${organizationId}/teams/${teamId}/gateway/upstream/${upstreamApiId}/weather`,
-      {
-        params: { city },
-        headers: {
-          "x-api-key": apiKey,
-        },
-      }
-    );
+    return axios({
+      method,
+      url: `${baseURL}/organizations/${organizationId}/teams/${teamId}/gateway/upstream/${upstreamApiId}`,
+      params: queryParams,
+      data: body,
+      headers: {
+        "x-api-key": apiKey,
+      },
+    });
   },
 };
 

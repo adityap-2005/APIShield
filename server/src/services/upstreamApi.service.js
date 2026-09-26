@@ -42,6 +42,7 @@ class UpstreamApiService {
             name,
             baseUrl,
             path,
+            authentication,
             upstreamCredential
         } = data;
 
@@ -116,6 +117,18 @@ class UpstreamApiService {
             );
         }
 
+        if (
+            authentication?.type === "API_KEY_QUERY" ||
+            authentication?.type === "API_KEY_HEADER"
+        ) {
+            if (!authentication.keyName) {
+                throw new ApiError(
+                    400,
+                    "Authentication key name is required."
+                );
+            }
+        }
+
         const encryptedCredentialData =
             encrypt(upstreamCredential);
 
@@ -132,6 +145,7 @@ class UpstreamApiService {
                     name,
                     baseUrl,
                     path,
+                    authentication,
 
                     encryptedCredential:
                         encryptedCredentialData.encryptedData,
@@ -307,7 +321,7 @@ class UpstreamApiService {
                 teamId
             })
                 .select(
-                    "_id environmentId name baseUrl path status createdAt updatedAt"
+                    "_id environmentId name baseUrl path authentication status createdAt updatedAt"
                 );
 
         if (!upstreamApi) {
@@ -401,6 +415,7 @@ class UpstreamApiService {
             "name",
             "baseUrl",
             "path",
+            "authentication",
             "status"
         ];
 
@@ -456,8 +471,208 @@ class UpstreamApiService {
 
         return upstreamApi;
     }
-}
 
+    async callGateway(
+        organizationId,
+        teamId,
+        upstreamApiId,
+        apiKeyContext,
+        requestContext
+    ) {
+        if (!apiKeyContext?.environmentId) {
+            throw new ApiError(
+                400,
+                "API key is not associated with an environment."
+            );
+        }
+
+        if (
+            apiKeyContext.organizationId.toString() !==
+            organizationId.toString()
+        ) {
+            throw new ApiError(
+                403,
+                "API key does not belong to this organization."
+            );
+        }
+
+        if (
+            apiKeyContext.teamId.toString() !==
+            teamId.toString()
+        ) {
+            throw new ApiError(
+                403,
+                "API key does not belong to this team."
+            );
+        }
+
+        const upstreamApi =
+            await UpstreamApi.findOne({
+                _id: upstreamApiId,
+                organizationId,
+                teamId,
+                environmentId: apiKeyContext.environmentId
+            })
+                .select(
+                    "+encryptedCredential +encryptionIv +encryptionAuthTag"
+                );
+
+        if (!upstreamApi) {
+            throw new ApiError(
+                404,
+                "Upstream API not found."
+            );
+        }
+
+        if (
+            upstreamApi.environmentId.toString() !==
+            apiKeyContext.environmentId.toString()
+        ) {
+            throw new ApiError(
+                403,
+                "Upstream API does not belong to the API key environment."
+            );
+        }
+
+        const environment =
+            await Environment.findOne({
+                _id: apiKeyContext.environmentId,
+                organizationId,
+                teamId
+            });
+
+        if (!environment) {
+            throw new ApiError(
+                404,
+                "Environment not found."
+            );
+        }
+
+        if (environment.status !== "ACTIVE") {
+            throw new ApiError(
+                400,
+                "Environment is disabled."
+            );
+        }
+
+        const integration =
+            await Integration.findOne({
+                _id: upstreamApi.integrationId,
+                organizationId,
+                teamId
+            });
+
+        if (!integration) {
+            throw new ApiError(
+                404,
+                "Integration not found."
+            );
+        }
+
+        if (integration.status !== "ACTIVE") {
+            throw new ApiError(
+                400,
+                "Integration is disabled."
+            );
+        }
+
+        if (upstreamApi.status !== "ACTIVE") {
+            throw new ApiError(
+                400,
+                "Upstream API is disabled."
+            );
+        }
+
+        const credential =
+            decrypt(
+                upstreamApi.encryptedCredential,
+                upstreamApi.encryptionIv,
+                upstreamApi.encryptionAuthTag
+            );
+
+        const startedAt = Date.now();
+
+        const endpoint =
+            requestContext?.endpoint ||
+            `${upstreamApi.baseUrl}${upstreamApi.path}`;
+
+        const recordUsage = async (statusCode) => {
+            try {
+                await usageService.recordUsage({
+                    apiKeyId: apiKeyContext.apiKeyId,
+                    organizationId,
+                    teamId,
+                    environmentId: apiKeyContext.environmentId,
+                    upstreamApiId: upstreamApi._id,
+                    method: requestContext?.method || "GET",
+                    endpoint,
+                    statusCode,
+                    responseTime: Date.now() - startedAt
+                });
+            } catch (usageError) {
+                console.error(
+                    "Failed to record gateway API usage."
+                );
+            }
+        };
+
+        try {
+            const response =
+                await this.callUpstreamApi({
+                    upstreamApi,
+                    credential,
+                    method: requestContext?.method || "GET",
+                    queryParams:
+                        requestContext?.queryParams || {},
+                    body:
+                        requestContext?.body
+                });
+
+            await recordUsage(response.status);
+
+            return {
+                data: response.data,
+                statusCode: response.status
+            };
+
+        } catch (error) {
+
+            const statusCode =
+                error.response?.status ||
+                (
+                    error.code === "ECONNABORTED" ||
+                        error.code === "ETIMEDOUT"
+                        ? 504
+                        : 502
+                );
+
+            await recordUsage(statusCode);
+
+            if (
+                error.code === "ECONNABORTED" ||
+                error.code === "ETIMEDOUT"
+            ) {
+                throw new ApiError(
+                    504,
+                    "Upstream API request timed out."
+                );
+            }
+
+            if (error.response) {
+                throw new ApiError(
+                    502,
+                    "Upstream API request failed."
+                );
+            }
+
+            throw new ApiError(
+                502,
+                "Unable to reach upstream API."
+            );
+        }
+    }
+
+}
 
 const upstreamApiService =
     new UpstreamApiService();

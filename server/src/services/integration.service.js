@@ -41,6 +41,7 @@ class IntegrationService {
             upstreamApiName,
             baseUrl,
             path,
+            authentication,
             upstreamCredential
         } = data;
 
@@ -69,6 +70,17 @@ class IntegrationService {
             throw new ApiError(
                 400,
                 "Upstream credential is required."
+            );
+        }
+
+        if (
+            (authentication?.type === "API_KEY_QUERY" ||
+                authentication?.type === "API_KEY_HEADER") &&
+            !authentication.keyName
+        ) {
+            throw new ApiError(
+                400,
+                "Authentication key name is required."
             );
         }
 
@@ -156,6 +168,7 @@ class IntegrationService {
             const createdEnvironment =
                 environment[0];
 
+
             const encryptedCredentialData =
                 encrypt(upstreamCredential);
 
@@ -175,7 +188,7 @@ class IntegrationService {
                             name: upstreamApiName,
                             baseUrl,
                             path,
-
+                            authentication,
                             encryptedCredential:
                                 encryptedCredentialData.encryptedData,
 
@@ -291,7 +304,7 @@ class IntegrationService {
                 organizationId,
                 teamId
             }).select(
-                "_id environmentId name baseUrl path status createdAt updatedAt"
+                "_id environmentId name baseUrl path authentication status createdAt updatedAt"
             );
 
         return integrations.map(

@@ -10,7 +10,7 @@
  * The user experiences Environment as the primary operational workspace:
  * - Environment workspace tabs (TEST, PRODUCTION, STAGING, DEVELOPMENT)
  * - Under selected Environment:
- *     1. Integrations (e.g. OpenWeather) -> Upstream APIs (Current Weather, Forecast)
+ *     1. Integrations -> Upstream APIs
  *     2. Gateway Access (Environment-scoped APIShield Access Keys)
  *
  * Security Guarantee:
@@ -104,9 +104,12 @@ export default function IntegrationsPage() {
   // Gateway Test Modal state
   const [showGatewayTestModal, setShowGatewayTestModal] = useState(false);
   const [testUpstreamApi, setTestUpstreamApi] = useState(null);
+  const [testTeam, setTestTeam] = useState(null);
   const [testEnv, setTestEnv] = useState(null);
   const [testApiKey, setTestApiKey] = useState("");
-  const [testCity, setTestCity] = useState("London");
+  const [testMethod, setTestMethod] = useState("GET");
+  const [testQueryParams, setTestQueryParams] = useState("{}");
+  const [testBody, setTestBody] = useState("");
   const [testingGateway, setTestingGateway] = useState(false);
   const [gatewayTestResult, setGatewayTestResult] = useState(null);
   const [copiedTestResponse, setCopiedTestResponse] = useState(false);
@@ -117,6 +120,8 @@ export default function IntegrationsPage() {
   const [newUpstreamName, setNewUpstreamName] = useState("");
   const [newBaseUrl, setNewBaseUrl] = useState("");
   const [newPath, setNewPath] = useState("");
+  const [newAuthType, setNewAuthType] = useState("NONE");
+  const [newAuthKeyName, setNewAuthKeyName] = useState("");
   const [newUpstreamCredential, setNewUpstreamCredential] = useState("");
   const [createIntegrationSubmitting, setCreateIntegrationSubmitting] = useState(false);
   const [createIntegrationError, setCreateIntegrationError] = useState("");
@@ -125,6 +130,8 @@ export default function IntegrationsPage() {
   const [addApiName, setAddApiName] = useState("");
   const [addApiBaseUrl, setAddApiBaseUrl] = useState("");
   const [addApiPath, setAddApiPath] = useState("");
+  const [addApiAuthType, setAddApiAuthType] = useState("NONE");
+  const [addApiAuthKeyName, setAddApiAuthKeyName] = useState("");
   const [addApiCredential, setAddApiCredential] = useState("");
   const [addApiSubmitting, setAddApiSubmitting] = useState(false);
   const [addApiError, setAddApiError] = useState("");
@@ -133,6 +140,8 @@ export default function IntegrationsPage() {
   const [editApiName, setEditApiName] = useState("");
   const [editApiBaseUrl, setEditApiBaseUrl] = useState("");
   const [editApiPath, setEditApiPath] = useState("");
+  const [editApiAuthType, setEditApiAuthType] = useState("NONE");
+  const [editApiAuthKeyName, setEditApiAuthKeyName] = useState("");
   const [editApiStatus, setEditApiStatus] = useState("ACTIVE");
   const [editApiCredential, setEditApiCredential] = useState("");
   const [editApiSubmitting, setEditApiSubmitting] = useState(false);
@@ -247,6 +256,8 @@ export default function IntegrationsPage() {
     setNewUpstreamName("");
     setNewBaseUrl("");
     setNewPath("");
+    setNewAuthType("NONE");
+    setNewAuthKeyName("");
     setNewUpstreamCredential("");
     setCreateIntegrationError("");
     setShowCreateIntegrationModal(true);
@@ -259,7 +270,9 @@ export default function IntegrationsPage() {
       !newUpstreamName.trim() ||
       !newBaseUrl.trim() ||
       !newPath.trim() ||
-      !newUpstreamCredential.trim()
+      (newAuthType !== "NONE" && !newUpstreamCredential.trim()) ||
+      ((newAuthType === "API_KEY_QUERY" || newAuthType === "API_KEY_HEADER") &&
+        !newAuthKeyName.trim())
     ) {
       setCreateIntegrationError("All fields including upstream credential are required.");
       return;
@@ -275,7 +288,11 @@ export default function IntegrationsPage() {
         upstreamApiName: newUpstreamName.trim(),
         baseUrl: newBaseUrl.trim(),
         path: newPath.trim(),
-        upstreamCredential: newUpstreamCredential.trim(),
+        authentication: {
+          type: newAuthType,
+          ...(newAuthKeyName.trim() && { keyName: newAuthKeyName.trim() }),
+        },
+        upstreamCredential: newUpstreamCredential.trim() || undefined,
       };
 
       await integrationsApi.create(activeOrg._id, selectedTeamId, payload);
@@ -294,6 +311,8 @@ export default function IntegrationsPage() {
     setAddApiName("");
     setAddApiBaseUrl("");
     setAddApiPath("");
+    setAddApiAuthType("NONE");
+    setAddApiAuthKeyName("");
     setAddApiCredential("");
     setAddApiError("");
     setShowAddUpstreamModal(true);
@@ -305,7 +324,9 @@ export default function IntegrationsPage() {
       !addApiName.trim() ||
       !addApiBaseUrl.trim() ||
       !addApiPath.trim() ||
-      !addApiCredential.trim()
+      (addApiAuthType !== "NONE" && !addApiCredential.trim()) ||
+      ((addApiAuthType === "API_KEY_QUERY" || addApiAuthType === "API_KEY_HEADER") &&
+        !addApiAuthKeyName.trim())
     ) {
       setAddApiError("All fields including upstream credential are required.");
       return;
@@ -319,7 +340,11 @@ export default function IntegrationsPage() {
         name: addApiName.trim(),
         baseUrl: addApiBaseUrl.trim(),
         path: addApiPath.trim(),
-        upstreamCredential: addApiCredential.trim(),
+        authentication: {
+          type: addApiAuthType,
+          ...(addApiAuthKeyName.trim() && { keyName: addApiAuthKeyName.trim() }),
+        },
+        upstreamCredential: addApiCredential.trim() || undefined,
       };
 
       await upstreamApisApi.create(
@@ -346,6 +371,8 @@ export default function IntegrationsPage() {
     setEditApiName(api.name || "");
     setEditApiBaseUrl(api.baseUrl || "");
     setEditApiPath(api.path || "");
+    setEditApiAuthType(api.authentication?.type || "NONE");
+    setEditApiAuthKeyName(api.authentication?.keyName || "");
     setEditApiStatus(api.status || "ACTIVE");
     setEditApiCredential("");
     setEditApiError("");
@@ -373,6 +400,19 @@ export default function IntegrationsPage() {
       if (editApiCredential.trim()) {
         payload.upstreamCredential = editApiCredential.trim();
       }
+
+      if (
+        (editApiAuthType === "API_KEY_QUERY" || editApiAuthType === "API_KEY_HEADER") &&
+        !editApiAuthKeyName.trim()
+      ) {
+        setEditApiError("Authentication key name is required for this authentication type.");
+        return;
+      }
+
+      payload.authentication = {
+        type: editApiAuthType,
+        ...(editApiAuthKeyName.trim() && { keyName: editApiAuthKeyName.trim() }),
+      };
 
       await upstreamApisApi.update(
         activeOrg._id,
@@ -444,10 +484,17 @@ export default function IntegrationsPage() {
 
   // ── Gateway Live Testing ───────────────────────────────────────────────────
   const handleOpenGatewayTestModal = (env, api) => {
+    const selectedTeam = teams.find((team) => team._id === selectedTeamId);
+    setTestTeam({
+      _id: selectedTeamId,
+      name: selectedTeam?.name || selectedTeamId,
+    });
     setTestEnv(env);
     setTestUpstreamApi(api);
     setTestApiKey("");
-    setTestCity("London");
+    setTestMethod("GET");
+    setTestQueryParams("{}");
+    setTestBody("");
     setGatewayTestResult(null);
     setShowGatewayTestModal(true);
   };
@@ -464,12 +511,29 @@ export default function IntegrationsPage() {
       setGatewayTestResult(null);
       const startTime = performance.now();
 
-      const res = await gatewayApi.callWeather(
+      let queryParams;
+      let body;
+      try {
+        queryParams = JSON.parse(testQueryParams || "{}");
+        if (typeof queryParams !== "object" || Array.isArray(queryParams)) {
+          throw new Error("Query parameters must be a JSON object.");
+        }
+        body = testBody.trim() ? JSON.parse(testBody) : undefined;
+      } catch (parseError) {
+        setGatewayTestResult({
+          success: false,
+          status: 400,
+          data: { message: parseError.message },
+        });
+        return;
+      }
+
+      const res = await gatewayApi.call(
         activeOrg._id,
-        selectedTeamId,
+        testTeam._id,
         testUpstreamApi._id,
         testApiKey.trim(),
-        testCity.trim() || "London"
+        { method: testMethod, queryParams, body }
       );
 
       const endTime = performance.now();
@@ -770,9 +834,13 @@ export default function IntegrationsPage() {
                                       </code>
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
+                                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-gray-500">
+                                      <span className="text-blue-300">
+                                        Auth: {api.authentication?.type || "NONE"}
+                                      </span>
+                                      <span>Environment: {activeEnvName}</span>
                                       <Lock className="w-3 h-3 text-green-400" />
-                                      <span>Provider Credential: •••••••• (AES-256-GCM Secured)</span>
+                                      <span>Provider credential secured</span>
                                     </div>
                                   </div>
 
@@ -1009,8 +1077,39 @@ export default function IntegrationsPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="label">Authentication</label>
+                <select
+                  className="input text-xs"
+                  value={newAuthType}
+                  onChange={(e) => setNewAuthType(e.target.value)}
+                  disabled={createIntegrationSubmitting}
+                >
+                  <option value="NONE">NONE</option>
+                  <option value="API_KEY_QUERY">API key in query</option>
+                  <option value="API_KEY_HEADER">API key in header</option>
+                  <option value="BEARER_TOKEN">Bearer token</option>
+                </select>
+              </div>
+              {(newAuthType === "API_KEY_QUERY" || newAuthType === "API_KEY_HEADER") && (
+                <div>
+                  <label className="label">Authentication Key Name *</label>
+                  <input
+                    type="text"
+                    className="input font-mono text-xs"
+                    placeholder="e.g. X-API-Key or api_key"
+                    value={newAuthKeyName}
+                    onChange={(e) => setNewAuthKeyName(e.target.value)}
+                    disabled={createIntegrationSubmitting}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
             <div>
-              <label className="label">Upstream Provider Credential / Secret Key *</label>
+              <label className="label">Upstream Provider Credential / Secret Key {newAuthType !== "NONE" && "*"}</label>
               <input
                 type="password"
                 className="input font-mono text-xs"
@@ -1018,7 +1117,7 @@ export default function IntegrationsPage() {
                 value={newUpstreamCredential}
                 onChange={(e) => setNewUpstreamCredential(e.target.value)}
                 disabled={createIntegrationSubmitting}
-                required
+                required={newAuthType !== "NONE"}
               />
               <p className="text-[11px] text-gray-500 font-mono mt-1 flex items-center gap-1">
                 <Lock className="w-3 h-3 text-green-400" />
@@ -1102,8 +1201,39 @@ export default function IntegrationsPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Authentication</label>
+              <select
+                className="input text-xs"
+                value={addApiAuthType}
+                onChange={(e) => setAddApiAuthType(e.target.value)}
+                disabled={addApiSubmitting}
+              >
+                <option value="NONE">NONE</option>
+                <option value="API_KEY_QUERY">API key in query</option>
+                <option value="API_KEY_HEADER">API key in header</option>
+                <option value="BEARER_TOKEN">Bearer token</option>
+              </select>
+            </div>
+            {(addApiAuthType === "API_KEY_QUERY" || addApiAuthType === "API_KEY_HEADER") && (
+              <div>
+                <label className="label">Authentication Key Name *</label>
+                <input
+                  type="text"
+                  className="input font-mono text-xs"
+                  placeholder="e.g. X-API-Key or api_key"
+                  value={addApiAuthKeyName}
+                  onChange={(e) => setAddApiAuthKeyName(e.target.value)}
+                  disabled={addApiSubmitting}
+                  required
+                />
+              </div>
+            )}
+          </div>
+
           <div>
-            <label className="label">Provider Credential / Secret Key *</label>
+            <label className="label">Provider Credential / Secret Key {addApiAuthType !== "NONE" && "*"}</label>
             <input
               type="password"
               className="input font-mono text-xs"
@@ -1111,7 +1241,7 @@ export default function IntegrationsPage() {
               value={addApiCredential}
               onChange={(e) => setAddApiCredential(e.target.value)}
               disabled={addApiSubmitting}
-              required
+              required={addApiAuthType !== "NONE"}
             />
             <p className="text-[11px] text-gray-500 font-mono mt-1 flex items-center gap-1">
               <Lock className="w-3 h-3 text-green-400" />
@@ -1189,6 +1319,37 @@ export default function IntegrationsPage() {
                 required
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Authentication</label>
+              <select
+                className="input text-xs"
+                value={editApiAuthType}
+                onChange={(e) => setEditApiAuthType(e.target.value)}
+                disabled={editApiSubmitting}
+              >
+                <option value="NONE">NONE</option>
+                <option value="API_KEY_QUERY">API key in query</option>
+                <option value="API_KEY_HEADER">API key in header</option>
+                <option value="BEARER_TOKEN">Bearer token</option>
+              </select>
+            </div>
+            {(editApiAuthType === "API_KEY_QUERY" || editApiAuthType === "API_KEY_HEADER") && (
+              <div>
+                <label className="label">Authentication Key Name *</label>
+                <input
+                  type="text"
+                  className="input font-mono text-xs"
+                  placeholder="e.g. X-API-Key or api_key"
+                  value={editApiAuthKeyName}
+                  onChange={(e) => setEditApiAuthKeyName(e.target.value)}
+                  disabled={editApiSubmitting}
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -1380,6 +1541,14 @@ export default function IntegrationsPage() {
         <form onSubmit={handleExecuteGatewayTest} className="space-y-4">
           <div className="p-3 bg-[#1c2128] border border-white/10 rounded-lg space-y-1.5 text-xs font-mono">
             <div className="flex items-center justify-between text-gray-300">
+              <span className="text-gray-400">Team:</span>
+              <span className="text-white font-semibold">{testTeam?.name}</span>
+            </div>
+            <div className="flex items-center justify-between text-gray-300">
+              <span className="text-gray-400">Environment:</span>
+              <span className="text-yellow-400 font-semibold">{testEnv?.name}</span>
+            </div>
+            <div className="flex items-center justify-between text-gray-300">
               <span className="text-gray-400">Target Upstream:</span>
               <span className="font-semibold text-white">{testUpstreamApi?.name}</span>
             </div>
@@ -1389,10 +1558,6 @@ export default function IntegrationsPage() {
                 {testUpstreamApi?.baseUrl}
                 {testUpstreamApi?.path}
               </span>
-            </div>
-            <div className="flex items-center justify-between text-gray-300">
-              <span className="text-gray-400">Environment:</span>
-              <span className="text-yellow-400 font-semibold">{testEnv?.name}</span>
             </div>
           </div>
 
@@ -1415,21 +1580,60 @@ export default function IntegrationsPage() {
             </p>
           </div>
 
-          <div>
-            <label className="label">Query Parameter: City</label>
-            <input
-              type="text"
-              className="input text-xs"
-              placeholder="London, New York, Tokyo..."
-              value={testCity}
-              onChange={(e) => setTestCity(e.target.value)}
-              disabled={testingGateway}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">HTTP Method</label>
+              <select
+                className="input text-xs"
+                value={testMethod}
+                onChange={(e) => setTestMethod(e.target.value)}
+                disabled={testingGateway}
+              >
+                {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => (
+                  <option key={method} value={method}>{method}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Query Parameters (JSON)</label>
+              <input
+                type="text"
+                className="input font-mono text-xs"
+                placeholder='{"q":"example"}'
+                value={testQueryParams}
+                onChange={(e) => setTestQueryParams(e.target.value)}
+                disabled={testingGateway}
+              />
+            </div>
+          </div>
+
+          {testMethod === "GET" ? (
+            <p className="text-[11px] text-gray-500 font-mono">
+              GET requests typically do not need a request body. Query parameters above are optional.
+            </p>
+          ) : (
+            <div>
+              <label className="label">Request Body (JSON, optional)</label>
+              <textarea
+                className="input font-mono text-xs min-h-20"
+                placeholder='{"example":true}'
+                value={testBody}
+                onChange={(e) => setTestBody(e.target.value)}
+                disabled={testingGateway}
+              />
+            </div>
+          )}
+
+          <div className="flex items-start gap-2 p-3 bg-blue-950/20 border border-blue-900/40 rounded-lg text-[11px] text-blue-200">
+            <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
+            <span>
+              Only the APIShield Access Key is entered here. Provider credentials stay encrypted and are applied server-side.
+            </span>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-white/10">
             <Link
-              to={`/org/${activeOrg._id}/api-keys?teamId=${selectedTeamId}`}
+              to={`/org/${activeOrg._id}/api-keys?teamId=${testTeam?._id}`}
               className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
               target="_blank"
             >
@@ -1480,6 +1684,9 @@ export default function IntegrationsPage() {
                     Latency: {gatewayTestResult.latencyMs} ms
                   </span>
                 )}
+                <span className="text-[11px] font-mono text-gray-500">
+                  {testTeam?.name} / {testEnv?.name}
+                </span>
               </div>
 
               <button

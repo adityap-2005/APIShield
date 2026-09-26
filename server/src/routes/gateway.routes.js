@@ -7,9 +7,9 @@ import gatewayController from "../controllers/gateway.controller.js";
 const router = express.Router();
 
 router.get(
-    "/organizations/:organizationId/teams/:teamId/gateway/upstream/:upstreamApiId/weather",
+    "/organizations/:organizationId/teams/:teamId/gateway/upstream/:upstreamApiId",
     authenticateApiKey,
-    gatewayController.callOpenWeather
+    gatewayController.callUpstreamApi
 );
 
 export default router;

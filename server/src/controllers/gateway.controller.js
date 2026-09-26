@@ -1,7 +1,8 @@
 import gatewayService from "../services/gateway.service.js";
+
 class GatewayController {
 
-    async callOpenWeather(req, res) {
+    async callUpstreamApi(req, res) {
 
         const {
             organizationId,
@@ -9,29 +10,28 @@ class GatewayController {
             upstreamApiId
         } = req.params;
 
-        const { city } = req.query;
-
-        const weather =
-            await gatewayService.callOpenWeather(
+        const response =
+            await gatewayService.callGateway(
                 organizationId,
                 teamId,
                 upstreamApiId,
-                city,
                 req.apiKeyContext,
                 {
                     method: req.method,
-                    endpoint: req.originalUrl
+                    endpoint: req.originalUrl,
+                    queryParams: req.query,
+                    body: req.body
                 }
             );
 
-        return res.status(weather.statusCode).json({
+        return res.status(response.statusCode).json({
             success: true,
-            data: weather.data
+            data: response.data
         });
     }
 }
 
-
-const gatewayController = new GatewayController();
+const gatewayController =
+    new GatewayController();
 
 export default gatewayController;
