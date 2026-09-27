@@ -66,7 +66,7 @@ class IntegrationService {
             );
         }
 
-        if ((authentication.type !== "NONE" && !upstreamCredential) {
+        if (authentication.type !== "NONE" && !upstreamCredential) {
             throw new ApiError(
                 400,
                 "Upstream credential is required."
