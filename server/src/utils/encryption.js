@@ -3,6 +3,12 @@ import crypto from "crypto";
 const ALGORITHM = "aes-256-gcm";
 
 const getEncryptionKey = () => {
+    if (!process.env.ENCRYPTION_KEY) {
+        throw new Error(
+            "ENCRYPTION_KEY environment variable is required for credential encryption/decryption."
+        );
+    }
+
     const key = Buffer.from(
         process.env.ENCRYPTION_KEY,
         "hex"
