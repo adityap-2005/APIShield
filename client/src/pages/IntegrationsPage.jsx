@@ -210,7 +210,7 @@ export default function IntegrationsPage() {
       setLoadingData(true);
       setError("");
       const [integrationsRes, keysRes] = await Promise.all([
-        integrationsApi.getAll(activeOrg._id, teamId).catch(() => ({ data: { data: [] } })),
+        integrationsApi.getAll(activeOrg._id, teamId),
         apiKeysApi.getAll(activeOrg._id, teamId).catch(() => ({ data: { data: [] } })),
       ]);
 
