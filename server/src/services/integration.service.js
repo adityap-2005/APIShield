@@ -169,8 +169,19 @@ class IntegrationService {
                 environment[0];
 
 
-            const encryptedCredentialData =
-                encrypt(upstreamCredential);
+            let encryptedCredentialData;
+
+            if (authentication.type !== "NONE") {
+                if (!upstreamCredential) {
+                    throw new ApiError(
+                        400,
+                        "Upstream credential is required."
+                    );
+                }
+
+                encryptedCredentialData =
+                    encrypt(upstreamCredential);
+            }
 
             let createdUpstreamApi;
 
@@ -190,13 +201,13 @@ class IntegrationService {
                             path,
                             authentication,
                             encryptedCredential:
-                                encryptedCredentialData.encryptedData,
+                                encryptedCredentialData?.encryptedData,
 
                             encryptionIv:
-                                encryptedCredentialData.iv,
+                                encryptedCredentialData?.iv,
 
                             encryptionAuthTag:
-                                encryptedCredentialData.authTag,
+                                encryptedCredentialData?.authTag,
 
                             createdBy: userId
                         }],
