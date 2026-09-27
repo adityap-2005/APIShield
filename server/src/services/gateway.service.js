@@ -79,7 +79,12 @@ class GatewayService {
         }
 
         if (upstreamApi.authentication?.type === "NONE") {
-            return null;
+            return {
+                upstreamApi,
+                environment,
+                integration,
+                credential: null
+            };
         }
 
         const credential = decrypt(
