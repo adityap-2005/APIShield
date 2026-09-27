@@ -193,6 +193,15 @@ class GatewayService {
             };
     
         } catch (error) {
+
+            if (axios.isAxiosError(error)) {
+                console.error("Gateway upstream error:", {
+                    code: error.code,
+                    status: error.response?.status,
+                    data: error.response?.data,
+                    message: error.message
+                });
+            }
     
             const statusCode =
                 error.response?.status ||
