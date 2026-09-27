@@ -78,12 +78,15 @@ class GatewayService {
             );
         }
 
-        const credential =
-            decrypt(
-                upstreamApi.encryptedCredential,
-                upstreamApi.encryptionIv,
-                upstreamApi.encryptionAuthTag
-            );
+        if (upstreamApi.authentication?.type === "NONE") {
+            return null;
+        }
+
+        const credential = decrypt(
+            upstreamApi.encryptedCredential,
+            upstreamApi.encryptionIv,
+            upstreamApi.encryptionAuthTag
+        );
 
         return {
             upstreamApi,
@@ -106,7 +109,7 @@ class GatewayService {
                 "API key is not associated with an environment."
             );
         }
-    
+
         if (
             apiKeyContext.organizationId.toString() !==
             organizationId.toString()
@@ -116,7 +119,7 @@ class GatewayService {
                 "API key does not belong to this organization."
             );
         }
-    
+
         if (
             apiKeyContext.teamId.toString() !==
             teamId.toString()
@@ -126,7 +129,7 @@ class GatewayService {
                 "API key does not belong to this team."
             );
         }
-    
+
         const {
             upstreamApi,
             credential
@@ -136,7 +139,7 @@ class GatewayService {
             teamId,
             apiKeyContext.environmentId
         );
-    
+
         if (
             upstreamApi.environmentId.toString() !==
             apiKeyContext.environmentId.toString()
@@ -146,13 +149,13 @@ class GatewayService {
                 "Upstream API does not belong to the API key environment."
             );
         }
-    
+
         const startedAt = Date.now();
-    
+
         const endpoint =
             requestContext?.endpoint ||
             `${upstreamApi.baseUrl}${upstreamApi.path}`;
-    
+
         const recordUsage = async (statusCode) => {
             try {
                 await usageService.recordUsage({
@@ -172,7 +175,7 @@ class GatewayService {
                 );
             }
         };
-    
+
         try {
             const response =
                 await this.callUpstreamApi({
@@ -184,14 +187,14 @@ class GatewayService {
                     body:
                         requestContext?.body
                 });
-    
+
             await recordUsage(response.status);
-    
+
             return {
                 data: response.data,
                 statusCode: response.status
             };
-    
+
         } catch (error) {
 
             if (axios.isAxiosError(error)) {
@@ -202,18 +205,18 @@ class GatewayService {
                     message: error.message
                 });
             }
-    
+
             const statusCode =
                 error.response?.status ||
                 (
                     error.code === "ECONNABORTED" ||
-                    error.code === "ETIMEDOUT"
+                        error.code === "ETIMEDOUT"
                         ? 504
                         : 502
                 );
-    
+
             await recordUsage(statusCode);
-    
+
             if (
                 error.code === "ECONNABORTED" ||
                 error.code === "ETIMEDOUT"
@@ -223,14 +226,14 @@ class GatewayService {
                     "Upstream API request timed out."
                 );
             }
-    
+
             if (error.response) {
                 throw new ApiError(
                     502,
                     "Upstream API request failed."
                 );
             }
-    
+
             throw new ApiError(
                 502,
                 "Unable to reach upstream API."
@@ -253,30 +256,30 @@ class GatewayService {
                 ...queryParams
             }
         };
-    
+
         const authentication =
             upstreamApi.authentication || {};
-    
+
         if (authentication.type === "API_KEY_QUERY") {
             config.params[authentication.keyName] = credential;
         }
-    
+
         if (authentication.type === "API_KEY_HEADER") {
             config.headers = {
                 [authentication.keyName]: credential
             };
         }
-    
+
         if (authentication.type === "BEARER_TOKEN") {
             config.headers = {
                 Authorization: `Bearer ${credential}`
             };
         }
-    
+
         if (body !== undefined) {
             config.data = body;
         }
-    
+
         return axios(config);
     }
 }
