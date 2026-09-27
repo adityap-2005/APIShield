@@ -69,19 +69,16 @@ const upstreamApiSchema = new mongoose.Schema({
 
     encryptedCredential: {
         type: String,
-        required: true,
         select: false
     },
 
     encryptionIv: {
         type: String,
-        required: true,
         select: false
     },
 
     encryptionAuthTag: {
         type: String,
-        required: true,
         select: false
     },
 
