@@ -9,7 +9,7 @@ export default {
       colors: {
         shield: {
           bg: "#0d1117",
-          sidebar: "#131822",
+          sidebar: "#0b0f19",
           surface: "#161b22",
           card: "#161b22",
           subsurface: "#0e131b",

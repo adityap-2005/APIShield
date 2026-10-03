@@ -1,16 +1,16 @@
 /**
- * OrgSelector.jsx
- * Supabase-style Organization Selector dropdown.
+ * ProjectSelector.jsx
+ * Supabase-style Project Selector dropdown.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Check, ChevronsUpDown, Box, Plus } from "lucide-react";
 import { useOrg } from "../context/OrgContext";
-import { Boxes, Plus, Check, ChevronsUpDown } from "lucide-react";
-import CreateOrgModal from "./CreateOrgModal";
+import CreateProjectModal from "./CreateProjectModal";
 
-export default function OrgSelector() {
-  const { organizations, activeOrg, switchOrg } = useOrg();
+export default function ProjectSelector() {
+  const { activeOrg, projects, activeProject, switchProject } = useOrg();
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const dropdownRef = useRef(null);
@@ -18,8 +18,8 @@ export default function OrgSelector() {
   const location = useLocation();
 
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+    const closeOnOutsideClick = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
@@ -28,41 +28,40 @@ export default function OrgSelector() {
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("mousedown", closeOnOutsideClick);
       document.addEventListener("keydown", handleKeyDown);
     }
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("mousedown", closeOnOutsideClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 
-  const handleSelectOrg = (org) => {
-    switchOrg(org);
+  const handleSelect = (project) => {
+    switchProject(project);
     setIsOpen(false);
-    if (location.pathname.startsWith("/org/")) {
-      const newPath = location.pathname.replace(/^\/org\/[^/]+/, `/org/${org._id}`);
-      navigate(newPath);
+    // If on /projects/:oldProjectId or /org/:orgId/projects/:oldProjectId, update route
+    const match = location.pathname.match(/^(.*\/projects\/)[^/]+$/);
+    if (match) {
+      navigate(`${match[1]}${project._id}`);
     }
   };
 
-  const orgName = activeOrg?.name || (organizations.length > 0 ? organizations[0].name : "Select Organization");
+  const projectName = activeProject?.name || (projects.length > 0 ? projects[0].name : "Select Project");
 
   return (
     <>
       <div className="relative" ref={dropdownRef}>
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsOpen((open) => !open)}
           className="flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium text-gray-200 hover:text-white hover:bg-white/5 transition-all focus:outline-none"
-          title={orgName}
+          title={projectName}
+          aria-label="Select project"
         >
-          {/* Hexagonal/Boxes icon */}
-          <Boxes className="w-4 h-4 text-gray-300 shrink-0" />
+          {/* Isometric Box / Project icon */}
+          <Box className="w-4 h-4 text-gray-300 shrink-0" />
           <span className="truncate max-w-[130px] sm:max-w-[170px] text-white">
-            {orgName}
-          </span>
-          <span className="bg-white/10 border border-white/5 text-gray-300 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold tracking-wide uppercase leading-none">
-            FREE
+            {projectName}
           </span>
           <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-0.5" />
         </button>
@@ -70,30 +69,30 @@ export default function OrgSelector() {
         {isOpen && (
           <div className="absolute left-0 mt-2 w-72 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
             <div className="px-3 py-2 text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5">
-              Organizations
+              Projects
             </div>
 
             <div className="max-h-60 overflow-y-auto py-1">
-              {organizations.length === 0 ? (
+              {projects.length === 0 ? (
                 <div className="px-3 py-3 text-xs text-gray-400 italic text-center">
-                  No organizations found
+                  No projects configured yet
                 </div>
               ) : (
-                organizations.map((org) => {
-                  const isActive = activeOrg?._id === org._id;
+                projects.map((project) => {
+                  const isSelected = activeProject?._id === project._id;
                   return (
                     <button
-                      key={org._id}
-                      onClick={() => handleSelectOrg(org)}
+                      key={project._id}
+                      onClick={() => handleSelect(project)}
                       className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-white/5 transition-colors ${
-                        isActive ? "text-emerald-400 font-semibold bg-emerald-950/30" : "text-gray-300"
+                        isSelected ? "text-emerald-400 font-semibold bg-emerald-950/30" : "text-gray-300"
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
-                        <Boxes className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-                        <span className="truncate">{org.name}</span>
+                        <Box className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                        <span className="truncate">{project.name}</span>
                       </div>
-                      {isActive && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                     </button>
                   );
                 })
@@ -109,15 +108,18 @@ export default function OrgSelector() {
                 className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-2 hover:bg-white/5 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>New Organization</span>
+                <span>New Project</span>
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Create Org Modal */}
-      <CreateOrgModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
     </>
   );
 }

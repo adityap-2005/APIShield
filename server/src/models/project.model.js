@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const teamSchema = new mongoose.Schema(
+const projectSchema = new mongoose.Schema(
     {
         organizationId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -47,7 +47,7 @@ const teamSchema = new mongoose.Schema(
     }
 );
 
-teamSchema.index(
+projectSchema.index(
     {
         organizationId: 1,
         slug: 1,
@@ -57,6 +57,6 @@ teamSchema.index(
     }
 );
 
-const Team = mongoose.model("Team", teamSchema);
+const Project = mongoose.model("Project", projectSchema);
 
-export default Team;
+export default Project;

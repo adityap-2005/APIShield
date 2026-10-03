@@ -19,14 +19,17 @@ import PersonalSettingsPage from "./pages/PersonalSettingsPage";
 // Organization Area Pages
 import OrgDashboardPage from "./pages/OrgDashboardPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
-import TeamsPage from "./pages/TeamsPage";
-import TeamDetailPage from "./pages/TeamDetailPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import ProjectDetailPage from "./pages/ProjectDetailPage";
 import MembersPage from "./pages/MembersPage";
 import InvitationsPage from "./pages/InvitationsPage";
 import UsagePage from "./pages/UsagePage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import EnvironmentsPage from "./pages/EnvironmentsPage";
+import UpstreamApisPage from "./pages/UpstreamApisPage";
+import TestApiPage from "./pages/TestApiPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
@@ -52,27 +55,37 @@ export default function App() {
 
                 {/* ── ORGANIZATION AREA (/org/:organizationId) ───────── */}
                 <Route path="/org/:organizationId" element={<OrgDashboardPage />} />
+                <Route path="/org/:organizationId/overview" element={<OrgDashboardPage />} />
                 <Route path="/org/:organizationId/api-keys" element={<ApiKeysPage />} />
-                <Route path="/org/:organizationId/teams" element={<TeamsPage />} />
-                <Route path="/org/:organizationId/teams/:teamId" element={<TeamDetailPage />} />
+                <Route path="/org/:organizationId/projects" element={<ProjectsPage />} />
+                <Route path="/org/:organizationId/projects/:projectId" element={<ProjectDetailPage />} />
+                <Route path="/org/:organizationId/environments" element={<EnvironmentsPage />} />
+                <Route path="/org/:organizationId/integrations" element={<IntegrationsPage />} />
+                <Route path="/org/:organizationId/upstream-apis" element={<UpstreamApisPage />} />
+                <Route path="/org/:organizationId/upstream-apis/test" element={<TestApiPage />} />
+                <Route path="/org/:organizationId/test-api" element={<TestApiPage />} />
                 <Route path="/org/:organizationId/members" element={<MembersPage />} />
                 <Route path="/org/:organizationId/invitations" element={<InvitationsPage />} />
                 <Route path="/org/:organizationId/usage" element={<UsagePage />} />
                 <Route path="/org/:organizationId/audit-logs" element={<AuditLogsPage />} />
                 <Route path="/org/:organizationId/analytics" element={<AnalyticsPage />} />
-                <Route path="/org/:organizationId/integrations" element={<IntegrationsPage />} />
                 <Route path="/org/:organizationId/settings" element={<SettingsPage />} />
 
-                {/* ── BACKWARDS COMPATIBLE SHORTCUT ROUTES ────────────── */}
+                {/* ── SHORTCUT ROUTES ────────────── */}
+                <Route path="/overview" element={<OrgDashboardPage />} />
                 <Route path="/api-keys" element={<ApiKeysPage />} />
-                <Route path="/teams" element={<TeamsPage />} />
-                <Route path="/teams/:teamId" element={<TeamDetailPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+                <Route path="/environments" element={<EnvironmentsPage />} />
+                <Route path="/integrations" element={<IntegrationsPage />} />
+                <Route path="/upstream-apis" element={<UpstreamApisPage />} />
+                <Route path="/upstream-apis/test" element={<TestApiPage />} />
+                <Route path="/test-api" element={<TestApiPage />} />
                 <Route path="/members" element={<MembersPage />} />
                 <Route path="/invitations" element={<InvitationsPage />} />
                 <Route path="/usage" element={<UsagePage />} />
                 <Route path="/audit-logs" element={<AuditLogsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>

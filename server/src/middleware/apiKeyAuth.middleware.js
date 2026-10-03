@@ -66,8 +66,8 @@ export const authenticateApiKey = async (
             organizationId:
                 apiKeyDocument.organizationId,
         
-            teamId:
-                apiKeyDocument.teamId,
+            projectId:
+                apiKeyDocument.projectId,
         
             environmentId:
                 apiKeyDocument.environmentId

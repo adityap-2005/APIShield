@@ -6,7 +6,7 @@ export const AUDIT_ENTITY_TYPES = {
 
     MEMBER: "MEMBER",
 
-    TEAM: "TEAM",
+    PROJECT: "PROJECT",
 
     API_KEY: "API_KEY"
 

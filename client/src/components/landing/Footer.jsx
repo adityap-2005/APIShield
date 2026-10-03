@@ -6,7 +6,7 @@ export default function Footer() {
   const footerLinks = {
     Product: [
       { label: "API Keys", href: "#features" },
-      { label: "Teams & RBAC", href: "#features" },
+      { label: "Projects & RBAC", href: "#features" },
       { label: "Usage & Telemetry", href: "#features" },
       { label: "Audit Logs", href: "#features" },
     ],
@@ -47,7 +47,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
-              Secure API credential management for modern development teams. Create, govern, and monitor API access from one workspace.
+              Secure API credential management for modern development projects. Create, govern, and monitor API access from one workspace.
             </p>
           </div>
 

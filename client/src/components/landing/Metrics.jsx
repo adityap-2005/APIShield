@@ -5,12 +5,12 @@ export default function Metrics() {
     {
       value: "1",
       label: "Centralized workspace",
-      description: "All keys, teams, and audit logs managed from a single place.",
+      description: "All keys, projects, and audit logs managed from a single place.",
     },
     {
-      value: "Teams",
+      value: "Projects",
       label: "Organized access",
-      description: "Granular role-based permissions per team and workspace.",
+      description: "Granular role-based permissions per project and workspace.",
     },
     {
       value: "API Keys",

@@ -1,9 +1,11 @@
 import AuditLog from "../models/auditLog.model.js";
 import Membership from "../models/membership.model.js";
+import ProjectMembership from "../models/projectMembership.model.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
+import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js";
 
 class AuditLogService {
 
@@ -28,7 +30,7 @@ class AuditLogService {
 
     async log({
         organizationId,
-        teamId = null,
+        projectId = null,
         actor,
         action,
         entity,
@@ -37,7 +39,7 @@ class AuditLogService {
 
         return await AuditLog.create({
             organizationId,
-            teamId,
+            projectId,
             actor,
             action,
             entity,
@@ -66,11 +68,29 @@ class AuditLogService {
         }
 
         const skip = (page - 1) * limit;
+        const isOrganizationAdmin = [
+            ORGANIZATION_ROLES.OWNER,
+            ORGANIZATION_ROLES.ADMIN,
+        ].includes(membership.role);
+        const projectMemberships = isOrganizationAdmin
+            ? null
+            : await ProjectMembership.find({
+                organizationId,
+                membershipId: membership._id,
+            }).select("projectId");
+        const projectIds = projectMemberships?.map(({ projectId }) => projectId);
+        const query = {
+            organizationId,
+            ...(projectIds ? {
+                $or: [
+                    { projectId: { $in: projectIds } },
+                    { projectId: null },
+                ],
+            } : {}),
+        };
 
         const logs =
-            await AuditLog.find({
-                organizationId
-            })
+            await AuditLog.find(query)
                 .sort({
                     createdAt: -1
                 })
@@ -79,9 +99,7 @@ class AuditLogService {
                 .lean();
 
         const total =
-            await AuditLog.countDocuments({
-                organizationId
-            });
+            await AuditLog.countDocuments(query);
 
         return {
             logs,
@@ -118,7 +136,23 @@ class AuditLogService {
         const auditLog =
             await AuditLog.findOne({
                 _id: auditLogId,
-                organizationId
+                organizationId,
+                ...(membership.role === ORGANIZATION_ROLES.OWNER ||
+                    membership.role === ORGANIZATION_ROLES.ADMIN
+                    ? {}
+                    : {
+                        $or: [
+                            { projectId: null },
+                            {
+                                projectId: {
+                                    $in: await ProjectMembership.find({
+                                        organizationId,
+                                        membershipId: membership._id,
+                                    }).distinct("projectId"),
+                                },
+                            },
+                        ],
+                    }),
             }).lean();
 
         if (!auditLog) {

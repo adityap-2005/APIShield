@@ -6,14 +6,14 @@ class GatewayController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             upstreamApiId
         } = req.params;
 
         const response =
             await gatewayService.callGateway(
                 organizationId,
-                teamId,
+                projectId,
                 upstreamApiId,
                 req.apiKeyContext,
                 {

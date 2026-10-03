@@ -17,7 +17,7 @@ class GatewayService {
     async getUpstreamApiCredential(
         upstreamApiId,
         organizationId,
-        teamId,
+        projectId,
         environmentId
     ) {
 
@@ -25,7 +25,7 @@ class GatewayService {
             await _getUpstreamApiWithCredential(
                 upstreamApiId,
                 organizationId,
-                teamId,
+                projectId,
                 environmentId
             );
 
@@ -33,7 +33,7 @@ class GatewayService {
             await Environment.findOne({
                 _id: environmentId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -54,7 +54,7 @@ class GatewayService {
             await Integration.findOne({
                 _id: upstreamApi.integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -103,7 +103,7 @@ class GatewayService {
 
     async callGateway(
         organizationId,
-        teamId,
+        projectId,
         upstreamApiId,
         apiKeyContext,
         requestContext
@@ -126,12 +126,12 @@ class GatewayService {
         }
 
         if (
-            apiKeyContext.teamId.toString() !==
-            teamId.toString()
+            apiKeyContext.projectId.toString() !==
+            projectId.toString()
         ) {
             throw new ApiError(
                 403,
-                "API key does not belong to this team."
+                "API key does not belong to this project."
             );
         }
 
@@ -141,7 +141,7 @@ class GatewayService {
         } = await this.getUpstreamApiCredential(
             upstreamApiId,
             organizationId,
-            teamId,
+            projectId,
             apiKeyContext.environmentId
         );
 
@@ -166,7 +166,7 @@ class GatewayService {
                 await usageService.recordUsage({
                     apiKeyId: apiKeyContext.apiKeyId,
                     organizationId,
-                    teamId,
+                    projectId,
                     environmentId: apiKeyContext.environmentId,
                     upstreamApiId: upstreamApi._id,
                     method: requestContext?.method || "GET",

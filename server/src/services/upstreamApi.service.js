@@ -11,20 +11,20 @@ import {
 
 import {
     _getActiveMembership,
-    _getActiveTeamMembership
+    _getActiveProjectMembership
 } from "../helpers/membership.helper.js";
 
 import {
-    _getTeamById
-} from "../helpers/team.helper.js";
+    _getProjectById
+} from "../helpers/project.helper.js";
 
 import {
     ORGANIZATION_ROLES
 } from "../constants/organizationRoles.js";
 
 import {
-    TEAM_ROLES
-} from "../constants/teamRoles.js";
+    PROJECT_ROLES
+} from "../constants/projectRoles.js";
 
 
 class UpstreamApiService {
@@ -32,7 +32,7 @@ class UpstreamApiService {
     async createUpstreamApi(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId,
         data
@@ -56,14 +56,14 @@ class UpstreamApiService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -71,10 +71,10 @@ class UpstreamApiService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to create an upstream API."
@@ -85,7 +85,7 @@ class UpstreamApiService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -100,7 +100,7 @@ class UpstreamApiService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -139,7 +139,7 @@ class UpstreamApiService {
             upstreamApi =
                 await UpstreamApi.create({
                     organizationId,
-                    teamId,
+                    projectId,
                     integrationId,
                     environmentId,
                     name,
@@ -182,7 +182,7 @@ class UpstreamApiService {
     async getUpstreamApis(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId
     ) {
@@ -197,13 +197,13 @@ class UpstreamApiService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
@@ -211,7 +211,7 @@ class UpstreamApiService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -226,7 +226,7 @@ class UpstreamApiService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -241,7 +241,7 @@ class UpstreamApiService {
                 environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             })
                 .select(
                     "_id environmentId name baseUrl path status createdAt updatedAt"
@@ -257,7 +257,7 @@ class UpstreamApiService {
     async getUpstreamApi(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId,
         upstreamApiId
@@ -273,13 +273,13 @@ class UpstreamApiService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
@@ -287,7 +287,7 @@ class UpstreamApiService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -302,7 +302,7 @@ class UpstreamApiService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -318,7 +318,7 @@ class UpstreamApiService {
                 environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             })
                 .select(
                     "_id environmentId name baseUrl path authentication status createdAt updatedAt"
@@ -338,7 +338,7 @@ class UpstreamApiService {
     async updateUpstreamApi(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId,
         upstreamApiId,
@@ -355,14 +355,14 @@ class UpstreamApiService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -370,10 +370,10 @@ class UpstreamApiService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to update this upstream API."
@@ -385,7 +385,7 @@ class UpstreamApiService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -401,7 +401,7 @@ class UpstreamApiService {
                 environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!upstreamApi) {
@@ -474,7 +474,7 @@ class UpstreamApiService {
 
     async callGateway(
         organizationId,
-        teamId,
+        projectId,
         upstreamApiId,
         apiKeyContext,
         requestContext
@@ -497,12 +497,12 @@ class UpstreamApiService {
         }
 
         if (
-            apiKeyContext.teamId.toString() !==
-            teamId.toString()
+            apiKeyContext.projectId.toString() !==
+            projectId.toString()
         ) {
             throw new ApiError(
                 403,
-                "API key does not belong to this team."
+                "API key does not belong to this project."
             );
         }
 
@@ -510,7 +510,7 @@ class UpstreamApiService {
             await UpstreamApi.findOne({
                 _id: upstreamApiId,
                 organizationId,
-                teamId,
+                projectId,
                 environmentId: apiKeyContext.environmentId
             })
                 .select(
@@ -538,7 +538,7 @@ class UpstreamApiService {
             await Environment.findOne({
                 _id: apiKeyContext.environmentId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -559,7 +559,7 @@ class UpstreamApiService {
             await Integration.findOne({
                 _id: upstreamApi.integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -601,7 +601,7 @@ class UpstreamApiService {
                 await usageService.recordUsage({
                     apiKeyId: apiKeyContext.apiKeyId,
                     organizationId,
-                    teamId,
+                    projectId,
                     environmentId: apiKeyContext.environmentId,
                     upstreamApiId: upstreamApi._id,
                     method: requestContext?.method || "GET",

@@ -6,14 +6,14 @@ class IntegrationController {
 
         const {
             organizationId,
-            teamId
+            projectId
         } = req.params;
 
         const integration =
             await integrationService.createIntegration(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 req.body
             );
 
@@ -28,14 +28,14 @@ class IntegrationController {
 
         const {
             organizationId,
-            teamId
+            projectId
         } = req.params;
 
         const integrations =
             await integrationService.getIntegrations(
                 req.user._id,
                 organizationId,
-                teamId
+                projectId
             );
 
         return res.status(200).json({
@@ -48,7 +48,7 @@ class IntegrationController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId
         } = req.params;
 
@@ -56,7 +56,7 @@ class IntegrationController {
             await integrationService.getIntegration(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId
             );
 
@@ -70,7 +70,7 @@ class IntegrationController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId
         } = req.params;
 
@@ -78,7 +78,7 @@ class IntegrationController {
             await integrationService.updateIntegration(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 req.body
             );
@@ -94,7 +94,7 @@ class IntegrationController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId
         } = req.params;
 
@@ -102,7 +102,7 @@ class IntegrationController {
             await integrationService.disableIntegration(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId
             );
 

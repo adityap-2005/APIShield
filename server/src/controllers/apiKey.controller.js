@@ -7,7 +7,7 @@ class ApiKeyController {
             const result =
                 await apiKeyService.createApiKey(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.user._id,
                     req.body
                 );
@@ -23,12 +23,12 @@ class ApiKeyController {
         }
     }
 
-    async getTeamApiKeys(req, res, next) {
+    async getProjectApiKeys(req, res, next) {
         try {
             const apiKeys =
-                await apiKeyService.getTeamApiKeys(
+                await apiKeyService.getProjectApiKeys(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.user._id
                 );
 
@@ -48,7 +48,7 @@ class ApiKeyController {
             const apiKey =
                 await apiKeyService.getApiKeyById(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.params.apiKeyId,
                     req.user._id
                 );
@@ -69,7 +69,7 @@ class ApiKeyController {
             const apiKey =
                 await apiKeyService.updateApiKey(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.params.apiKeyId,
                     req.user._id,
                     req.body
@@ -91,7 +91,7 @@ class ApiKeyController {
             const result =
                 await apiKeyService.rotateApiKey(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.params.apiKeyId,
                     req.user._id
                 );
@@ -112,7 +112,7 @@ class ApiKeyController {
             const result =
                 await apiKeyService.revokeApiKey(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.params.apiKeyId,
                     req.user._id
                 );
@@ -133,7 +133,7 @@ class ApiKeyController {
             const result =
                 await apiKeyService.archiveApiKey(
                     req.params.organizationId,
-                    req.params.teamId,
+                    req.params.projectId,
                     req.params.apiKeyId,
                     req.user._id
                 );

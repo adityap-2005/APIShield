@@ -72,8 +72,8 @@ User
   └─ Membership  (org-level role: OWNER / ADMIN / DEVELOPER)
         └─ Organization
               ├─ Invitation  (PENDING / ACCEPTED / REJECTED / EXPIRED / CANCELLED)
-              ├─ Team
-              │     ├─ TeamMembership  (team-level role: TEAM_ADMIN / MEMBER)
+              ├─ Project
+              │     ├─ ProjectMembership  (project-level role: PROJECT_ADMIN / MEMBER)
               │     └─ ApiKey
               └─ AuditLog
 ```
@@ -90,11 +90,11 @@ User
 | `"ADMIN"` | Yes | Yes (DEVELOPER only) | |
 | `"DEVELOPER"` | No | No | Default on invitation |
 
-### Team Roles (TEAM_ROLES)
+### Project Roles (PROJECT_ROLES)
 
-| Value | Can Manage API Keys | Can Add/Remove Team Members |
+| Value | Can Manage API Keys | Can Add/Remove Project Members |
 |-------|--------------------|-----------------------------|
-| `"TEAM_ADMIN"` | Yes | Yes |
+| `"PROJECT_ADMIN"` | Yes | Yes |
 | `"MEMBER"` | No | No |
 
 ### Membership Status (MEMBERSHIP_STATUS)
@@ -140,8 +140,8 @@ User
 |-------|---------|
 | `"users:read"` | Read user data |
 | `"users:write"` | Write user data |
-| `"teams:read"` | Read team data |
-| `"teams:write"` | Write team data |
+| `"projects:read"` | Read project data |
+| `"projects:write"` | Write project data |
 | `"api_keys:read"` | Read API keys |
 | `"api_keys:write"` | Write API keys |
 
@@ -158,15 +158,15 @@ User
 ```
 USER_REGISTERED        ORGANIZATION_CREATED
 MEMBER_INVITED         MEMBER_REMOVED         MEMBER_ROLE_CHANGED
-TEAM_CREATED           TEAM_UPDATED           TEAM_DELETED
-TEAM_MEMBER_ADDED      TEAM_MEMBER_REMOVED
+PROJECT_CREATED           PROJECT_UPDATED           PROJECT_DELETED
+PROJECT_MEMBER_ADDED      PROJECT_MEMBER_REMOVED
 API_KEY_CREATED        API_KEY_UPDATED        API_KEY_ROTATED
 API_KEY_REVOKED        API_KEY_ARCHIVED
 ```
 
 ### Audit Entity Types (AUDIT_ENTITY_TYPES)
 
-`USER` / `ORGANIZATION` / `MEMBER` / `TEAM` / `API_KEY`
+`USER` / `ORGANIZATION` / `MEMBER` / `PROJECT` / `API_KEY`
 
 ---
 
@@ -471,7 +471,7 @@ Get all active members.
 }
 ```
 
-> `membershipId` is the Membership document's `_id`. Use this when adding members to teams or updating/removing members.
+> `membershipId` is the Membership document's `_id`. Use this when adding members to projects or updating/removing members.
 
 ---
 
@@ -535,11 +535,11 @@ Leave the organization (current user only).
 
 ---
 
-### 6. Teams
+### 6. Projects
 
-#### POST /api/v1/organizations/:organizationId/teams
+#### POST /api/v1/organizations/:organizationId/projects
 
-Create a team. Creator automatically becomes TEAM_ADMIN.
+Create a project. Creator automatically becomes PROJECT_ADMIN.
 
 **Authentication:** Required.
 **Authorization:** Any active org member.
@@ -556,7 +556,7 @@ Create a team. Creator automatically becomes TEAM_ADMIN.
 ```json
 {
   "success": true,
-  "message": "Team created successfully",
+  "message": "Project created successfully",
   "data": {
     "_id": "...", "organizationId": "...", "name": "...", "slug": "...",
     "description": "", "createdBy": "USER_ID", "updatedBy": "USER_ID",
@@ -569,40 +569,40 @@ Create a team. Creator automatically becomes TEAM_ADMIN.
 
 ---
 
-#### GET /api/v1/organizations/:organizationId/teams
+#### GET /api/v1/organizations/:organizationId/projects
 
-Get all teams in organization.
-
-**Authentication:** Required.
-**Authorization:** Any active member.
-
-**Success (200):**
-```json
-{ "success": true, "message": "Teams fetched successfully", "data": [ { ... } ] }
-```
-
----
-
-#### GET /api/v1/organizations/:organizationId/teams/:teamId
-
-Get a single team.
+Get all projects in organization.
 
 **Authentication:** Required.
 **Authorization:** Any active member.
 
 **Success (200):**
 ```json
-{ "success": true, "message": "Team fetched successfully", "data": { ... } }
+{ "success": true, "message": "Projects fetched successfully", "data": [ { ... } ] }
 ```
 
 ---
 
-#### PATCH /api/v1/organizations/:organizationId/teams/:teamId
+#### GET /api/v1/organizations/:organizationId/projects/:projectId
 
-Update team name/description.
+Get a single project.
 
 **Authentication:** Required.
-**Authorization:** TEAM_ADMIN of this team.
+**Authorization:** Any active member.
+
+**Success (200):**
+```json
+{ "success": true, "message": "Project fetched successfully", "data": { ... } }
+```
+
+---
+
+#### PATCH /api/v1/organizations/:organizationId/projects/:projectId
+
+Update project name/description.
+
+**Authentication:** Required.
+**Authorization:** PROJECT_ADMIN of this project.
 
 **Request body:**
 ```json
@@ -611,37 +611,37 @@ Update team name/description.
 
 **Success (200):**
 ```json
-{ "success": true, "message": "Team updated successfully", "data": { ... } }
+{ "success": true, "message": "Project updated successfully", "data": { ... } }
 ```
 
-**Errors:** `403` not team admin, `409` name taken.
+**Errors:** `403` not project admin, `409` name taken.
 
 ---
 
-#### DELETE /api/v1/organizations/:organizationId/teams/:teamId
+#### DELETE /api/v1/organizations/:organizationId/projects/:projectId
 
-Delete a team and all its memberships.
+Delete a project and all its memberships.
 
 **Authentication:** Required.
-**Authorization:** Org OWNER/ADMIN, or TEAM_ADMIN.
+**Authorization:** Org OWNER/ADMIN, or PROJECT_ADMIN.
 
 **Success (200):**
 ```json
-{ "success": true, "message": "Team deleted successfully" }
+{ "success": true, "message": "Project deleted successfully" }
 ```
 
 ---
 
-### 7. Team Members
+### 7. Project Members
 
-Base path: `/api/v1/organizations/:organizationId/teams/:teamId/members`
+Base path: `/api/v1/organizations/:organizationId/projects/:projectId/members`
 
 #### POST /members
 
-Add an org member to the team. New team members get role MEMBER by default.
+Add an org member to the project. New project members get role MEMBER by default.
 
 **Authentication:** Required.
-**Authorization:** TEAM_ADMIN.
+**Authorization:** PROJECT_ADMIN.
 
 **Request body:**
 ```json
@@ -654,36 +654,36 @@ Add an org member to the team. New team members get role MEMBER by default.
 ```json
 {
   "success": true,
-  "message": "Member added to team successfully",
+  "message": "Member added to project successfully",
   "data": {
-    "_id": "TEAM_MEMBERSHIP_ID",
-    "organizationId": "...", "teamId": "...", "membershipId": "...",
+    "_id": "PROJECT_MEMBERSHIP_ID",
+    "organizationId": "...", "projectId": "...", "membershipId": "...",
     "role": "MEMBER", "addedBy": "USER_ID",
     "createdAt": "...", "updatedAt": "..."
   }
 }
 ```
 
-**Errors:** `409` already in team, `404` member not found, `403` not team admin.
+**Errors:** `409` already in project, `404` member not found, `403` not project admin.
 
 ---
 
 #### GET /members
 
-Get all team members.
+Get all project members.
 
 **Authentication:** Required.
-**Authorization:** Org OWNER/ADMIN, or any team member.
+**Authorization:** Org OWNER/ADMIN, or any project member.
 
 **Success (200):**
 ```json
 {
   "success": true,
-  "message": "Team members fetched successfully",
+  "message": "Project members fetched successfully",
   "data": [
     {
-      "teamMembershipId": "TEAM_MEMBERSHIP_ID",
-      "teamRole": "TEAM_ADMIN",
+      "projectMembershipId": "PROJECT_MEMBERSHIP_ID",
+      "projectRole": "PROJECT_ADMIN",
       "organizationRole": "OWNER",
       "status": "ACTIVE",
       "user": { "id": "...", "name": "...", "email": "...", "avatar": null }
@@ -696,34 +696,34 @@ Get all team members.
 
 #### DELETE /members/:membershipId
 
-Remove a member from the team.
+Remove a member from the project.
 
-**URL param:** `membershipId` = the Membership `_id` (not TeamMembership `_id`).
+**URL param:** `membershipId` = the Membership `_id` (not ProjectMembership `_id`).
 
 **Authentication:** Required.
-**Authorization:** Org OWNER/ADMIN, or TEAM_ADMIN (but cannot remove another TEAM_ADMIN).
+**Authorization:** Org OWNER/ADMIN, or PROJECT_ADMIN (but cannot remove another PROJECT_ADMIN).
 
 **Success (200):**
 ```json
-{ "success": true, "message": "Member removed from team successfully" }
+{ "success": true, "message": "Member removed from project successfully" }
 ```
 
-**Errors:** `403` cannot remove team admin, `404` not found.
+**Errors:** `403` cannot remove project admin, `404` not found.
 
 ---
 
 #### PATCH /members/:membershipId
 
-Update a team member's role.
+Update a project member's role.
 
 **URL param:** `membershipId` = the Membership `_id`.
 
 **Authentication:** Required.
-**Authorization:** Org OWNER/ADMIN, or TEAM_ADMIN (with restrictions).
+**Authorization:** Org OWNER/ADMIN, or PROJECT_ADMIN (with restrictions).
 
 **Request body:**
 ```json
-{ "role": "TEAM_ADMIN | MEMBER" }
+{ "role": "PROJECT_ADMIN | MEMBER" }
 ```
 
 **Success (200):**
@@ -731,30 +731,30 @@ Update a team member's role.
 { "success": true, "message": "Member role updated successfully." }
 ```
 
-**Errors:** `400` same role, `400` own role, `403` cannot change another team admin's role.
+**Errors:** `400` same role, `400` own role, `403` cannot change another project admin's role.
 
 ---
 
 #### DELETE /leave
 
-Leave a team voluntarily.
+Leave a project voluntarily.
 
 **Authentication:** Required.
 
 **Success (200):**
 ```json
-{ "success": true, "message": "Left team successfully" }
+{ "success": true, "message": "Left project successfully" }
 ```
 
-**Errors:** `403` not a team member. Backend validates if last TEAM_ADMIN.
+**Errors:** `403` not a project member. Backend validates if last PROJECT_ADMIN.
 
 ---
 
 ### 8. API Keys
 
-Base path: `/api/v1/organizations/:organizationId/teams/:teamId/api-keys`
+Base path: `/api/v1/organizations/:organizationId/projects/:projectId/api-keys`
 
-**Authorization for ALL API key routes:** Must be active org member + team member + TEAM_ADMIN role.
+**Authorization for ALL API key routes:** Must be active org member + project member + PROJECT_ADMIN role.
 
 ---
 
@@ -783,7 +783,7 @@ Create an API key.
   "data": {
     "apiKey": "aps_dev_FULL_SECRET_KEY_HERE",
     "apiKeyDetails": {
-      "_id": "...", "organizationId": "...", "teamId": "...",
+      "_id": "...", "organizationId": "...", "projectId": "...",
       "name": "...", "description": "", "environment": "DEVELOPMENT",
       "publicKeyId": "aps_dev_abc1",
       "scopes": [], "status": "ACTIVE",
@@ -802,7 +802,7 @@ Create an API key.
 
 #### GET /
 
-Get all API keys for the team.
+Get all API keys for the project.
 
 **Authentication:** Required.
 
@@ -949,7 +949,7 @@ Get paginated audit logs.
       {
         "_id": "...",
         "organizationId": "...",
-        "teamId": null,
+        "projectId": null,
         "actor": { "id": "USER_ID", "name": "...", "email": "..." },
         "action": "API_KEY_CREATED",
         "entity": { "id": "...", "type": "API_KEY", "name": "..." },
@@ -1001,7 +1001,7 @@ Get a single audit log entry.
 
 | Feature | Status |
 |---------|--------|
-| Dashboard summary stats (counts of teams, keys, members) | No single endpoint; derive from individual list calls |
+| Dashboard summary stats (counts of projects, keys, members) | No single endpoint; derive from individual list calls |
 | Analytics / request tracking | Not implemented |
 | Update organization (name/description/website/logo) | No PATCH endpoint |
 | Update user profile (name/avatar/password) | No endpoint |
@@ -1032,10 +1032,10 @@ The user may belong to multiple organizations. Store the selected `organizationI
 | Identifier | Meaning |
 |-----------|---------|
 | `membershipId` | `_id` of a `Membership` document |
-| `teamMembershipId` | `_id` of a `TeamMembership` document |
+| `projectMembershipId` | `_id` of a `ProjectMembership` document |
 | `apiKeyId` | `_id` of an `ApiKey` document |
 | `organizationId` | `_id` of an `Organization` document |
-| `teamId` | `_id` of a `Team` document |
+| `projectId` | `_id` of a `Project` document |
 | `invitationId` | `_id` of an `Invitation` document |
 | `auditLogId` | `_id` of an `AuditLog` document |
 | `publicKeyId` | Safe display prefix of an API key (e.g. `aps_dev_abc1`) |

@@ -1,15 +1,15 @@
 import ApiKey from "../models/apiKey.model.js";
 import ApiError from "../utils/ApiError.js";
-import { TEAM_ROLES } from "../constants/teamRoles.js";
+import { PROJECT_ROLES } from "../constants/projectRoles.js";
 
 export async function _getApiKeyById(
         apiKeyId,
-        teamId,
+        projectId,
         organizationId
     ) {
         const apiKey = await ApiKey.findOne({
             _id: apiKeyId,
-            teamId,
+            projectId,
             organizationId
         });
 
@@ -24,16 +24,16 @@ export async function _getApiKeyById(
     }
 
 export function _authorizeApiKeyManagement(
-        teamMembership
+        projectMembership
     ) {
 
         if (
-            teamMembership.role !==
-            TEAM_ROLES.TEAM_ADMIN
+            projectMembership.role !==
+            PROJECT_ROLES.PROJECT_ADMIN
         ) {
             throw new ApiError(
                 403,
-                "Only Team Admin can manage API Keys."
+                "Only Project Admin can manage API Keys."
             );
         }
 

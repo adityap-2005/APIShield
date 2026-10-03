@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import Team from "../models/team.model.js";
+import Project from "../models/project.model.js";
 import ApiKey from "../models/apiKey.model.js";
 import ApiUsage from "../models/apiUsage.model.js";
 import Invitation from "../models/invitation.model.js";
@@ -231,7 +231,7 @@ class OrganizationService {
                 { session }
             );
 
-            await Team.deleteMany(
+            await Project.deleteMany(
                 { organizationId },
                 { session }
             );

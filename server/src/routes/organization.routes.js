@@ -3,7 +3,7 @@ import protect from "../middleware/auth.middleware.js";
 import organizationController from "../controllers/organization.controller.js";
 import invitationController from "../controllers/invitation.controller.js";
 import membershipController from "../controllers/membership.controller.js";
-import teamController from "../controllers/team.controller.js";
+import projectController from "../controllers/project.controller.js";
 
 const router = new express.Router();
 
@@ -68,68 +68,68 @@ router.delete(
     membershipController.removeMember
 );
 
-// Team Management
+// Project Management
 
 router.post(
-    "/:organizationId/teams",
+    "/:organizationId/projects",
     protect,
-    teamController.createTeam
+    projectController.createProject
 );
 
 router.get(
-    "/:organizationId/teams",
+    "/:organizationId/projects",
     protect,
-    teamController.getOrganizationTeams
+    projectController.getOrganizationProjects
 );
 
 router.get(
-    "/:organizationId/teams/:teamId",
+    "/:organizationId/projects/:projectId",
     protect,
-    teamController.getTeamById
+    projectController.getProjectById
 );
 
 router.patch(
-    "/:organizationId/teams/:teamId",
+    "/:organizationId/projects/:projectId",
     protect,
-    teamController.updateTeam
+    projectController.updateProject
 );
 
 router.delete(
-    "/:organizationId/teams/:teamId",
+    "/:organizationId/projects/:projectId",
     protect,
-    teamController.deleteTeam
+    projectController.deleteProject
 );
 
-// Team Members
+// Project Members
 
 router.post(
-    "/:organizationId/teams/:teamId/members",
+    "/:organizationId/projects/:projectId/members",
     protect,
-    teamController.addTeamMember
+    projectController.addProjectMember
 );
 
 router.get(
-    "/:organizationId/teams/:teamId/members",
+    "/:organizationId/projects/:projectId/members",
     protect,
-    teamController.getTeamMembers
+    projectController.getProjectMembers
 );
 
 router.delete(
-    "/:organizationId/teams/:teamId/members/:membershipId",
+    "/:organizationId/projects/:projectId/members/:membershipId",
     protect,
-    teamController.removeTeamMember
+    projectController.removeProjectMember
 );
 
 router.patch(
-    "/:organizationId/teams/:teamId/members/:membershipId",
+    "/:organizationId/projects/:projectId/members/:membershipId",
     protect,
-    teamController.updateTeamMemberRole
+    projectController.updateProjectMemberRole
 );
 
 router.delete(
-    "/:organizationId/teams/:teamId/leave",
+    "/:organizationId/projects/:projectId/leave",
     protect,
-    teamController.leaveTeam
+    projectController.leaveProject
 );
 
 export default router;

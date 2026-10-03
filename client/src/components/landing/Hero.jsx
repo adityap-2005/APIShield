@@ -52,7 +52,7 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.25 }}
               className="text-base text-gray-400 max-w-xl leading-relaxed"
             >
-              APIShield helps developers and teams create, manage, rotate, and monitor API credentials from one secure workspace.
+              APIShield helps developers and projects create, manage, rotate, and monitor API credentials from one secure workspace.
             </motion.p>
 
             {/* 4. Action Buttons */}

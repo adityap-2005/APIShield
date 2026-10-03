@@ -57,7 +57,7 @@ export function getRoleVariant(role) {
     case "OWNER":      return "purple";
     case "ADMIN":      return "info";
     case "DEVELOPER":  return "default";
-    case "TEAM_ADMIN": return "info";
+    case "PROJECT_ADMIN": return "info";
     case "MEMBER":     return "default";
     default:           return "default";
   }

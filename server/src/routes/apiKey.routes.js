@@ -16,7 +16,7 @@ router.post(
 router.get(
     "/",
     protect,
-    apiKeyController.getTeamApiKeys
+    apiKeyController.getProjectApiKeys
 );
 
 router.get(

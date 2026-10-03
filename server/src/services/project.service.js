@@ -1,42 +1,42 @@
-import Team from "../models/team.model.js";
-import TeamMembership from "../models/teamMembership.model.js"
+import Project from "../models/project.model.js";
+import ProjectMembership from "../models/projectMembership.model.js"
 
 import auditLogService from "./auditLog.service.js";
 
 import ApiError from "../utils/ApiError.js";
 
 import { ORGANIZATION_ROLES } from "../constants/organizationRoles.js";
-import { TEAM_ROLES } from "../constants/teamRoles.js";
+import { PROJECT_ROLES } from "../constants/projectRoles.js";
 import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 import {
-    _getTeamById,
-    _getTeamBySlug,
-    _validateTeamRole,
-    _validateTeamRoleValue,
-    _validateLastTeamAdmin
-} from "../helpers/team.helper.js"
+    _getProjectById,
+    _getProjectBySlug,
+    _validateProjectRole,
+    _validateProjectRoleValue,
+    _validateLastProjectAdmin
+} from "../helpers/project.helper.js"
 
 import {
     _getOrganizationById
 } from "../helpers/organization.helper.js"
 
-import { 
+import {
     _getActiveMembership,
     _getMembershipById,
-    _getTeamMembership,
-    _getActiveTeamMembership
+    _getProjectMembership,
+    _getActiveProjectMembership
 } from "../helpers/membership.helper.js"
 
-class TeamService {
+class ProjectService {
 
-    async createTeam(
+    async createProject(
         organizationId,
         userId,
-        teamData
+        projectData
     ) {
-        const { name, description } = teamData;
+        const { name, description } = projectData;
 
         await _getOrganizationById(
             organizationId
@@ -53,20 +53,20 @@ class TeamService {
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
 
-        const existingTeam =
-            await _getTeamBySlug(
+        const existingProject =
+            await _getProjectBySlug(
                 slug,
                 organizationId
             );
 
-        if (existingTeam) {
+        if (existingProject) {
             throw new ApiError(
                 409,
-                "Team with this name already exists."
+                "Project with this name already exists."
             );
         }
 
-        const team = await Team.create({
+        const project = await Project.create({
             organizationId,
             name,
             slug,
@@ -75,11 +75,11 @@ class TeamService {
             updatedBy: userId,
         });
 
-        await TeamMembership.create({
+        await ProjectMembership.create({
             organizationId,
-            teamId: team._id,
+            projectId: project._id,
             membershipId: requesterMembership._id,
-            role: TEAM_ROLES.TEAM_ADMIN,
+            role: PROJECT_ROLES.PROJECT_ADMIN,
             addedBy: userId
         });
 
@@ -89,27 +89,27 @@ class TeamService {
         await auditLogService.log({
             organizationId,
 
-            teamId: team._id,
+            projectId: project._id,
 
             actor,
 
             action:
-                AUDIT_ACTIONS.TEAM_CREATED,
+                AUDIT_ACTIONS.PROJECT_CREATED,
 
             entity: {
-                id: team._id,
+                id: project._id,
                 type:
-                    AUDIT_ENTITY_TYPES.TEAM,
-                name: team.name
+                    AUDIT_ENTITY_TYPES.PROJECT,
+                name: project.name
             },
 
             metadata: {}
         });
 
-        return team;
+        return project;
     }
 
-    async getOrganizationTeams(
+    async getOrganizationProjects(
         organizationId,
         userId
     ) {
@@ -117,48 +117,69 @@ class TeamService {
             organizationId
         );
 
-        await _getActiveMembership(
+        const membership = await _getActiveMembership(
             userId,
             organizationId
         );
 
-        const teams = await Team.find({
-            organizationId,
-        })
-            .sort({ createdAt: -1 });
+        const isOrganizationAdmin = [
+            ORGANIZATION_ROLES.OWNER,
+            ORGANIZATION_ROLES.ADMIN,
+        ].includes(membership.role);
 
-        return teams;
+        const projectQuery = { organizationId };
+        if (!isOrganizationAdmin) {
+            const projectMemberships = await ProjectMembership.find({
+                organizationId,
+                membershipId: membership._id,
+            }).select("projectId");
+            projectQuery._id = {
+                $in: projectMemberships.map(({ projectId }) => projectId),
+            };
+        }
+
+        const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
+
+        return projects;
     }
 
-    async getTeamById(
+    async getProjectById(
         organizationId,
-        teamId,
+        projectId,
         userId
     ) {
         await _getOrganizationById(
             organizationId
         );
 
-        await _getActiveMembership(
+        const membership = await _getActiveMembership(
             userId,
             organizationId
         );
 
-        const team = await _getTeamById(
-            teamId,
+        const project = await _getProjectById(
+            projectId,
             organizationId
         );
 
-        return team;
+        const isOrganizationAdmin = [
+            ORGANIZATION_ROLES.OWNER,
+            ORGANIZATION_ROLES.ADMIN,
+        ].includes(membership.role);
+        if (!isOrganizationAdmin) {
+            await _getActiveProjectMembership(projectId, membership._id);
+        }
+
+        return project;
     }
 
-    async updateTeam(
+    async updateProject(
         organizationId,
-        teamId,
+        projectId,
         userId,
-        teamData
+        projectData
     ) {
-        const { name, description } = teamData;
+        const { name, description } = projectData;
 
         await _getOrganizationById(
             organizationId
@@ -170,25 +191,25 @@ class TeamService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
-        _validateTeamRole(
-            teamMembership,
+        _validateProjectRole(
+            projectMembership,
             [
-                TEAM_ROLES.TEAM_ADMIN
+                PROJECT_ROLES.PROJECT_ADMIN
             ]
         );
 
-        const team = await _getTeamById(
-            teamId,
+        const project = await _getProjectById(
+            projectId,
             organizationId
         );
 
-        if (name && name !== team.name) {
+        if (name && name !== project.name) {
 
             const slug = name
                 .trim()
@@ -196,41 +217,41 @@ class TeamService {
                 .replace(/\s+/g, "-")
                 .replace(/[^a-z0-9-]/g, "");
 
-            const existingTeam =
-                await _getTeamBySlug(
+            const existingProject =
+                await _getProjectBySlug(
                     slug,
                     organizationId
                 );
 
             if (
-                existingTeam &&
-                existingTeam._id.toString() !==
-                team._id.toString()
+                existingProject &&
+                existingProject._id.toString() !==
+                project._id.toString()
             ) {
                 throw new ApiError(
                     409,
-                    "Team with this name already exists."
+                    "Project with this name already exists."
                 );
             }
 
-            team.name = name;
-            team.slug = slug;
+            project.name = name;
+            project.slug = slug;
         }
 
         if (description !== undefined) {
-            team.description = description;
+            project.description = description;
         }
 
-        team.updatedBy = userId;
+        project.updatedBy = userId;
 
-        await team.save();
+        await project.save();
 
-        return team;
+        return project;
     }
 
-    async deleteTeam(
+    async deleteProject(
         organizationId,
-        teamId,
+        projectId,
         userId
     ) {
         await _getOrganizationById(
@@ -251,30 +272,30 @@ class TeamService {
 
         if (!isOrganizationAdmin) {
 
-            const teamMembership =
-                await _getActiveTeamMembership(
-                    teamId,
+            const projectMembership =
+                await _getActiveProjectMembership(
+                    projectId,
                     organizationMembership._id
                 );
 
-            _validateTeamRole(
-                teamMembership,
+            _validateProjectRole(
+                projectMembership,
                 [
-                    TEAM_ROLES.TEAM_ADMIN
+                    PROJECT_ROLES.PROJECT_ADMIN
                 ]
             );
         }
 
-        const team = await _getTeamById(
-            teamId,
+        const project = await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await TeamMembership.deleteMany({
-            teamId: team._id
+        await ProjectMembership.deleteMany({
+            projectId: project._id
         });
 
-        await team.deleteOne();
+        await project.deleteOne();
 
         const actor =
             await auditLogService.getActor(userId);
@@ -282,18 +303,18 @@ class TeamService {
         await auditLogService.log({
             organizationId,
 
-            teamId: team._id,
+            projectId: project._id,
 
             actor,
 
             action:
-                AUDIT_ACTIONS.TEAM_DELETED,
+                AUDIT_ACTIONS.PROJECT_DELETED,
 
             entity: {
-                id: team._id,
+                id: project._id,
                 type:
-                    AUDIT_ENTITY_TYPES.TEAM,
-                name: team.name
+                    AUDIT_ENTITY_TYPES.PROJECT,
+                name: project.name
             },
 
             metadata: {}
@@ -302,9 +323,9 @@ class TeamService {
         return;
     }
 
-    async addTeamMember(
+    async addProjectMember(
         organizationId,
-        teamId,
+        projectId,
         membershipId,
         userId
     ) {
@@ -318,21 +339,21 @@ class TeamService {
                 organizationId
             );
 
-        const requesterTeamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const requesterProjectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
-        _validateTeamRole(
-            requesterTeamMembership,
+        _validateProjectRole(
+            requesterProjectMembership,
             [
-                TEAM_ROLES.TEAM_ADMIN
+                PROJECT_ROLES.PROJECT_ADMIN
             ]
         );
 
-        const team = await _getTeamById(
-            teamId,
+        const project = await _getProjectById(
+            projectId,
             organizationId
         );
 
@@ -341,25 +362,25 @@ class TeamService {
             organizationId
         );
 
-        const existingTeamMember =
-            await TeamMembership.findOne({
-                teamId,
+        const existingProjectMember =
+            await ProjectMembership.findOne({
+                projectId,
                 membershipId,
             });
 
-        if (existingTeamMember) {
+        if (existingProjectMember) {
             throw new ApiError(
                 409,
-                "Member is already part of this team."
+                "Member is already part of this project."
             );
         }
 
-        const teamMembership =
-            await TeamMembership.create({
+        const projectMembership =
+            await ProjectMembership.create({
                 organizationId,
-                teamId,
+                projectId,
                 membershipId,
-                role: TEAM_ROLES.MEMBER,
+                role: PROJECT_ROLES.MEMBER,
                 addedBy: userId,
             });
 
@@ -369,32 +390,32 @@ class TeamService {
         await auditLogService.log({
             organizationId,
 
-            teamId,
+            projectId,
 
             actor,
 
             action:
-                AUDIT_ACTIONS.TEAM_MEMBER_ADDED,
+                AUDIT_ACTIONS.PROJECT_MEMBER_ADDED,
 
             entity: {
-                id: team._id,
+                id: project._id,
                 type:
-                    AUDIT_ENTITY_TYPES.TEAM,
-                name: team.name
+                    AUDIT_ENTITY_TYPES.PROJECT,
+                name: project.name
             },
 
             metadata: {
                 memberId: membership._id,
-                role: teamMembership.role
+                role: projectMembership.role
             }
         });
 
-        return teamMembership;
+        return projectMembership;
     }
 
-    async getTeamMembers(
+    async getProjectMembers(
         organizationId,
-        teamId,
+        projectId,
         userId
     ) {
         await _getOrganizationById(
@@ -414,20 +435,20 @@ class TeamService {
             ].includes(organizationMembership.role);
 
         if (!isOrganizationAdmin) {
-            await _getActiveTeamMembership(
-                teamId,
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
         }
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembers = await TeamMembership.find({
+        const projectMembers = await ProjectMembership.find({
             organizationId,
-            teamId,
+            projectId,
         })
             .populate({
                 path: "membershipId",
@@ -437,11 +458,12 @@ class TeamService {
                 },
             });
 
-        return teamMembers.map(member => ({
-            teamMembershipId: member._id,
-            teamRole: member.role,
+        return projectMembers.map(member => ({
+            projectMembershipId: member._id,
+            projectRole: member.role,
             organizationRole: member.membershipId.role,
             status: member.membershipId.status,
+            createdAt: member.createdAt,
             user: {
                 id: member.membershipId.userId._id,
                 name: member.membershipId.userId.name,
@@ -451,9 +473,9 @@ class TeamService {
         }));
     }
 
-    async removeTeamMember(
+    async removeProjectMember(
         organizationId,
-        teamId,
+        projectId,
         membershipId,
         userId
     ) {
@@ -473,22 +495,22 @@ class TeamService {
         ].includes(organizationMembership.role);
 
         if (!isOrganizationAdmin) {
-            const requesterTeamMembership =
-                await _getActiveTeamMembership(
-                    teamId,
+            const requesterProjectMembership =
+                await _getActiveProjectMembership(
+                    projectId,
                     organizationMembership._id
                 );
 
-            _validateTeamRole(
-                requesterTeamMembership,
+            _validateProjectRole(
+                requesterProjectMembership,
                 [
-                    TEAM_ROLES.TEAM_ADMIN
+                    PROJECT_ROLES.PROJECT_ADMIN
                 ]
             );
         }
 
-        const team = await _getTeamById(
-            teamId,
+        const project = await _getProjectById(
+            projectId,
             organizationId
         );
 
@@ -497,60 +519,60 @@ class TeamService {
             organizationId
         );
 
-        const teamMembership =
-            await _getTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getProjectMembership(
+                projectId,
                 membershipId
             );
 
         if (
             !isOrganizationAdmin &&
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN
         ) {
             throw new ApiError(
                 403,
-                "You cannot remove another Team Admin."
+                "You cannot remove another Project Admin."
             );
         }
 
-        await teamMembership.deleteOne();
+        await projectMembership.deleteOne();
 
         const actor =
             await auditLogService.getActor(userId);
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 
             action:
-                AUDIT_ACTIONS.TEAM_MEMBER_REMOVED,
+                AUDIT_ACTIONS.PROJECT_MEMBER_REMOVED,
 
             entity: {
-                id: team._id,
+                id: project._id,
                 type:
-                    AUDIT_ENTITY_TYPES.TEAM,
-                name: team.name
+                    AUDIT_ENTITY_TYPES.PROJECT,
+                name: project.name
             },
 
             metadata: {
                 memberId: membership._id,
-                role: teamMembership.role
+                role: projectMembership.role
             }
         });
 
         return;
     }
 
-    async updateTeamMemberRole(
+    async updateProjectMemberRole(
         organizationId,
-        teamId,
+        projectId,
         membershipId,
         userId,
         role
     ) {
-        await _validateTeamRoleValue(role);
+        await _validateProjectRoleValue(role);
 
         await _getOrganizationById(
             organizationId
@@ -570,22 +592,22 @@ class TeamService {
 
         if (!isOrganizationAdmin) {
 
-            const requesterTeamMembership =
-                await _getActiveTeamMembership(
-                    teamId,
+            const requesterProjectMembership =
+                await _getActiveProjectMembership(
+                    projectId,
                     organizationMembership._id
                 );
 
-            _validateTeamRole(
-                requesterTeamMembership,
+            _validateProjectRole(
+                requesterProjectMembership,
                 [
-                    TEAM_ROLES.TEAM_ADMIN
+                    PROJECT_ROLES.PROJECT_ADMIN
                 ]
             );
         }
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
@@ -594,112 +616,112 @@ class TeamService {
             organizationId
         );
 
-        const teamMembership =
-            await _getTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getProjectMembership(
+                projectId,
                 membershipId
             );
 
-        if (teamMembership.role === role) {
+        if (projectMembership.role === role) {
             throw new ApiError(
                 400,
-                "Team member already has this role."
+                "Project member already has this role."
             );
         }
 
         if (
             organizationMembership._id.equals(
-                teamMembership.membershipId
+                projectMembership.membershipId
             )
         ) {
             throw new ApiError(
                 400,
-                "You cannot change your own team role."
+                "You cannot change your own project role."
             );
         }
 
-        if (teamMembership.role === role) {
+        if (projectMembership.role === role) {
             throw new ApiError(
                 400,
-                "Team member already has this role."
+                "Project member already has this role."
             );
         }
 
         if (
             !isOrganizationAdmin &&
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN
         ) {
             throw new ApiError(
                 403,
-                "You cannot change another Team Admin's role."
+                "You cannot change another Project Admin's role."
             );
         }
 
         if (
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN &&
-            role === TEAM_ROLES.MEMBER
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN &&
+            role === PROJECT_ROLES.MEMBER
         ) {
-            await _validateLastTeamAdmin(
-                teamMembership
+            await _validateLastProjectAdmin(
+                projectMembership
             );
         }
 
-        const previousRole = teamMembership.role;
+        const previousRole = projectMembership.role;
 
-        teamMembership.role = role;
+        projectMembership.role = role;
 
-        await teamMembership.save();
+        await projectMembership.save();
 
-        if (role === TEAM_ROLES.TEAM_ADMIN) {
+        if (role === PROJECT_ROLES.PROJECT_ADMIN) {
 
             const actor =
                 await auditLogService.getActor(userId);
 
-            const team =
-                await _getTeamById(
-                    teamId,
+            const project =
+                await _getProjectById(
+                    projectId,
                     organizationId
                 );
 
             await auditLogService.log({
                 organizationId,
 
-                teamId,
+                projectId,
 
                 actor,
 
                 action:
-                    AUDIT_ACTIONS.TEAM_ADMIN_ASSIGNED,
+                    AUDIT_ACTIONS.PROJECT_ADMIN_ASSIGNED,
 
                 entity: {
-                    id: team._id,
+                    id: project._id,
                     type:
-                        AUDIT_ENTITY_TYPES.TEAM,
-                    name: team.name
+                        AUDIT_ENTITY_TYPES.PROJECT,
+                    name: project.name
                 },
 
                 metadata: {
                     memberId:
-                        teamMembership.membershipId,
+                        projectMembership.membershipId,
 
                     previousRole,
 
                     newRole:
-                        TEAM_ROLES.TEAM_ADMIN
+                        PROJECT_ROLES.PROJECT_ADMIN
                 }
             });
         }
 
         return {
-            teamMembershipId: teamMembership._id,
-            membershipId: teamMembership.membershipId,
-            role: teamMembership.role
+            projectMembershipId: projectMembership._id,
+            membershipId: projectMembership.membershipId,
+            role: projectMembership.role
         };
     }
 
-    async leaveTeam(
+    async leaveProject(
         organizationId,
-        teamId,
+        projectId,
         userId
     ) {
         await _getOrganizationById(
@@ -712,27 +734,27 @@ class TeamService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
-        await _validateLastTeamAdmin(
-            teamMembership
+        await _validateLastProjectAdmin(
+            projectMembership
         );
 
-        await teamMembership.deleteOne();
+        await projectMembership.deleteOne();
 
         return;
     }
 }
 
-const teamService = new TeamService();
+const projectService = new ProjectService();
 
-export default teamService;
+export default projectService;

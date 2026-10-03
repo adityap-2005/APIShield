@@ -25,7 +25,7 @@ export default function Features() {
     {
       id: "access",
       title: "Controlled Access",
-      description: "Manage organization members, teams, invitations, and roles from one place.",
+      description: "Manage organization members, projects, invitations, and roles from one place.",
       icon: Users,
       iconBg: "bg-blue-950/60 border-blue-800/60 text-blue-400",
       content: (
@@ -76,7 +76,7 @@ export default function Features() {
               <span className="text-gray-500">11:40:12</span>
               <span className="text-blue-400">member_invited</span>
             </div>
-            <span className="text-gray-500">team-lead</span>
+            <span className="text-gray-500">project-lead</span>
           </div>
           <div className="flex items-center justify-between text-gray-400 border-t border-white/5 pt-1.5">
             <div className="flex items-center gap-2">

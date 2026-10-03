@@ -44,7 +44,7 @@ export default function PersonalSettingsPage() {
           <div className="flex items-center justify-between p-3.5 bg-[#1c2128] rounded-xl border border-white/5">
             <div>
               <span className="font-semibold text-white block">Email Notifications</span>
-              <span className="text-[11px] text-gray-400">Receive alerts for team invitations and key rotations</span>
+              <span className="text-[11px] text-gray-400">Receive alerts for project invitations and key rotations</span>
             </div>
             <Badge variant="success">Enabled</Badge>
           </div>

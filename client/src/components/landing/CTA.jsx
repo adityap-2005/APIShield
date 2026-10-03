@@ -39,7 +39,7 @@ export default function CTA() {
           transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
           className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto leading-relaxed"
         >
-          Bring API keys, teams, access control, usage, and audit activity into one unified workspace.
+          Bring API keys, projects, access control, usage, and audit activity into one unified workspace.
         </motion.p>
 
         {/* Animated Buttons */}

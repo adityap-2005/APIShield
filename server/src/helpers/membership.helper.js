@@ -1,5 +1,5 @@
 import Membership from "../models/membership.model.js";
-import TeamMembership from "../models/teamMembership.model.js";
+import ProjectMembership from "../models/projectMembership.model.js";
 import ApiError from "../utils/ApiError.js";
 import { MEMBERSHIP_ROLES } from "../constants/membershipRoles.js";
 import { MEMBERSHIP_STATUS } from "../constants/membershipStatus.js";
@@ -51,37 +51,37 @@ export async function _getMembershipById(
         return membership;
     }
 
-export async function _getTeamMembership(teamId, membershipId) {
-        const teamMembership = await TeamMembership.findOne({
-            teamId,
+export async function _getProjectMembership(projectId, membershipId) {
+        const projectMembership = await ProjectMembership.findOne({
+            projectId,
             membershipId,
         });
 
-        if (!teamMembership) {
-            throw new ApiError(404, "Team membership not found.");
+        if (!projectMembership) {
+            throw new ApiError(404, "Project membership not found.");
         }
 
-        return teamMembership;
+        return projectMembership;
     }
 
-export async function _getActiveTeamMembership(
-        teamId,
+export async function _getActiveProjectMembership(
+        projectId,
         membershipId
     ) {
-        const teamMembership =
-            await TeamMembership.findOne({
-                teamId,
+        const projectMembership =
+            await ProjectMembership.findOne({
+                projectId,
                 membershipId
             });
 
-        if (!teamMembership) {
+        if (!projectMembership) {
             throw new ApiError(
                 403,
-                "You are not a member of this team."
+                "You are not a member of this project."
             );
         }
 
-        return teamMembership;
+        return projectMembership;
     }
 
 export async function _validateOrganizationRole(

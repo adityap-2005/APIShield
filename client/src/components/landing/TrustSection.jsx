@@ -4,7 +4,7 @@ import { KeyRound, Users, ShieldCheck, BarChart3, Lock } from "lucide-react";
 export default function TrustSection() {
   const pillars = [
     { label: "API KEY MANAGEMENT", icon: KeyRound },
-    { label: "TEAM ACCESS", icon: Users },
+    { label: "PROJECT ACCESS", icon: Users },
     { label: "AUDIT TRAIL", icon: ShieldCheck },
     { label: "USAGE INSIGHTS", icon: BarChart3 },
     { label: "SECURE CREDENTIALS", icon: Lock },
@@ -20,7 +20,7 @@ export default function TrustSection() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <p className="text-[11px] font-mono tracking-widest text-gray-500 uppercase">
-          Built for modern API teams
+          Built for modern API projects
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 pt-1">

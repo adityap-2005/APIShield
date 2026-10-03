@@ -5,7 +5,7 @@ import ApiError from "../utils/ApiError.js";
 export const _getUpstreamApiWithCredential = async (
     upstreamApiId,
     organizationId,
-    teamId,
+    projectId,
     environmentId
 ) => {
 
@@ -13,7 +13,7 @@ export const _getUpstreamApiWithCredential = async (
         await UpstreamApi.findOne({
             _id: upstreamApiId,
             organizationId,
-            teamId,
+            projectId,
             environmentId
         }).select(
             "+encryptedCredential +encryptionIv +encryptionAuthTag"

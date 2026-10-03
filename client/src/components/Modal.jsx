@@ -24,7 +24,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" })
       onClick={onClose}
     >
       <div
-        className={`w-full ${sizeClass} bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-blue-950/20 overflow-hidden text-left`}
+        className={`w-full ${sizeClass} bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden text-left`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

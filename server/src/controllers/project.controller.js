@@ -1,10 +1,10 @@
-import teamService from "../services/team.service.js"
+import projectService from "../services/project.service.js"
 
-class TeamController {
+class ProjectController {
 
-    async createTeam(req, res, next) {
+    async createProject(req, res, next) {
         try {
-            const team = await teamService.createTeam(
+            const project = await projectService.createProject(
                 req.params.organizationId,
                 req.user._id,
                 req.body
@@ -12,115 +12,115 @@ class TeamController {
 
             return res.status(201).json({
                 success: true,
-                message: "Team created successfully",
-                data: team,
+                message: "Project created successfully",
+                data: project,
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async getOrganizationTeams(req, res, next) {
+    async getOrganizationProjects(req, res, next) {
         try {
-            const teams = await teamService.getOrganizationTeams(
+            const projects = await projectService.getOrganizationProjects(
                 req.params.organizationId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Teams fetched successfully",
-                data: teams,
+                message: "Projects fetched successfully",
+                data: projects,
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async getTeamById(req, res, next) {
+    async getProjectById(req, res, next) {
         try {
-            const team = await teamService.getTeamById(
+            const project = await projectService.getProjectById(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Team fetched successfully",
-                data: team,
+                message: "Project fetched successfully",
+                data: project,
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async updateTeam(req, res, next) {
+    async updateProject(req, res, next) {
         try {
-            const team = await teamService.updateTeam(
+            const project = await projectService.updateProject(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.user._id,
                 req.body
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Team updated successfully",
-                data: team,
+                message: "Project updated successfully",
+                data: project,
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async deleteTeam(req, res, next) {
+    async deleteProject(req, res, next) {
         try {
-            await teamService.deleteTeam(
+            await projectService.deleteProject(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Team deleted successfully",
+                message: "Project deleted successfully",
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async addTeamMember(req, res, next) {
+    async addProjectMember(req, res, next) {
         try {
-            const teamMembership = await teamService.addTeamMember(
+            const projectMembership = await projectService.addProjectMember(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.body.membershipId,
                 req.user._id
             );
 
             return res.status(201).json({
                 success: true,
-                message: "Member added to team successfully",
-                data: teamMembership,
+                message: "Member added to project successfully",
+                data: projectMembership,
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async getTeamMembers(req, res, next) {
+    async getProjectMembers(req, res, next) {
         try {
-            const members = await teamService.getTeamMembers(
+            const members = await projectService.getProjectMembers(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Team members fetched successfully",
+                message: "Project members fetched successfully",
                 data: members,
             });
         } catch (error) {
@@ -128,29 +128,29 @@ class TeamController {
         }
     }
 
-    async removeTeamMember(req, res, next) {
+    async removeProjectMember(req, res, next) {
         try {
-            await teamService.removeTeamMember(
+            await projectService.removeProjectMember(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.params.membershipId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Member removed from team successfully",
+                message: "Member removed from project successfully",
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async updateTeamMemberRole(req, res, next) {
+    async updateProjectMemberRole(req, res, next) {
         try {
-            await teamService.updateTeamMemberRole(
+            await projectService.updateProjectMemberRole(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.params.membershipId,
                 req.user._id,
                 req.body.role
@@ -165,17 +165,17 @@ class TeamController {
         }
     }
 
-    async leaveTeam(req, res, next) {
+    async leaveProject(req, res, next) {
         try {
-            await teamService.leaveTeam(
+            await projectService.leaveProject(
                 req.params.organizationId,
-                req.params.teamId,
+                req.params.projectId,
                 req.user._id
             );
 
             return res.status(200).json({
                 success: true,
-                message: "Left team successfully",
+                message: "Left project successfully",
             });
         } catch (error) {
             next(error);
@@ -183,6 +183,6 @@ class TeamController {
     }
 }
 
-const teamController = new TeamController();
+const projectController = new ProjectController();
 
-export default teamController;
+export default projectController;

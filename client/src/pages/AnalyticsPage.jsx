@@ -1,47 +1,52 @@
 /**
  * AnalyticsPage.jsx
  *
- * Full analytics dashboard using exact fields returned by backend GET /organizations/:orgId/analytics:
- * - overview (totalRequests, successfulRequests, failedRequests, averageResponseTime)
- * - requestsOverTime
- * - requestsByApiKey
- * - requestsByTeam
- * - requestsByMethod
- * - requestsByEnvironment
- * - requestsByStatusCode
- * - topEndpoints
+ * Real-time Gateway Analytics, Throughput, and Error breakdown.
+ * Uses real backend data only.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
 import analyticsApi from "../api/analytics";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
-import EmptyState from "../components/EmptyState";
-import Badge from "../components/Badge";
 
-import { BarChart3, TrendingUp, Key, Users, Globe, Code, FileText, Activity } from "lucide-react";
+import {
+  BarChart3,
+  TrendingUp,
+  Clock,
+  KeyRound,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronDown,
+  Activity,
+  Layers,
+  Server
+} from "lucide-react";
 
 export default function AnalyticsPage() {
   const { activeOrg } = useOrg();
+  const params = useParams();
+  const orgId = params.organizationId || activeOrg?._id;
 
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const loadAnalytics = async () => {
-    if (!activeOrg) return;
+    if (!orgId) return;
     try {
       setLoading(true);
       setError("");
-      const response = await analyticsApi.getAnalytics(activeOrg._id);
-      setAnalytics(response.data?.data);
+      const response = await analyticsApi.getAnalytics(orgId);
+      setAnalytics(response.data?.data || null);
     } catch (err) {
       if (err.response?.status === 403) {
-        setError("Analytics access requires OWNER or ADMIN role in this organization.");
+        setError("API Analytics requires OWNER or ADMIN role in this organization.");
       } else {
-        setError(err.response?.data?.message || "Failed to load analytics.");
+        setAnalytics(null);
       }
     } finally {
       setLoading(false);
@@ -50,93 +55,190 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     loadAnalytics();
-  }, [activeOrg]);
-
-  if (!activeOrg) {
-    return <EmptyState message="No active organization selected." />;
-  }
+  }, [orgId]);
 
   if (loading) {
     return <LoadingSpinner message="Loading analytics dashboard..." />;
   }
 
-  if (error) {
-    return <ErrorMessage message={error} onRetry={loadAnalytics} />;
-  }
-
   const {
     overview,
     requestsOverTime = [],
-    requestsByApiKey = [],
-    requestsByTeam = [],
-    requestsByMethod = [],
-    requestsByEnvironment = [],
     requestsByStatusCode = [],
-    topEndpoints = []
+    requestsByMethod = [],
   } = analytics || {};
 
-  const totalReqs = overview?.totalRequests || 0;
+  const totalRequests = overview?.totalRequests || 0;
+  const successfulRequests = overview?.successfulRequests || 0;
+  const failedRequests = overview?.failedRequests || 0;
+  const avgLatency = overview?.averageResponseTime ? `${overview.averageResponseTime} ms` : "0 ms";
+
+  const successRate = totalRequests > 0
+    ? ((successfulRequests / totalRequests) * 100).toFixed(2) + "%"
+    : "100%";
+  const errorRate = totalRequests > 0
+    ? ((failedRequests / totalRequests) * 100).toFixed(2) + "%"
+    : "0.00%";
+
+  // Real chart calculation
+  const maxReqOverTime = Math.max(...requestsOverTime.map((d) => d.requests || 0), 1);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="page-header">
+    <div className="space-y-6">
+      {/* ── HEADER ────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="page-title flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
-            Analytics Dashboard
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-400 font-mono mb-2">
+            <Link to="/" className="text-gray-400 hover:text-white transition-colors">
+              APIShield
+            </Link>
+            <span className="text-gray-600">/</span>
+            <span className="text-gray-300">Analytics</span>
+          </nav>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            Analytics
           </h1>
-          <p className="page-description">Deep dive into API requests, status codes, environments, and usage breakdown</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Real-time gateway metrics, throughput, latency, and error breakdown.
+          </p>
         </div>
       </div>
 
-      {totalReqs === 0 ? (
-        <EmptyState
-          message="No gateway traffic yet. Requests routed through APIShield will appear here."
-        />
-      ) : (
-        <>
-          {/* 1. Overview Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="card bg-[#161b22] border-white/10">
-              <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Total Requests</p>
-              <p className="text-2xl font-bold font-mono text-white mt-1">{totalReqs.toLocaleString()}</p>
-            </div>
-            <div className="card bg-[#161b22] border-white/10">
-              <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Successful Requests</p>
-              <p className="text-2xl font-bold font-mono text-green-400 mt-1">{(overview?.successfulRequests || 0).toLocaleString()}</p>
-            </div>
-            <div className="card bg-[#161b22] border-white/10">
-              <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Failed Requests</p>
-              <p className="text-2xl font-bold font-mono text-red-400 mt-1">{(overview?.failedRequests || 0).toLocaleString()}</p>
-            </div>
-            <div className="card bg-[#161b22] border-white/10">
-              <p className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">Avg Latency</p>
-              <p className="text-2xl font-bold font-mono text-yellow-400 mt-1">{overview?.averageResponseTime || 0} ms</p>
+      {error && <ErrorMessage message={error} onRetry={loadAnalytics} />}
+
+      {/* ── TOP 4 KPI CARDS ────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
+              TOTAL REQUESTS
+            </span>
+            <Activity className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-white mt-2">
+            {totalRequests.toLocaleString()}
+          </div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">Total recorded volume</div>
+        </div>
+
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
+              SUCCESS RATE
+            </span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-2">
+            {successRate}
+          </div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">
+            {successfulRequests.toLocaleString()} successful (2xx)
+          </div>
+        </div>
+
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
+              AVG LATENCY
+            </span>
+            <Clock className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-white mt-2">
+            {avgLatency}
+          </div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">Gateway to upstream</div>
+        </div>
+
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
+              ERROR RATE
+            </span>
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-rose-400 mt-2">
+            {errorRate}
+          </div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">
+            {failedRequests.toLocaleString()} failed (4xx/5xx)
+          </div>
+        </div>
+      </div>
+
+      {/* ── THROUGHPUT CHART & STATUS CODE BREAKDOWN ────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Real Requests Over Time */}
+        <div className="lg:col-span-2 bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-white tracking-tight">Throughput History</h2>
+              <p className="text-[11px] text-gray-400 font-mono">Requests over recorded timeline</p>
             </div>
           </div>
 
-          {/* 2. Requests Over Time */}
-          <div className="card bg-[#161b22] border border-white/10 space-y-4">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
-              Requests Over Time
+          {requestsOverTime.length === 0 ? (
+            <div className="h-44 flex flex-col items-center justify-center text-center text-xs text-gray-500 font-mono">
+              <BarChart3 className="w-8 h-8 text-gray-600 mb-2" />
+              <span>No request activity recorded yet</span>
+              <span className="text-[10px] text-gray-600 mt-0.5">
+                Timeline throughput will appear as gateway traffic is received
+              </span>
+            </div>
+          ) : (
+            <div className="h-44 flex items-end gap-2 pt-4">
+              {requestsOverTime.map((d, idx) => {
+                const heightPercent = Math.max(Math.round((d.requests / maxReqOverTime) * 100), 10);
+                return (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 group relative">
+                    <div className="w-full bg-white/5 rounded-t overflow-hidden flex items-end h-32">
+                      <div
+                        style={{ height: `${heightPercent}%` }}
+                        className="w-full bg-emerald-500 group-hover:bg-emerald-400 transition-all rounded-t"
+                      />
+                    </div>
+                    <span className="text-[9px] font-mono text-gray-400 truncate max-w-full">
+                      {d.date?.slice(5) || d.date}
+                    </span>
+
+                    {/* Tooltip */}
+                    <div className="absolute -top-7 px-2 py-1 bg-[#161b22] border border-white/10 rounded text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                      {d.requests} requests on {d.date}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right 1 Col: Status Codes & Methods */}
+        <div className="space-y-4">
+          {/* Status Codes */}
+          <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm space-y-3">
+            <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
+              Status Codes Breakdown
             </h2>
-            {requestsOverTime.length === 0 ? (
-              <p className="text-xs text-gray-500 py-4 italic">No timeline data available.</p>
+
+            {requestsByStatusCode.length === 0 ? (
+              <p className="text-xs text-gray-500 italic py-4 text-center font-mono">
+                No status code data available
+              </p>
             ) : (
-              <div className="space-y-2.5">
-                {requestsOverTime.map((item) => {
-                  const pct = totalReqs > 0 ? Math.round((item.requests / totalReqs) * 100) : 0;
+              <div className="space-y-2">
+                {requestsByStatusCode.map((sc, i) => {
+                  const code = sc.statusCode || sc._id;
+                  const isSuccess = code >= 200 && code < 300;
                   return (
-                    <div key={item.date} className="space-y-1">
-                      <div className="flex justify-between text-xs font-mono">
-                        <span className="text-gray-300">{item.date}</span>
-                        <span className="text-blue-300">{item.requests} requests ({pct}%)</span>
+                    <div key={i} className="flex items-center justify-between text-xs font-mono">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isSuccess ? "bg-emerald-400" : "bg-rose-400"
+                          }`}
+                        />
+                        <span className="text-white font-bold">{code}</span>
                       </div>
-                      <div className="w-full bg-[#1c2128] rounded-full h-2 overflow-hidden border border-white/5">
-                        <div className="bg-[#2f81f7] h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 2)}%` }} />
-                      </div>
+                      <span className="text-gray-300">{sc.requests?.toLocaleString() || 0} reqs</span>
                     </div>
                   );
                 })}
@@ -144,150 +246,31 @@ export default function AnalyticsPage() {
             )}
           </div>
 
-          {/* Grid: By API Key & By Team */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 3. Requests by API Key */}
-            <div className="card bg-[#161b22] border border-white/10 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-                <Key className="w-4 h-4 text-blue-400" />
-                Requests by API Key
-              </h2>
-              {requestsByApiKey.length === 0 ? (
-                <p className="text-xs text-gray-500 py-4 italic">No API Key request data available.</p>
-              ) : (
-                <div className="divide-y divide-white/5">
-                  {requestsByApiKey.map((item, idx) => (
-                    <div key={item.apiKeyId || idx} className="py-2.5 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-semibold text-white">{item.name || "Access Key"}</div>
-                      </div>
-                      <div className="font-mono text-blue-300 font-bold">{item.requests} reqs</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 4. Requests by Team */}
-            <div className="card bg-[#161b22] border border-white/10 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-                <Users className="w-4 h-4 text-blue-400" />
-                Requests by Team
-              </h2>
-              {requestsByTeam.length === 0 ? (
-                <p className="text-xs text-gray-500 py-4 italic">No Team request data available.</p>
-              ) : (
-                <div className="divide-y divide-white/5">
-                  {requestsByTeam.map((item, idx) => (
-                    <div key={item.teamId || idx} className="py-2.5 flex items-center justify-between text-xs">
-                      <span className="font-semibold text-white">{item.name}</span>
-                      <span className="font-mono text-blue-300 font-bold">{item.requests} reqs</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Grid: Method, Environment, Status Code */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 5. Requests by HTTP Method */}
-            <div className="card bg-[#161b22] border border-white/10 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-                <Code className="w-4 h-4 text-green-400" />
-                By HTTP Method
-              </h2>
-              {requestsByMethod.length === 0 ? (
-                <p className="text-xs text-gray-500 py-2 italic">No method data.</p>
-              ) : (
-                <div className="space-y-2">
-                  {requestsByMethod.map((item) => (
-                    <div key={item.method} className="flex items-center justify-between text-xs">
-                      <Badge variant="info">{item.method}</Badge>
-                      <span className="font-mono text-gray-300 font-semibold">{item.requests} reqs</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 6. Requests by Environment */}
-            <div className="card bg-[#161b22] border border-white/10 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-                <Globe className="w-4 h-4 text-yellow-400" />
-                By Environment
-              </h2>
-              {requestsByEnvironment.length === 0 ? (
-                <p className="text-xs text-gray-500 py-2 italic">No environment data.</p>
-              ) : (
-                <div className="space-y-2">
-                  {requestsByEnvironment.map((item, idx) => (
-                    <div key={item.name || item.environmentId || idx} className="flex items-center justify-between text-xs">
-                      <Badge variant="purple">{item.name || "Environment"}</Badge>
-                      <span className="font-mono text-gray-300 font-semibold">{item.requests} reqs</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 7. Status Codes */}
-            <div className="card bg-[#161b22] border border-white/10 space-y-4">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-3">
-                <FileText className="w-4 h-4 text-red-400" />
-                By Status Code
-              </h2>
-              {requestsByStatusCode.length === 0 ? (
-                <p className="text-xs text-gray-500 py-2 italic">No status code data.</p>
-              ) : (
-                <div className="space-y-2">
-                  {requestsByStatusCode.map((item) => (
-                    <div key={item.statusCode} className="flex items-center justify-between text-xs">
-                      <Badge variant={item.statusCode >= 200 && item.statusCode < 300 ? "success" : "danger"}>
-                        {item.statusCode}
-                      </Badge>
-                      <span className="font-mono text-gray-300 font-semibold">{item.requests} reqs</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 8. Top Endpoints */}
-          <div className="card bg-[#161b22] border border-white/10 space-y-4">
-            <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 pb-3">
-              Top Requested Endpoints
+          {/* Methods */}
+          <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm space-y-3">
+            <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider">
+              HTTP Methods
             </h2>
-            {topEndpoints.length === 0 ? (
-              <EmptyState message="No endpoint analytics recorded." />
+
+            {requestsByMethod.length === 0 ? (
+              <p className="text-xs text-gray-500 italic py-2 text-center font-mono">
+                No method data available
+              </p>
             ) : (
-              <div className="table-container">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Method</th>
-                      <th>Endpoint Path</th>
-                      <th>Total Requests</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topEndpoints.map((ep, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <Badge variant={ep.method === "GET" ? "info" : "success"}>{ep.method}</Badge>
-                        </td>
-                        <td className="font-mono text-xs text-gray-200">{ep.endpoint}</td>
-                        <td className="font-mono text-xs text-blue-300 font-bold">{ep.requests}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {requestsByMethod.map((m, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs font-mono">
+                    <span className="px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/10 font-bold">
+                      {m.method}
+                    </span>
+                    <span className="text-gray-300">{m.requests?.toLocaleString() || 0} reqs</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

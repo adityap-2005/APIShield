@@ -16,9 +16,9 @@ const apiUsageSchema = new mongoose.Schema(
             required: true,
         },
 
-        teamId: {
+        projectId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Team",
+            ref: "Project",
             required: true,
         },
 
@@ -66,7 +66,7 @@ apiUsageSchema.index({
 });
 
 apiUsageSchema.index({
-    teamId: 1,
+    projectId: 1,
     createdAt: -1
 });
 

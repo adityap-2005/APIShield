@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-import { TEAM_ROLES } from "../constants/teamRoles.js";
+import { PROJECT_ROLES } from "../constants/projectRoles.js";
 
-const teamMembershipSchema = new mongoose.Schema(
+const projectMembershipSchema = new mongoose.Schema(
     {
         organizationId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -10,10 +10,10 @@ const teamMembershipSchema = new mongoose.Schema(
             required: [true, "Organization is required"],
         },
 
-        teamId: {
+        projectId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Team",
-            required: [true, "Team is required"],
+            ref: "Project",
+            required: [true, "Project is required"],
         },
 
         membershipId: {
@@ -24,8 +24,8 @@ const teamMembershipSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: Object.values(TEAM_ROLES),
-            default: TEAM_ROLES.MEMBER
+            enum: Object.values(PROJECT_ROLES),
+            default: PROJECT_ROLES.MEMBER
         },
 
         addedBy: {
@@ -39,10 +39,10 @@ const teamMembershipSchema = new mongoose.Schema(
     }
 );
 
-// Prevent duplicate members in the same team
-teamMembershipSchema.index(
+// Prevent duplicate members in the same project
+projectMembershipSchema.index(
     {
-        teamId: 1,
+        projectId: 1,
         membershipId: 1,
     },
     {
@@ -51,14 +51,14 @@ teamMembershipSchema.index(
 );
 
 // Speed up organization cleanup
-teamMembershipSchema.index({
+projectMembershipSchema.index({
     organizationId: 1,
     membershipId: 1,
 });
 
-const TeamMembership = mongoose.model(
-    "TeamMembership",
-    teamMembershipSchema
+const ProjectMembership = mongoose.model(
+    "ProjectMembership",
+    projectMembershipSchema
 );
 
-export default TeamMembership;
+export default ProjectMembership;

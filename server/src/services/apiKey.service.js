@@ -1,5 +1,5 @@
 import ApiKey from "../models/apiKey.model.js";
-import Team from "../models/team.model.js";
+import Project from "../models/project.model.js";
 import Environment from "../models/environment.model.js";
 
 import auditLogService from "./auditLog.service.js";
@@ -14,7 +14,7 @@ import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 import { _getOrganizationById } from "../helpers/organization.helper.js";
 import {
     _getActiveMembership,
-    _getActiveTeamMembership
+    _getActiveProjectMembership
 } from "../helpers/membership.helper.js";
 import {
     _getApiKeyById,
@@ -25,7 +25,7 @@ class ApiKeyService {
 
     async createApiKey(
         organizationId,
-        teamId,
+        projectId,
         userId,
         apiKeyData
     ) {
@@ -49,23 +49,23 @@ class ApiKeyService {
                 organizationId
             );
 
-        // Check Team Exists
-        const team = await Team.findOne({
-            _id: teamId,
+        // Check Project Exists
+        const project = await Project.findOne({
+            _id: projectId,
             organizationId,
         });
 
-        if (!team) {
+        if (!project) {
             throw new ApiError(
                 404,
-                "Team not found."
+                "Project not found."
             );
         }
 
-        // Check Active Team Membership
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        // Check Active Project Membership
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
@@ -73,7 +73,7 @@ class ApiKeyService {
             await Environment.findOne({
                 _id: environmentId,
                 organizationId,
-                teamId,
+                projectId,
                 status: "ACTIVE"
             });
 
@@ -86,7 +86,7 @@ class ApiKeyService {
 
         // Authorization
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         // Expiration Validation
@@ -113,7 +113,7 @@ class ApiKeyService {
 
                 organizationId,
 
-                teamId,
+                projectId,
 
                 environmentId,
 
@@ -135,7 +135,7 @@ class ApiKeyService {
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 
@@ -162,9 +162,9 @@ class ApiKeyService {
         };
     }
 
-    async getTeamApiKeys(
+    async getProjectApiKeys(
         organizationId,
-        teamId,
+        projectId,
         userId
     ) {
         const organizationMembership =
@@ -173,20 +173,21 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKeys = await ApiKey.find({
             organizationId,
-            teamId
+            projectId
         })
+            .populate("environmentId", "name status")
             .sort({ createdAt: -1 });
 
         return apiKeys;
@@ -194,7 +195,7 @@ class ApiKeyService {
 
     async getApiKeyById(
         organizationId,
-        teamId,
+        projectId,
         apiKeyId,
         userId
     ) {
@@ -204,20 +205,20 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKey =
             await _getApiKeyById(
                 apiKeyId,
-                teamId,
+                projectId,
                 organizationId
             );
 
@@ -226,7 +227,7 @@ class ApiKeyService {
 
     async updateApiKey(
         organizationId,
-        teamId,
+        projectId,
         apiKeyId,
         userId,
         apiKeyData
@@ -243,20 +244,20 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKey =
             await _getApiKeyById(
                 apiKeyId,
-                teamId,
+                projectId,
                 organizationId
             );
 
@@ -295,7 +296,7 @@ class ApiKeyService {
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 
@@ -322,7 +323,7 @@ class ApiKeyService {
 
     async rotateApiKey(
         organizationId,
-        teamId,
+        projectId,
         apiKeyId,
         userId
     ) {
@@ -332,20 +333,20 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKey =
             await _getApiKeyById(
                 apiKeyId,
-                teamId,
+                projectId,
                 organizationId
             );
 
@@ -353,7 +354,7 @@ class ApiKeyService {
             await Environment.findOne({
                 _id: apiKey.environmentId,
                 organizationId,
-                teamId,
+                projectId,
                 status: "ACTIVE"
             });
 
@@ -392,7 +393,7 @@ class ApiKeyService {
         const rotatedApiKey =
             await ApiKey.create({
                 organizationId,
-                teamId,
+                projectId,
                 environmentId: apiKey.environmentId,
                 name: apiKey.name,
                 description: apiKey.description,
@@ -413,7 +414,7 @@ class ApiKeyService {
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 
@@ -442,7 +443,7 @@ class ApiKeyService {
 
     async revokeApiKey(
         organizationId,
-        teamId,
+        projectId,
         apiKeyId,
         userId
     ) {
@@ -452,20 +453,20 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKey =
             await _getApiKeyById(
                 apiKeyId,
-                teamId,
+                projectId,
                 organizationId
             );
 
@@ -473,7 +474,7 @@ class ApiKeyService {
             await Environment.findOne({
                 _id: apiKey.environmentId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -503,7 +504,7 @@ class ApiKeyService {
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 
@@ -532,7 +533,7 @@ class ApiKeyService {
 
     async archiveApiKey(
         organizationId,
-        teamId,
+        projectId,
         apiKeyId,
         userId
     ) {
@@ -542,20 +543,20 @@ class ApiKeyService {
                 organizationId
             );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 organizationMembership._id
             );
 
         _authorizeApiKeyManagement(
-            teamMembership
+            projectMembership
         );
 
         const apiKey =
             await _getApiKeyById(
                 apiKeyId,
-                teamId,
+                projectId,
                 organizationId
             );
 
@@ -563,7 +564,7 @@ class ApiKeyService {
             await Environment.findOne({
                 _id: apiKey.environmentId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -602,7 +603,7 @@ class ApiKeyService {
 
         await auditLogService.log({
             organizationId,
-            teamId,
+            projectId,
 
             actor,
 

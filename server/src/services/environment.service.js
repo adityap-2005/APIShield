@@ -8,20 +8,20 @@ import {
 
 import {
     _getActiveMembership,
-    _getActiveTeamMembership
+    _getActiveProjectMembership
 } from "../helpers/membership.helper.js";
 
 import {
-    _getTeamById
-} from "../helpers/team.helper.js";
+    _getProjectById
+} from "../helpers/project.helper.js";
 
 import {
     ORGANIZATION_ROLES
 } from "../constants/organizationRoles.js";
 
 import {
-    TEAM_ROLES
-} from "../constants/teamRoles.js";
+    PROJECT_ROLES
+} from "../constants/projectRoles.js";
 
 
 class EnvironmentService {
@@ -29,7 +29,7 @@ class EnvironmentService {
     async createEnvironment(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         data
     ) {
@@ -46,14 +46,14 @@ class EnvironmentService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -61,10 +61,10 @@ class EnvironmentService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to create an environment."
@@ -75,7 +75,7 @@ class EnvironmentService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -91,7 +91,7 @@ class EnvironmentService {
             const createdEnvironment =
                 await Environment.create({
                     organizationId,
-                    teamId,
+                    projectId,
                     integrationId,
                     name,
                     createdBy: userId
@@ -117,7 +117,7 @@ class EnvironmentService {
     async getEnvironments(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId
     ) {
         await _getOrganizationById(
@@ -130,13 +130,13 @@ class EnvironmentService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
@@ -144,7 +144,7 @@ class EnvironmentService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -158,7 +158,7 @@ class EnvironmentService {
             await Environment.find({
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             })
                 .select(
                     "_id integrationId name status createdAt updatedAt"
@@ -173,7 +173,7 @@ class EnvironmentService {
     async getEnvironment(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId
     ) {
@@ -187,13 +187,13 @@ class EnvironmentService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
@@ -201,7 +201,7 @@ class EnvironmentService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -216,7 +216,7 @@ class EnvironmentService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             }).select(
                 "_id integrationId name status createdAt updatedAt"
             );
@@ -234,7 +234,7 @@ class EnvironmentService {
     async updateEnvironment(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId,
         data
@@ -249,14 +249,14 @@ class EnvironmentService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -264,10 +264,10 @@ class EnvironmentService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to update this environment."
@@ -279,7 +279,7 @@ class EnvironmentService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {
@@ -320,7 +320,7 @@ class EnvironmentService {
     async disableEnvironment(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         environmentId
     ) {
@@ -334,14 +334,14 @@ class EnvironmentService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -349,10 +349,10 @@ class EnvironmentService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to disable this environment."
@@ -364,7 +364,7 @@ class EnvironmentService {
                 _id: environmentId,
                 integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!environment) {

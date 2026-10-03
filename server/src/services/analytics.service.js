@@ -8,7 +8,7 @@ import {
     _getOverview,
     _getRequestsOverTime,
     _getRequestsByApiKey,
-    _getRequestsByTeam,
+    _getRequestsByProject,
     _getRequestsByMethod,
     _getRequestsByEnvironment,
     _getRequestsByStatusCode,
@@ -48,8 +48,8 @@ class AnalyticsService {
         const requestsByApiKey =
             await _getRequestsByApiKey(organizationId);
 
-        const requestsByTeam =
-            await _getRequestsByTeam(organizationId);
+        const requestsByProject =
+            await _getRequestsByProject(organizationId);
 
         const requestsByMethod =
             await _getRequestsByMethod(organizationId);
@@ -67,7 +67,7 @@ class AnalyticsService {
             overview,
             requestsOverTime,
             requestsByApiKey,
-            requestsByTeam,
+            requestsByProject,
             requestsByMethod,
             requestsByEnvironment,
             requestsByStatusCode,

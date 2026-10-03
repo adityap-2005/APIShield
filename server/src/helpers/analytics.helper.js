@@ -73,14 +73,14 @@ export async function _getRequestsByApiKey(organizationId) {
     ]);
 }
 
-export async function _getRequestsByTeam(organizationId) {
+export async function _getRequestsByProject(organizationId) {
     return ApiUsage.aggregate([
         { $match: { organizationId: new mongoose.Types.ObjectId(organizationId) } },
-        { $group: { _id: "$teamId", requests: { $sum: 1 } } },
+        { $group: { _id: "$projectId", requests: { $sum: 1 } } },
         { $sort: { requests: -1 } },
-        { $lookup: { from: "teams", localField: "_id", foreignField: "_id", as: "team" } },
-        { $unwind: "$team" },
-        { $project: { _id: 0, teamId: "$_id", requests: 1, name: "$team.name" } }
+        { $lookup: { from: "projects", localField: "_id", foreignField: "_id", as: "project" } },
+        { $unwind: "$project" },
+        { $project: { _id: 0, projectId: "$_id", requests: 1, name: "$project.name" } }
     ]);
 }
 
@@ -115,10 +115,74 @@ export async function _getRequestsByStatusCode(organizationId) {
 
 export async function _getTopEndpoints(organizationId) {
     return ApiUsage.aggregate([
-        { $match: { organizationId: new mongoose.Types.ObjectId(organizationId) } },
-        { $group: { _id: { method: "$method", endpoint: "$endpoint" }, requests: { $sum: 1 } } },
-        { $sort: { requests: -1 } },
-        { $limit: 10 },
-        { $project: { _id: 0, method: "$_id.method", endpoint: "$_id.endpoint", requests: 1 } }
+        {
+            $match: {
+                organizationId: new mongoose.Types.ObjectId(organizationId)
+            }
+        },
+
+        {
+            $group: {
+                _id: {
+                    method: "$method",
+                    endpoint: "$endpoint",
+                    upstreamApiId: "$upstreamApiId"
+                },
+                requests: { $sum: 1 }
+            }
+        },
+
+        {
+            $sort: {
+                requests: -1
+            }
+        },
+
+        {
+            $limit: 10
+        },
+
+        {
+            $lookup: {
+                from: "upstreamapis",
+                localField: "_id.upstreamApiId",
+                foreignField: "_id",
+                as: "upstreamApi"
+            }
+        },
+
+        {
+            $unwind: {
+                path: "$upstreamApi",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $lookup: {
+                from: "integrations",
+                localField: "upstreamApi.integrationId",
+                foreignField: "_id",
+                as: "integration"
+            }
+        },
+
+        {
+            $unwind: {
+                path: "$integration",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $project: {
+                _id: 0,
+                method: "$_id.method",
+                endpoint: "$_id.endpoint",
+                requests: 1,
+                integrationId: "$integration._id",
+                integrationName: "$integration.name"
+            }
+        }
     ]);
 }

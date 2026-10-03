@@ -16,7 +16,7 @@ const analyticsApi = {
   //     overview: { totalRequests, successfulRequests, failedRequests, averageResponseTime },
   //     requestsOverTime: [{ date, requests }],
   //     requestsByApiKey: [{ apiKeyId, requests, name, environment }],
-  //     requestsByTeam: [{ teamId, requests, name }],
+  //     requestsByProject: [{ projectId, requests, name }],
   //     requestsByMethod: [{ method, requests }],
   //     requestsByEnvironment: [{ environment, requests }],
   //     requestsByStatusCode: [{ statusCode, requests }],

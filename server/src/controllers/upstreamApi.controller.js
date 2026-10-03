@@ -7,7 +7,7 @@ class UpstreamApiController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId
         } = req.params;
@@ -16,7 +16,7 @@ class UpstreamApiController {
             await upstreamApiService.createUpstreamApi(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId,
                 req.body
@@ -33,7 +33,7 @@ class UpstreamApiController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId
         } = req.params;
@@ -42,7 +42,7 @@ class UpstreamApiController {
             await upstreamApiService.getUpstreamApis(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId
             );
@@ -58,7 +58,7 @@ class UpstreamApiController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId,
             upstreamApiId
@@ -68,7 +68,7 @@ class UpstreamApiController {
             await upstreamApiService.getUpstreamApi(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId,
                 upstreamApiId
@@ -85,7 +85,7 @@ class UpstreamApiController {
 
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId,
             upstreamApiId
@@ -95,7 +95,7 @@ class UpstreamApiController {
             await upstreamApiService.updateUpstreamApi(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId,
                 upstreamApiId,

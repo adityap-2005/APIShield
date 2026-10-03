@@ -8,9 +8,9 @@ const upstreamApiSchema = new mongoose.Schema({
         index: true
     },
 
-    teamId: {
+    projectId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Team",
+        ref: "Project",
         required: true,
         index: true
     },

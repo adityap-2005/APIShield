@@ -14,7 +14,7 @@ const auditLogsApi = {
   // Returns: {
   //   success, message,
   //   data: {
-  //     logs: [{ _id, organizationId, teamId, actor, action, entity, metadata, createdAt }],
+  //     logs: [{ _id, organizationId, projectId, actor, action, entity, metadata, createdAt }],
   //     pagination: { page, limit, total, totalPages }
   //   }
   // }

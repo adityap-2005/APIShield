@@ -67,14 +67,17 @@ export default function ProfileDropdown() {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 rounded-md hover:bg-white/5 transition-colors focus:outline-none"
+        className="flex items-center gap-2.5 p-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none"
         aria-label="User Menu"
       >
-        <div className="w-7 h-7 rounded-full bg-blue-950/60 border border-blue-800/40 text-blue-300 flex items-center justify-center text-xs font-bold font-mono">
+        <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/10 text-emerald-400 flex items-center justify-center text-xs font-bold font-mono">
           {initials}
         </div>
         <div className="text-left hidden sm:block">
-          <div className="text-xs font-medium text-white leading-tight">{user?.name}</div>
+          <div className="text-xs font-medium text-white leading-tight">{user?.name || "Aditya Panda"}</div>
+          <div className="text-[10px] text-gray-400 leading-tight">
+            {activeOrg?.role || "Owner"}
+          </div>
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
       </button>

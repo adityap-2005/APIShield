@@ -5,7 +5,7 @@ class EnvironmentController {
     async createEnvironment(req, res) {
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId
         } = req.params;
 
@@ -13,7 +13,7 @@ class EnvironmentController {
             await environmentService.createEnvironment(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 req.body
             );
@@ -28,7 +28,7 @@ class EnvironmentController {
     async getEnvironments(req, res) {
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId
         } = req.params;
 
@@ -36,7 +36,7 @@ class EnvironmentController {
             await environmentService.getEnvironments(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId
             );
 
@@ -50,7 +50,7 @@ class EnvironmentController {
     async getEnvironment(req, res) {
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId
         } = req.params;
@@ -59,7 +59,7 @@ class EnvironmentController {
             await environmentService.getEnvironment(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId
             );
@@ -74,7 +74,7 @@ class EnvironmentController {
     async updateEnvironment(req, res) {
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId
         } = req.params;
@@ -83,7 +83,7 @@ class EnvironmentController {
             await environmentService.updateEnvironment(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId,
                 req.body
@@ -99,7 +99,7 @@ class EnvironmentController {
     async disableEnvironment(req, res) {
         const {
             organizationId,
-            teamId,
+            projectId,
             integrationId,
             environmentId
         } = req.params;
@@ -108,7 +108,7 @@ class EnvironmentController {
             await environmentService.disableEnvironment(
                 req.user._id,
                 organizationId,
-                teamId,
+                projectId,
                 integrationId,
                 environmentId
             );

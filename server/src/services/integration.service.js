@@ -11,20 +11,20 @@ import {
 
 import {
     _getActiveMembership,
-    _getActiveTeamMembership
+    _getActiveProjectMembership
 } from "../helpers/membership.helper.js";
 
 import {
-    _getTeamById
-} from "../helpers/team.helper.js";
+    _getProjectById
+} from "../helpers/project.helper.js";
 
 import {
     ORGANIZATION_ROLES
 } from "../constants/organizationRoles.js";
 
 import {
-    TEAM_ROLES
-} from "../constants/teamRoles.js";
+    PROJECT_ROLES
+} from "../constants/projectRoles.js";
 
 
 class IntegrationService {
@@ -32,7 +32,7 @@ class IntegrationService {
     async createIntegration(
         userId,
         organizationId,
-        teamId,
+        projectId,
         data
     ) {
         const {
@@ -94,14 +94,14 @@ class IntegrationService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -109,10 +109,10 @@ class IntegrationService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to create an integration."
@@ -131,7 +131,7 @@ class IntegrationService {
                     await Integration.create(
                         [{
                             organizationId,
-                            teamId,
+                            projectId,
                             name,
                             createdBy: userId
                         }],
@@ -145,7 +145,7 @@ class IntegrationService {
                 if (error.code === 11000) {
                     throw new ApiError(
                         409,
-                        "An integration with this name already exists in this team."
+                        "An integration with this name already exists in this project."
                     );
                 }
 
@@ -156,7 +156,7 @@ class IntegrationService {
                 await Environment.create(
                     [{
                         organizationId,
-                        teamId,
+                        projectId,
                         integrationId:
                             createdIntegration._id,
                         name: environmentName,
@@ -191,7 +191,7 @@ class IntegrationService {
                     await UpstreamApi.create(
                         [{
                             organizationId,
-                            teamId,
+                            projectId,
                             integrationId:
                                 createdIntegration._id,
                             environmentId:
@@ -256,7 +256,7 @@ class IntegrationService {
     async getIntegrations(
         userId,
         organizationId,
-        teamId
+        projectId
     ) {
         await _getOrganizationById(
             organizationId
@@ -268,20 +268,20 @@ class IntegrationService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
         const integrations =
             await Integration.find({
                 organizationId,
-                teamId
+                projectId
             }).sort({
                 createdAt: -1
             });
@@ -297,7 +297,7 @@ class IntegrationService {
                     $in: integrationIds
                 },
                 organizationId,
-                teamId
+                projectId
             }).select(
                 "_id integrationId name status"
             );
@@ -313,7 +313,7 @@ class IntegrationService {
                     $in: environmentIds
                 },
                 organizationId,
-                teamId
+                projectId
             }).select(
                 "_id environmentId name baseUrl path authentication status createdAt updatedAt"
             );
@@ -348,7 +348,7 @@ class IntegrationService {
     async getIntegration(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId
     ) {
         await _getOrganizationById(
@@ -361,13 +361,13 @@ class IntegrationService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        await _getActiveTeamMembership(
-            teamId,
+        await _getActiveProjectMembership(
+            projectId,
             membership._id
         );
 
@@ -375,7 +375,7 @@ class IntegrationService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -389,7 +389,7 @@ class IntegrationService {
             await Environment.find({
                 integrationId: integration._id,
                 organizationId,
-                teamId
+                projectId
             }).select(
                 "_id integrationId name status"
             );
@@ -405,7 +405,7 @@ class IntegrationService {
                     $in: environmentIds
                 },
                 organizationId,
-                teamId
+                projectId
             }).select(
                 "_id environmentId name baseUrl path status createdAt updatedAt"
             );
@@ -432,7 +432,7 @@ class IntegrationService {
     async updateIntegration(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId,
         data
     ) {
@@ -446,14 +446,14 @@ class IntegrationService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -461,10 +461,10 @@ class IntegrationService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to update this integration."
@@ -475,7 +475,7 @@ class IntegrationService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {
@@ -504,7 +504,7 @@ class IntegrationService {
     async disableIntegration(
         userId,
         organizationId,
-        teamId,
+        projectId,
         integrationId
     ) {
         await _getOrganizationById(
@@ -517,14 +517,14 @@ class IntegrationService {
                 organizationId
             );
 
-        await _getTeamById(
-            teamId,
+        await _getProjectById(
+            projectId,
             organizationId
         );
 
-        const teamMembership =
-            await _getActiveTeamMembership(
-                teamId,
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
                 membership._id
             );
 
@@ -532,10 +532,10 @@ class IntegrationService {
             membership.role === ORGANIZATION_ROLES.OWNER ||
             membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        const isTeamAdmin =
-            teamMembership.role === TEAM_ROLES.TEAM_ADMIN;
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
 
-        if (!isOrgAdmin && !isTeamAdmin) {
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
                 "You do not have permission to disable this integration."
@@ -546,7 +546,7 @@ class IntegrationService {
             await Integration.findOne({
                 _id: integrationId,
                 organizationId,
-                teamId
+                projectId
             });
 
         if (!integration) {

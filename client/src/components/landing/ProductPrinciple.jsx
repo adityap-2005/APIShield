@@ -32,7 +32,7 @@ export default function ProductPrinciple() {
 
           {/* Subtitle */}
           <p className="text-xs sm:text-sm text-gray-400 max-w-xl mx-auto leading-relaxed">
-            APIShield is designed to give developers a clear, structured place to manage credentials, team access, and audit activity without complexity.
+            APIShield is designed to give developers a clear, structured place to manage credentials, project access, and audit activity without complexity.
           </p>
 
           <div className="pt-2 flex items-center justify-center gap-2 text-xs text-gray-500 font-mono">

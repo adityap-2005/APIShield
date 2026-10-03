@@ -102,7 +102,7 @@ export default function LoginPage() {
                 Manage API credentials with confidence.
               </h1>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Centralized workspace for API key creation, rotation, team access, and real-time audit records.
+                Centralized workspace for API key creation, rotation, project access, and real-time audit records.
               </p>
             </div>
 

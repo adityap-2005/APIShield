@@ -6,8 +6,8 @@ import gatewayController from "../controllers/gateway.controller.js";
 
 const router = express.Router();
 
-router.get(
-    "/organizations/:organizationId/teams/:teamId/gateway/upstream/:upstreamApiId",
+router.all(
+    "/organizations/:organizationId/projects/:projectId/gateway/upstream/:upstreamApiId",
     authenticateApiKey,
     gatewayController.callUpstreamApi
 );

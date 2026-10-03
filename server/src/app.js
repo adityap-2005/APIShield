@@ -61,7 +61,7 @@ app.use(
 );
 
 app.use(
-    "/api/v1/organizations/:organizationId/teams/:teamId/api-keys",
+    "/api/v1/organizations/:organizationId/projects/:projectId/api-keys",
     apiKeyRoutes
 );
 

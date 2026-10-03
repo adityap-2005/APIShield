@@ -8,9 +8,9 @@ const integrationSchema = new mongoose.Schema({
         index: true
     },
 
-    teamId: {
+    projectId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Team",
+        ref: "Project",
         required: true,
         index: true
     },
@@ -39,7 +39,7 @@ const integrationSchema = new mongoose.Schema({
 
 integrationSchema.index(
     {
-        teamId: 1,
+        projectId: 1,
         name: 1
     },
     {

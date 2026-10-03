@@ -1,0 +1,4 @@
+export const PROJECT_ROLES = {
+    PROJECT_ADMIN: "PROJECT_ADMIN",
+    MEMBER: "MEMBER"
+};

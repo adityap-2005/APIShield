@@ -33,13 +33,13 @@ export default function ConfirmModal({
   const iconVariants = {
     danger: <div className="w-9 h-9 rounded-lg bg-red-950/60 border border-red-800/60 flex items-center justify-center text-red-400 shrink-0"><AlertTriangle className="w-4 h-4" /></div>,
     warning: <div className="w-9 h-9 rounded-lg bg-yellow-950/60 border border-yellow-800/60 flex items-center justify-center text-yellow-400 shrink-0"><ShieldAlert className="w-4 h-4" /></div>,
-    primary: <div className="w-9 h-9 rounded-lg bg-blue-950/60 border border-blue-800/60 flex items-center justify-center text-blue-400 shrink-0"><Info className="w-4 h-4" /></div>,
+    primary: <div className="w-9 h-9 rounded-lg bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0"><Info className="w-4 h-4" /></div>,
   };
 
   const btnVariants = {
     danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-500",
     warning: "bg-yellow-600 text-white hover:bg-yellow-500 focus:ring-yellow-500",
-    primary: "bg-[#2f81f7] text-white hover:bg-blue-500 focus:ring-blue-500",
+    primary: "bg-[#10b981] hover:bg-emerald-400 text-black font-semibold focus:ring-emerald-500",
   };
 
   return (
@@ -48,7 +48,7 @@ export default function ConfirmModal({
       onClick={() => !loading && onClose()}
     >
       <div
-        className="w-full max-w-md bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-blue-950/20 overflow-hidden text-left"
+        className="w-full max-w-md bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
