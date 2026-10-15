@@ -59,18 +59,10 @@ export const authenticateApiKey = async (
         );
 
         req.apiKeyContext = {
-
-            apiKeyId:
-                apiKeyDocument._id,
-        
-            organizationId:
-                apiKeyDocument.organizationId,
-        
-            projectId:
-                apiKeyDocument.projectId,
-        
-            environmentId:
-                apiKeyDocument.environmentId
+            apiKeyId: apiKeyDocument._id,
+            organizationId: apiKeyDocument.organizationId,
+            projectId: apiKeyDocument.projectId,
+            environmentId: apiKeyDocument.environmentId || null
         };
 
         next();

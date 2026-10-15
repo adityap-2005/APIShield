@@ -40,7 +40,7 @@ const apiKeySchema = new mongoose.Schema({
     environmentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Environment",
-        required: true,
+        required: false,
         index: true
     },
 

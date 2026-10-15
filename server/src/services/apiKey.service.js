@@ -1,6 +1,5 @@
 import ApiKey from "../models/apiKey.model.js";
 import Project from "../models/project.model.js";
-import Environment from "../models/environment.model.js";
 
 import auditLogService from "./auditLog.service.js";
 
@@ -69,21 +68,6 @@ class ApiKeyService {
                 organizationMembership._id
             );
 
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                organizationId,
-                projectId,
-                status: "ACTIVE"
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found or is disabled."
-            );
-        }
-
         // Authorization
         _authorizeApiKeyManagement(
             projectMembership
@@ -105,7 +89,7 @@ class ApiKeyService {
             apiKey,
             publicKeyId,
             keyHash
-        } = generateApiKey(environment.name);
+        } = generateApiKey();
 
         // Save API Key
         const createdApiKey =
@@ -115,7 +99,7 @@ class ApiKeyService {
 
                 projectId,
 
-                environmentId,
+                ...(environmentId ? { environmentId } : {}),
 
                 name,
 
@@ -147,10 +131,7 @@ class ApiKeyService {
                 name: createdApiKey.name
             },
 
-            metadata: {
-                environment: environment.name,
-                environmentId: environment._id
-            }
+            metadata: {}
         });
 
         return {
@@ -187,7 +168,6 @@ class ApiKeyService {
             organizationId,
             projectId
         })
-            .populate("environmentId", "name status")
             .sort({ createdAt: -1 });
 
         return apiKeys;
@@ -350,21 +330,6 @@ class ApiKeyService {
                 organizationId
             );
 
-        const environment =
-            await Environment.findOne({
-                _id: apiKey.environmentId,
-                organizationId,
-                projectId,
-                status: "ACTIVE"
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found or is disabled."
-            );
-        }
-
         if (apiKey.status === API_KEY_STATUS.REVOKED) {
             throw new ApiError(
                 400,
@@ -386,15 +351,13 @@ class ApiKeyService {
             apiKey: newPlainApiKey,
             publicKeyId,
             keyHash
-        } = generateApiKey(
-            environment.name
-        );
+        } = generateApiKey();
 
         const rotatedApiKey =
             await ApiKey.create({
                 organizationId,
                 projectId,
-                environmentId: apiKey.environmentId,
+                ...(apiKey.environmentId ? { environmentId: apiKey.environmentId } : {}),
                 name: apiKey.name,
                 description: apiKey.description,
                 expiresAt: apiKey.expiresAt,
@@ -427,8 +390,6 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: environment.name,
-                environmentId: environment._id,
                 previousApiKeyId: apiKey._id,
                 previousPublicKeyId: apiKey.publicKeyId,
                 publicKeyId: rotatedApiKey.publicKeyId
@@ -470,20 +431,6 @@ class ApiKeyService {
                 organizationId
             );
 
-        const environment =
-            await Environment.findOne({
-                _id: apiKey.environmentId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
         if (
             apiKey.status === API_KEY_STATUS.REVOKED
         ) {
@@ -517,8 +464,6 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: environment.name,
-                environmentId: environment._id,
                 publicKeyId: apiKey.publicKeyId
             }
         });
@@ -559,20 +504,6 @@ class ApiKeyService {
                 projectId,
                 organizationId
             );
-
-        const environment =
-            await Environment.findOne({
-                _id: apiKey.environmentId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
 
         if (
             apiKey.status === API_KEY_STATUS.ARCHIVED
@@ -616,8 +547,6 @@ class ApiKeyService {
             },
 
             metadata: {
-                environment: environment.name,
-                environmentId: environment._id,
                 publicKeyId: apiKey.publicKeyId
             }
         });

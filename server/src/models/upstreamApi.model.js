@@ -25,7 +25,7 @@ const upstreamApiSchema = new mongoose.Schema({
     environmentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Environment",
-        required: true,
+        required: false,
         index: true
     },
 
@@ -99,7 +99,7 @@ const upstreamApiSchema = new mongoose.Schema({
 
 upstreamApiSchema.index(
     {
-        environmentId: 1,
+        integrationId: 1,
         name: 1
     },
     {

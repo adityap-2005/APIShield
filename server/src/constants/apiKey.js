@@ -12,6 +12,8 @@ export const API_KEY_ENVIRONMENT = {
     TEST: "TEST",
 };
 
+export const DEFAULT_API_KEY_PREFIX = "aps_";
+
 export const API_KEY_PREFIX = {
     PRODUCTION: "aps_live_",
     STAGING: "aps_stage_",

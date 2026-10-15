@@ -27,7 +27,6 @@ import UsagePage from "./pages/UsagePage";
 import AuditLogsPage from "./pages/AuditLogsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
-import EnvironmentsPage from "./pages/EnvironmentsPage";
 import UpstreamApisPage from "./pages/UpstreamApisPage";
 import TestApiPage from "./pages/TestApiPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -59,7 +58,7 @@ export default function App() {
                 <Route path="/org/:organizationId/api-keys" element={<ApiKeysPage />} />
                 <Route path="/org/:organizationId/projects" element={<ProjectsPage />} />
                 <Route path="/org/:organizationId/projects/:projectId" element={<ProjectDetailPage />} />
-                <Route path="/org/:organizationId/environments" element={<EnvironmentsPage />} />
+                <Route path="/org/:organizationId/environments" element={<Navigate to="integrations" replace />} />
                 <Route path="/org/:organizationId/integrations" element={<IntegrationsPage />} />
                 <Route path="/org/:organizationId/upstream-apis" element={<UpstreamApisPage />} />
                 <Route path="/org/:organizationId/upstream-apis/test" element={<TestApiPage />} />
@@ -76,7 +75,7 @@ export default function App() {
                 <Route path="/api-keys" element={<ApiKeysPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-                <Route path="/environments" element={<EnvironmentsPage />} />
+                <Route path="/environments" element={<Navigate to="/integrations" replace />} />
                 <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/upstream-apis" element={<UpstreamApisPage />} />
                 <Route path="/upstream-apis/test" element={<TestApiPage />} />

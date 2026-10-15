@@ -10,7 +10,6 @@ import apiKeyRoutes from "./routes/apiKey.routes.js";
 import auditLogRoutes from "./routes/auditLog.routes.js";
 import analyticsRouter from "./routes/analytics.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
-import environmentRoutes from "./routes/environment.routes.js";
 import upstreamApiRoutes from "./routes/upstreamApi.routes.js";
 import gatewayRoutes from "./routes/gateway.routes.js";
 
@@ -78,11 +77,6 @@ app.use(
 app.use(
     "/api/v1",
     integrationRoutes
-);
-
-app.use(
-    "/api/v1",
-    environmentRoutes
 );
 
 app.use(

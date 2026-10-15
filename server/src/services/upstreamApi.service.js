@@ -1,5 +1,4 @@
 import UpstreamApi from "../models/upstreamApi.model.js";
-import Environment from "../models/environment.model.js";
 import Integration from "../models/integration.model.js";
 import ApiError from "../utils/ApiError.js";
 
@@ -34,8 +33,8 @@ class UpstreamApiService {
         organizationId,
         projectId,
         integrationId,
-        environmentId,
-        data
+        data,
+        environmentId = null
     ) {
 
         const {
@@ -95,21 +94,6 @@ class UpstreamApiService {
             );
         }
 
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                integrationId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
         if (authentication.type !== "NONE" && !upstreamCredential) {
             throw new ApiError(
                 400,
@@ -130,7 +114,7 @@ class UpstreamApiService {
         }
 
         const encryptedCredentialData =
-            encrypt(upstreamCredential);
+            upstreamCredential ? encrypt(upstreamCredential) : null;
 
         let upstreamApi;
 
@@ -141,20 +125,20 @@ class UpstreamApiService {
                     organizationId,
                     projectId,
                     integrationId,
-                    environmentId,
+                    ...(environmentId ? { environmentId } : {}),
                     name,
                     baseUrl,
                     path,
                     authentication,
 
                     encryptedCredential:
-                        encryptedCredentialData.encryptedData,
+                        encryptedCredentialData?.encryptedData,
 
                     encryptionIv:
-                        encryptedCredentialData.iv,
+                        encryptedCredentialData?.iv,
 
                     encryptionAuthTag:
-                        encryptedCredentialData.authTag,
+                        encryptedCredentialData?.authTag,
 
                     createdBy: userId
                 });
@@ -164,7 +148,7 @@ class UpstreamApiService {
             if (error.code === 11000) {
                 throw new ApiError(
                     409,
-                    `${name} upstream API already exists in this environment.`
+                    `${name} upstream API already exists in this integration.`
                 );
             }
 
@@ -183,8 +167,7 @@ class UpstreamApiService {
         userId,
         organizationId,
         projectId,
-        integrationId,
-        environmentId
+        integrationId
     ) {
 
         await _getOrganizationById(
@@ -221,30 +204,14 @@ class UpstreamApiService {
             );
         }
 
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                integrationId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
         const upstreamApis =
             await UpstreamApi.find({
-                environmentId,
                 integrationId,
                 organizationId,
                 projectId
             })
                 .select(
-                    "_id environmentId name baseUrl path status createdAt updatedAt"
+                    "_id integrationId name baseUrl path status createdAt updatedAt"
                 )
                 .sort({
                     createdAt: -1
@@ -259,7 +226,6 @@ class UpstreamApiService {
         organizationId,
         projectId,
         integrationId,
-        environmentId,
         upstreamApiId
     ) {
 
@@ -297,31 +263,15 @@ class UpstreamApiService {
             );
         }
 
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                integrationId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
         const upstreamApi =
             await UpstreamApi.findOne({
                 _id: upstreamApiId,
-                environmentId,
                 integrationId,
                 organizationId,
                 projectId
             })
                 .select(
-                    "_id environmentId name baseUrl path authentication status createdAt updatedAt"
+                    "_id integrationId name baseUrl path authentication status createdAt updatedAt"
                 );
 
         if (!upstreamApi) {
@@ -340,7 +290,6 @@ class UpstreamApiService {
         organizationId,
         projectId,
         integrationId,
-        environmentId,
         upstreamApiId,
         data
     ) {
@@ -380,25 +329,9 @@ class UpstreamApiService {
             );
         }
 
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                integrationId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
         const upstreamApi =
             await UpstreamApi.findOne({
                 _id: upstreamApiId,
-                environmentId,
                 integrationId,
                 organizationId,
                 projectId
@@ -458,7 +391,7 @@ class UpstreamApiService {
             if (error.code === 11000) {
                 throw new ApiError(
                     409,
-                    `${upstreamApi.name} upstream API already exists in this environment.`
+                    `${upstreamApi.name} upstream API already exists in this integration.`
                 );
             }
 
@@ -472,204 +405,75 @@ class UpstreamApiService {
         return upstreamApi;
     }
 
-    async callGateway(
+
+    async deleteUpstreamApi(
+        userId,
         organizationId,
         projectId,
-        upstreamApiId,
-        apiKeyContext,
-        requestContext
+        integrationId,
+        upstreamApiId
     ) {
-        if (!apiKeyContext?.environmentId) {
-            throw new ApiError(
-                400,
-                "API key is not associated with an environment."
-            );
-        }
+        await _getOrganizationById(organizationId);
 
-        if (
-            apiKeyContext.organizationId.toString() !==
-            organizationId.toString()
-        ) {
-            throw new ApiError(
-                403,
-                "API key does not belong to this organization."
-            );
-        }
+        const membership = await _getActiveMembership(
+            userId,
+            organizationId
+        );
 
-        if (
-            apiKeyContext.projectId.toString() !==
-            projectId.toString()
-        ) {
-            throw new ApiError(
-                403,
-                "API key does not belong to this project."
-            );
-        }
+        await _getProjectById(projectId, organizationId);
 
-        const upstreamApi =
-            await UpstreamApi.findOne({
-                _id: upstreamApiId,
-                organizationId,
-                projectId,
-                environmentId: apiKeyContext.environmentId
-            })
-                .select(
-                    "+encryptedCredential +encryptionIv +encryptionAuthTag"
-                );
+        const projectMembership = await _getActiveProjectMembership(
+            projectId,
+            membership._id
+        );
 
-        if (!upstreamApi) {
-            throw new ApiError(
-                404,
-                "Upstream API not found."
-            );
-        }
+        const isOrgAdmin =
+            membership.role === ORGANIZATION_ROLES.OWNER ||
+            membership.role === ORGANIZATION_ROLES.ADMIN;
 
-        if (
-            upstreamApi.environmentId.toString() !==
-            apiKeyContext.environmentId.toString()
-        ) {
+        const isProjectAdmin =
+            projectMembership.role === PROJECT_ROLES.PROJECT_ADMIN;
+
+        if (!isOrgAdmin && !isProjectAdmin) {
             throw new ApiError(
                 403,
-                "Upstream API does not belong to the API key environment."
+                "You do not have permission to delete this upstream API."
             );
         }
 
-        const environment =
-            await Environment.findOne({
-                _id: apiKeyContext.environmentId,
-                organizationId,
-                projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
-            );
-        }
-
-        if (environment.status !== "ACTIVE") {
-            throw new ApiError(
-                400,
-                "Environment is disabled."
-            );
-        }
-
-        const integration =
-            await Integration.findOne({
-                _id: upstreamApi.integrationId,
-                organizationId,
-                projectId
-            });
+        const integration = await Integration.findOne({
+            _id: integrationId,
+            organizationId,
+            projectId
+        });
 
         if (!integration) {
-            throw new ApiError(
-                404,
-                "Integration not found."
-            );
+            throw new ApiError(404, "Integration not found.");
         }
 
-        if (integration.status !== "ACTIVE") {
-            throw new ApiError(
-                400,
-                "Integration is disabled."
-            );
+        const upstreamApi = await UpstreamApi.findOne({
+            _id: upstreamApiId,
+            organizationId,
+            projectId,
+            integrationId
+        });
+
+        if (!upstreamApi) {
+            throw new ApiError(404, "Upstream API not found.");
         }
 
-        if (upstreamApi.status !== "ACTIVE") {
-            throw new ApiError(
-                400,
-                "Upstream API is disabled."
-            );
-        }
+        await UpstreamApi.deleteOne({
+            _id: upstreamApi._id,
+            organizationId,
+            projectId,
+            integrationId
+        });
 
-        const credential =
-            decrypt(
-                upstreamApi.encryptedCredential,
-                upstreamApi.encryptionIv,
-                upstreamApi.encryptionAuthTag
-            );
-
-        const startedAt = Date.now();
-
-        const endpoint =
-            requestContext?.endpoint ||
-            `${upstreamApi.baseUrl}${upstreamApi.path}`;
-
-        const recordUsage = async (statusCode) => {
-            try {
-                await usageService.recordUsage({
-                    apiKeyId: apiKeyContext.apiKeyId,
-                    organizationId,
-                    projectId,
-                    environmentId: apiKeyContext.environmentId,
-                    upstreamApiId: upstreamApi._id,
-                    method: requestContext?.method || "GET",
-                    endpoint,
-                    statusCode,
-                    responseTime: Date.now() - startedAt
-                });
-            } catch (usageError) {
-                console.error(
-                    "Failed to record gateway API usage."
-                );
-            }
+        return {
+            id: upstreamApi._id,
+            name: upstreamApi.name,
+            deleted: true
         };
-
-        try {
-            const response =
-                await this.callUpstreamApi({
-                    upstreamApi,
-                    credential,
-                    method: requestContext?.method || "GET",
-                    queryParams:
-                        requestContext?.queryParams || {},
-                    body:
-                        requestContext?.body
-                });
-
-            await recordUsage(response.status);
-
-            return {
-                data: response.data,
-                statusCode: response.status
-            };
-
-        } catch (error) {
-
-            const statusCode =
-                error.response?.status ||
-                (
-                    error.code === "ECONNABORTED" ||
-                        error.code === "ETIMEDOUT"
-                        ? 504
-                        : 502
-                );
-
-            await recordUsage(statusCode);
-
-            if (
-                error.code === "ECONNABORTED" ||
-                error.code === "ETIMEDOUT"
-            ) {
-                throw new ApiError(
-                    504,
-                    "Upstream API request timed out."
-                );
-            }
-
-            if (error.response) {
-                throw new ApiError(
-                    502,
-                    "Upstream API request failed."
-                );
-            }
-
-            throw new ApiError(
-                502,
-                "Unable to reach upstream API."
-            );
-        }
     }
 
 }

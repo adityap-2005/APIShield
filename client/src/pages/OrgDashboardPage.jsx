@@ -190,7 +190,7 @@ export default function OrgDashboardPage() {
               {activeKeysCount}
             </span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Across all environments</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">Active project keys</p>
         </div>
 
         {/* Metric 3: Integrations */}

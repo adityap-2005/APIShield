@@ -21,7 +21,7 @@ import {
  * becomes path: /weather, query: ?city=Bengaluru
  */
 const formatEndpointDisplay = (rawEndpoint) => {
-  if (!rawEndpoint) return { path: "/", query: "", fullRaw: "/"};
+  if (!rawEndpoint) return { path: "/", query: "", fullRaw: "/" };
 
   // Strip protocol and origin if present
   let clean = rawEndpoint.replace(/^https?:\/\/[^/]+/i, "");
@@ -63,7 +63,7 @@ const METHOD_STYLES = {
 };
 
 export default function UsagePage() {
-  const { activeOrg, activeEnvironment, switchUpstreamApi } = useOrg();
+  const { activeOrg, switchUpstreamApi } = useOrg();
   const params = useParams();
   const navigate = useNavigate();
   const orgId = params.organizationId || activeOrg?._id;
@@ -171,10 +171,6 @@ export default function UsagePage() {
     return <LoadingSpinner message="Fetching API usage statistics..." />;
   }
 
-  const envDisplayName = activeEnvironment?.name
-    ? activeEnvironment.name.charAt(0).toUpperCase() + activeEnvironment.name.slice(1).toLowerCase()
-    : "Production";
-
   return (
     <div className="space-y-6">
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
@@ -207,7 +203,7 @@ export default function UsagePage() {
           <div className="text-2xl font-bold font-mono text-white mt-2">
             {totalReqs.toLocaleString()}
           </div>
-          <p className="text-[11px] text-gray-500 font-mono mt-1">Across all environments</p>
+          <p className="text-[11px] text-gray-500 font-mono mt-1">Total recorded volume</p>
         </div>
 
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-sm">
@@ -304,8 +300,6 @@ export default function UsagePage() {
             <h2 className="text-sm font-semibold text-white tracking-tight">Endpoint usage</h2>
           </div>
           <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
-            <span>{envDisplayName}</span>
-            <span className="text-gray-600">·</span>
             <span>Last 7 days</span>
           </div>
         </div>
@@ -342,7 +336,6 @@ export default function UsagePage() {
                 </thead>
                 <tbody className="divide-y divide-white/5 font-mono">
                   {paginatedEndpoints.map((ep, i) => {
-                    console.log("ENDPOINT DATA:", ep);
                     const method = (ep.method || "GET").toUpperCase();
                     const methodClass =
                       METHOD_STYLES[method] || "bg-emerald-500/10 text-emerald-400 border-emerald-500/25";

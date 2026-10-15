@@ -224,12 +224,12 @@ export default function ProjectDetailPage() {
 
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-lg">
           <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">
-            ENVIRONMENTS
+            INTEGRATIONS
           </span>
           <div className="text-2xl font-bold font-mono text-emerald-400 mt-2">
-            4 Stages
+            Active
           </div>
-          <p className="text-[11px] text-gray-500 font-mono mt-1">Dev, Staging, Prod, Test</p>
+          <p className="text-[11px] text-gray-500 font-mono mt-1">Upstream proxy connections</p>
         </div>
 
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-lg">

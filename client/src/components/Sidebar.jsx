@@ -36,7 +36,6 @@ export default function Sidebar({
   const mainItems = [
     { to: orgId ? `/org/${orgId}` : "/overview", label: "Overview", icon: LayoutDashboard, exact: true },
     { to: getHref("/projects"), label: "Projects", icon: FolderKanban },
-    { to: getHref("/environments"), label: "Environments", icon: Layers },
     { to: getHref("/integrations"), label: "Integrations", icon: Blocks },
     {
       to: getHref("/upstream-apis"),

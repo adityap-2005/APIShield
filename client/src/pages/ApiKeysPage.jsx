@@ -1,16 +1,15 @@
 /**
  * ApiKeysPage.jsx
  *
- * Professional API Key management console matching reference image media_1790937926848.jpg
- * Real backend data only. Hierarchy: Organization -> Project -> Environment -> API Key
+ * Professional API Key management console.
+ * Real backend data only. Hierarchy: Organization -> Project -> API Key
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
 import projectsApi from "../api/projects";
 import apiKeysApi from "../api/apiKeys";
-import integrationsApi from "../api/integrations";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
@@ -23,19 +22,12 @@ import {
   Copy,
   Check,
   Ban,
+  RefreshCw,
   AlertTriangle,
-  X
 } from "lucide-react";
 
-const ENV_DOT_COLORS = {
-  PRODUCTION: "bg-emerald-400",
-  DEVELOPMENT: "bg-blue-400",
-  STAGING: "bg-amber-400",
-  TEST: "bg-purple-400",
-};
-
 export default function ApiKeysPage() {
-  const { activeOrg, activeProject, activeEnvironment, environments } = useOrg();
+  const { activeOrg, activeProject } = useOrg();
   const [searchParams] = useSearchParams();
 
   const [projects, setProjects] = useState([]);
@@ -43,10 +35,6 @@ export default function ApiKeysPage() {
     searchParams.get("projectId") || activeProject?._id || ""
   );
   const [apiKeys, setApiKeys] = useState([]);
-  const [integrations, setIntegrations] = useState([]);
-
-  // Active Environment Filter Tab ("ALL" | "PRODUCTION" | "STAGING" | "DEVELOPMENT" | "TEST")
-  const [activeTab, setActiveTab] = useState("ALL");
 
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [loadingKeys, setLoadingKeys] = useState(false);
@@ -55,13 +43,12 @@ export default function ApiKeysPage() {
   // Modals state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [createdSecret, setCreatedSecret] = useState(null);
+  const [secretAction, setSecretAction] = useState("generated");
   const [copiedSecret, setCopiedSecret] = useState(false);
-  const [copiedKeyId, setCopiedKeyId] = useState(null);
 
   // Form State
   const [keyName, setKeyName] = useState("");
   const [keyDescription, setKeyDescription] = useState("");
-  const [modalSelectedEnv, setModalSelectedEnv] = useState("PRODUCTION");
   const [expirationPreset, setExpirationPreset] = useState("NEVER");
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -77,62 +64,6 @@ export default function ApiKeysPage() {
     loading: false,
   });
 
-  // Extract all environments across integrations in active project
-  const allEnvironments = useMemo(() => {
-    const map = new Map();
-    integrations.forEach((integ) => {
-      (integ.environments || []).forEach((env) => {
-        if (!map.has(env._id)) {
-          map.set(env._id, {
-            _id: env._id,
-            name: env.name || "Production",
-            status: env.status || "ACTIVE",
-          });
-        }
-      });
-    });
-
-    (environments || []).forEach((env) => {
-      if (env?._id && !map.has(env._id)) {
-        map.set(env._id, {
-          _id: env._id,
-          name: env.name || "Production",
-          status: env.status || "ACTIVE",
-        });
-      }
-    });
-
-    const envList = Array.from(map.values());
-    if (envList.length === 0) {
-      return [
-        { _id: "env_prod", name: "Production", status: "ACTIVE" },
-        { _id: "env_stage", name: "Staging", status: "ACTIVE" },
-        { _id: "env_dev", name: "Development", status: "ACTIVE" },
-        { _id: "env_test", name: "Test", status: "ACTIVE" },
-      ];
-    }
-    return envList;
-  }, [integrations, environments]);
-
-  const getEnvName = (k) => {
-    if (k.environmentId && typeof k.environmentId === "object" && k.environmentId.name) {
-      return k.environmentId.name;
-    }
-    if (k.environment && k.environment.name) {
-      return k.environment.name;
-    }
-    if (k.environmentName) {
-      return k.environmentName;
-    }
-    if (typeof k.environmentId === "string") {
-      const found = allEnvironments.find(
-        (e) => e._id === k.environmentId || (e.name && e.name.toUpperCase() === k.environmentId.toUpperCase())
-      );
-      if (found) return found.name;
-    }
-    return "Unknown";
-  };
-
   // Load Projects
   useEffect(() => {
     if (!activeOrg?._id) return;
@@ -146,14 +77,12 @@ export default function ApiKeysPage() {
     }
   }, [activeProject]);
 
-  // Load Keys and Integrations when project changes
+  // Load Keys when project changes
   useEffect(() => {
     if (selectedProjectId && activeOrg?._id) {
       loadApiKeys(selectedProjectId);
-      loadIntegrations(selectedProjectId);
     } else {
       setApiKeys([]);
-      setIntegrations([]);
     }
   }, [selectedProjectId, activeOrg]);
 
@@ -187,36 +116,6 @@ export default function ApiKeysPage() {
     }
   };
 
-  const loadIntegrations = async (projectId) => {
-    try {
-      const res = await integrationsApi.getAll(activeOrg._id, projectId);
-      setIntegrations(res.data?.data || []);
-    } catch {
-      setIntegrations([]);
-    }
-  };
-
-  // Tabs calculation from real keys
-  const tabCounts = useMemo(() => {
-    const counts = { ALL: apiKeys.length, PRODUCTION: 0, STAGING: 0, DEVELOPMENT: 0, TEST: 0 };
-    apiKeys.forEach((k) => {
-      const envUpper = getEnvName(k).toUpperCase();
-      if (counts[envUpper] !== undefined) {
-        counts[envUpper] += 1;
-      }
-    });
-    return counts;
-  }, [apiKeys, allEnvironments]);
-
-  // Filtered keys
-  const filteredKeys = useMemo(() => {
-    if (activeTab === "ALL") return apiKeys;
-    return apiKeys.filter((k) => {
-      const envUpper = getEnvName(k).toUpperCase();
-      return envUpper === activeTab;
-    });
-  }, [apiKeys, activeTab, allEnvironments]);
-
   const handleGenerateKey = async (e) => {
     e.preventDefault();
     if (!keyName.trim()) {
@@ -237,38 +136,68 @@ export default function ApiKeysPage() {
         expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
       }
 
-      // If activeTab is specific, use that; otherwise use modalSelectedEnv
-      const targetEnvName = (activeTab !== "ALL" ? activeTab : modalSelectedEnv).toUpperCase();
-      const matchedEnv =
-        allEnvironments.find(
-          (e) => (e.name || "").toUpperCase() === targetEnvName
-        ) ||
-        environments.find(
-          (e) => (e.name || "").toUpperCase() === targetEnvName
-        ) ||
-        allEnvironments[0];
-
-      const targetEnv = matchedEnv?._id || activeEnvironment?._id || allEnvironments[0]?._id;
-
       const res = await apiKeysApi.create(activeOrg._id, selectedProjectId, {
         name: keyName.trim(),
         description: keyDescription.trim() || undefined,
-        environmentId: targetEnv,
         expiresAt,
       });
 
       const data = res.data?.data;
-      if (data?.key || data?.secret) {
-        setCreatedSecret(data.key || data.secret);
+      if (data?.apiKey || data?.key || data?.secret) {
+        setCreatedSecret(data.apiKey || data.key || data.secret);
+        setSecretAction("generated");
       }
       setKeyName("");
       setKeyDescription("");
-      loadApiKeys(selectedProjectId);
+      await loadApiKeys(selectedProjectId);
     } catch (err) {
       setModalError(err.response?.data?.message || "Failed to generate API key.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleRotateKey = (keyItem) => {
+    setConfirmState({
+      isOpen: true,
+      keyId: keyItem._id,
+      title: "Rotate API Key",
+      description: `Are you sure you want to rotate "${keyItem.name}"? The current secret will stop working and a new secret will be shown once. Save it immediately.`,
+      confirmText: "Rotate Key",
+      variant: "warning",
+      action: async () => {
+        try {
+          setConfirmState((prev) => ({ ...prev, loading: true }));
+          const res = await apiKeysApi.rotate(
+            activeOrg._id,
+            selectedProjectId,
+            keyItem._id
+          );
+          const data = res.data?.data;
+          const newSecret = data?.apiKey || data?.key || data?.secret;
+
+          if (!newSecret) {
+            throw new Error("The rotation response did not include a new secret.");
+          }
+
+          setCreatedSecret(newSecret);
+          setSecretAction("rotated");
+          setCopiedSecret(false);
+          setShowGenerateModal(true);
+          setConfirmState((prev) => ({ ...prev, isOpen: false, loading: false }));
+          await loadApiKeys(selectedProjectId);
+        } catch (err) {
+          setError(err.response?.data?.message || err.message || "Failed to rotate API key.");
+          setConfirmState((prev) => ({ ...prev, loading: false }));
+        }
+      },
+    });
+  };
+
+  const closeSecretModal = () => {
+    setShowGenerateModal(false);
+    setCreatedSecret(null);
+    setCopiedSecret(false);
   };
 
   const handleRevokeKey = (keyItem) => {
@@ -283,18 +212,13 @@ export default function ApiKeysPage() {
           setConfirmState((prev) => ({ ...prev, loading: true }));
           await apiKeysApi.revoke(activeOrg._id, selectedProjectId, keyItem._id);
           setConfirmState((prev) => ({ ...prev, isOpen: false, loading: false }));
-          loadApiKeys(selectedProjectId);
-        } catch {
+          await loadApiKeys(selectedProjectId);
+        } catch (err) {
+          setError(err.response?.data?.message || "Failed to revoke API key.");
           setConfirmState((prev) => ({ ...prev, loading: false }));
         }
       },
     });
-  };
-
-  const copyKeyIdentifier = (id, text) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKeyId(id);
-    setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
   if (loadingProjects) {
@@ -303,7 +227,7 @@ export default function ApiKeysPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── HEADER (Matches media_1790937926848.jpg) ───────────────────────── */}
+      {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -317,6 +241,7 @@ export default function ApiKeysPage() {
         <button
           onClick={() => {
             setCreatedSecret(null);
+            setSecretAction("generated");
             setShowGenerateModal(true);
           }}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20 self-start sm:self-auto"
@@ -328,43 +253,17 @@ export default function ApiKeysPage() {
 
       {error && <ErrorMessage message={error} />}
 
-      {/* ── ENVIRONMENT TABS (Matches Reference) ────────────────────────────── */}
-      <div className="flex items-center gap-1.5 bg-[#0e131f] border border-white/10 rounded-xl p-1.5 w-fit overflow-x-auto">
-        {[
-          { key: "ALL", label: `All Keys` },
-          { key: "PRODUCTION", label: `Production` },
-          { key: "STAGING", label: `Staging` },
-          { key: "DEVELOPMENT", label: `Development` },
-          { key: "TEST", label: `Test` },
-        ].map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                isActive
-                  ? "bg-white/10 text-white font-semibold"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
       {/* ── API KEYS TABLE ─────────────────────────────────────────────────── */}
       {loadingKeys ? (
         <LoadingSpinner message="Loading API keys..." />
-      ) : filteredKeys.length === 0 ? (
+      ) : apiKeys.length === 0 ? (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-12 text-center">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
             <KeyRound className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-white mb-1">No API keys yet</h3>
           <p className="text-xs text-gray-400 max-w-md mx-auto mb-6">
-            Generate an environment-scoped API access key to authenticate gateway requests.
+            Generate an API access key to authenticate gateway requests.
           </p>
           <button
             onClick={() => {
@@ -384,26 +283,32 @@ export default function ApiKeysPage() {
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-mono text-gray-400 uppercase tracking-wider">
                   <th className="px-4 py-3 font-medium">KEY NAME</th>
-                  <th className="px-4 py-3 font-medium">ENVIRONMENT</th>
                   <th className="px-4 py-3 font-medium">CREATED</th>
                   <th className="px-4 py-3 font-medium">LAST USED</th>
+                  <th className="px-4 py-3 font-medium">EXPIRES</th>
+                  <th className="px-4 py-3 font-medium">LAST ROTATED</th>
                   <th className="px-4 py-3 font-medium">STATUS</th>
                   <th className="px-4 py-3 font-medium text-right">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredKeys.map((k) => {
-                  const envName = getEnvName(k);
-                  const envUpper = envName.toUpperCase();
-                  const dotColor = ENV_DOT_COLORS[envUpper] || "bg-emerald-400";
+                {apiKeys.map((k) => {
                   const isRevoked = k.status === "REVOKED";
                   const isExpired = k.status === "EXPIRED";
-                  const isActive = !isRevoked && !isExpired;
+                  const isArchived = k.status === "ARCHIVED";
+                  const isActive = k.status === "ACTIVE";
 
-                  // Masked key display
-                  const safeKeyDisplay = k.keyPrefix
-                    ? `${k.keyPrefix}••••${k.keySuffix || "abcd"}`
-                    : `aps_live_••••${k._id?.slice(-4) || "abcd"}`;
+                  // Safe key display
+                  const safeKeyDisplay = k.publicKeyId || "Identifier unavailable";
+                  const statusLabel = isActive
+                    ? "ACTIVE"
+                    : isRevoked
+                      ? "REVOKED"
+                      : isExpired
+                        ? "EXPIRED"
+                        : isArchived
+                          ? "ARCHIVED"
+                          : k.status || "UNKNOWN";
 
                   return (
                     <tr key={k._id} className="hover:bg-white/[0.02] transition-colors">
@@ -417,22 +322,26 @@ export default function ApiKeysPage() {
                         </div>
                       </td>
 
-                      {/* Environment */}
-                      <td className="px-4 py-3.5 font-mono">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                          <span className="text-gray-300 capitalize">{envName.toLowerCase()}</span>
-                        </div>
-                      </td>
-
                       {/* Created */}
                       <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
-                        {k.createdAt ? new Date(k.createdAt).toLocaleDateString() : "Jan 10, 2026"}
+                        {k.createdAt ? new Date(k.createdAt).toLocaleDateString() : "Active"}
                       </td>
 
                       {/* Last Used */}
                       <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
                         {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleTimeString() : "Never"}
+                      </td>
+
+                      {/* Expiration */}
+                      <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
+                        {k.expiresAt ? new Date(k.expiresAt).toLocaleDateString() : "Never"}
+                      </td>
+
+                      {/* Last Rotated */}
+                      <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
+                        {k.lastRotatedAt || k.rotatedAt
+                          ? new Date(k.lastRotatedAt || k.rotatedAt).toLocaleString()
+                          : "Never"}
                       </td>
 
                       {/* Status */}
@@ -444,33 +353,30 @@ export default function ApiKeysPage() {
                               : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                           }`}
                         >
-                          {isActive ? "ACTIVE" : isRevoked ? "REVOKED" : "EXPIRED"}
+                          {statusLabel}
                         </span>
                       </td>
 
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => copyKeyIdentifier(k._id, safeKeyDisplay)}
-                            className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                            title="Copy Key ID"
-                          >
-                            {copiedKeyId === k._id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-
                           {isActive && (
-                            <button
-                              onClick={() => handleRevokeKey(k)}
-                              className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors"
-                              title="Revoke Key"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleRotateKey(k)}
+                                className="p-1.5 rounded-md hover:bg-amber-500/10 text-gray-400 hover:text-amber-400 transition-colors"
+                                title="Rotate Key"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRevokeKey(k)}
+                                className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors"
+                                title="Revoke Key"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -486,8 +392,8 @@ export default function ApiKeysPage() {
       {/* ── GENERATE KEY MODAL ──────────────────────────────────────────────── */}
       <Modal
         isOpen={showGenerateModal}
-        onClose={() => setShowGenerateModal(false)}
-        title={createdSecret ? "API Key Generated" : "Generate API Key"}
+        onClose={closeSecretModal}
+        title={createdSecret ? `API Key ${secretAction === "rotated" ? "Rotated" : "Generated"}` : "Generate API Key"}
       >
         {createdSecret ? (
           <div className="space-y-4 text-xs">
@@ -496,7 +402,7 @@ export default function ApiKeysPage() {
               <div>
                 <span className="font-semibold block">Copy your API key now</span>
                 <span className="text-[11px] text-amber-300/80 mt-0.5 block">
-                  You will not be able to see this secret again once this dialog is closed.
+                  This secret will not be shown again once this dialog is closed. Save it immediately.
                 </span>
               </div>
             </div>
@@ -521,7 +427,7 @@ export default function ApiKeysPage() {
             <div className="flex justify-end pt-3 border-t border-white/10">
               <button
                 type="button"
-                onClick={() => setShowGenerateModal(false)}
+                onClick={closeSecretModal}
                 className="btn-primary text-xs"
               >
                 I have saved my key
@@ -547,36 +453,6 @@ export default function ApiKeysPage() {
                 required
                 autoFocus
               />
-            </div>
-
-            <div>
-              <label className="label">Environment {activeTab === "ALL" && "*"}</label>
-              {activeTab !== "ALL" ? (
-                <div className="flex items-center gap-2 p-2.5 bg-[#0e131b] border border-white/10 rounded-lg text-xs font-mono text-gray-200">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      ENV_DOT_COLORS[activeTab.toUpperCase()] || "bg-emerald-400"
-                    }`}
-                  />
-                  <span className="capitalize">
-                    {activeTab.toLowerCase()}
-                  </span>
-                  <span className="text-[10px] text-gray-500 font-sans ml-auto">
-                    (From active tab)
-                  </span>
-                </div>
-              ) : (
-                <select
-                  value={modalSelectedEnv}
-                  onChange={(e) => setModalSelectedEnv(e.target.value)}
-                  className="input font-mono text-xs"
-                >
-                  <option value="PRODUCTION">Production</option>
-                  <option value="STAGING">Staging</option>
-                  <option value="DEVELOPMENT">Development</option>
-                  <option value="TEST">Test</option>
-                </select>
-              )}
             </div>
 
             <div>

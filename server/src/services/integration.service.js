@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import Integration from "../models/integration.model.js";
-import Environment from "../models/environment.model.js";
 import ApiError from "../utils/ApiError.js";
 import UpstreamApi from "../models/upstreamApi.model.js";
 import { encrypt } from "../utils/encryption.js";
@@ -37,7 +36,6 @@ class IntegrationService {
     ) {
         const {
             name,
-            environment: environmentName,
             upstreamApiName,
             baseUrl,
             path,
@@ -66,7 +64,7 @@ class IntegrationService {
             );
         }
 
-        if (authentication.type !== "NONE" && !upstreamCredential) {
+        if (authentication && authentication.type !== "NONE" && !upstreamCredential) {
             throw new ApiError(
                 400,
                 "Upstream credential is required."
@@ -152,26 +150,9 @@ class IntegrationService {
                 throw error;
             }
 
-            const environment =
-                await Environment.create(
-                    [{
-                        organizationId,
-                        projectId,
-                        integrationId:
-                            createdIntegration._id,
-                        name: environmentName,
-                        createdBy: userId
-                    }],
-                    { session }
-                );
-
-            const createdEnvironment =
-                environment[0];
-
-
             let encryptedCredentialData;
 
-            if (authentication.type !== "NONE") {
+            if (authentication && authentication.type !== "NONE") {
                 if (!upstreamCredential) {
                     throw new ApiError(
                         400,
@@ -194,12 +175,10 @@ class IntegrationService {
                             projectId,
                             integrationId:
                                 createdIntegration._id,
-                            environmentId:
-                                createdEnvironment._id,
                             name: upstreamApiName,
                             baseUrl,
                             path,
-                            authentication,
+                            authentication: authentication || { type: "NONE" },
                             encryptedCredential:
                                 encryptedCredentialData?.encryptedData,
 
@@ -222,7 +201,7 @@ class IntegrationService {
                 if (error.code === 11000) {
                     throw new ApiError(
                         409,
-                        `${upstreamApiName} upstream API already exists in this environment.`
+                        `${upstreamApiName} upstream API already exists in this integration.`
                     );
                 }
 
@@ -237,7 +216,6 @@ class IntegrationService {
 
             return {
                 integration: createdIntegration,
-                environment: createdEnvironment,
                 upstreamApi: createdUpstreamApi
             };
 
@@ -291,56 +269,26 @@ class IntegrationService {
                 (integration) => integration._id
             );
 
-        const environments =
-            await Environment.find({
+        const upstreamApis =
+            await UpstreamApi.find({
                 integrationId: {
                     $in: integrationIds
                 },
                 organizationId,
                 projectId
             }).select(
-                "_id integrationId name status"
-            );
-
-        const environmentIds =
-            environments.map(
-                (environment) => environment._id
-            );
-
-        const upstreamApis =
-            await UpstreamApi.find({
-                environmentId: {
-                    $in: environmentIds
-                },
-                organizationId,
-                projectId
-            }).select(
-                "_id environmentId name baseUrl path authentication status createdAt updatedAt"
+                "_id integrationId name baseUrl path authentication status createdAt updatedAt"
             );
 
         return integrations.map(
             (integration) => ({
                 ...integration.toObject(),
-
-                environments:
-                    environments
-                        .filter(
-                            (environment) =>
-                                environment.integrationId.toString() ===
-                                integration._id.toString()
-                        )
-                        .map(
-                            (environment) => ({
-                                ...environment.toObject(),
-
-                                upstreamApis:
-                                    upstreamApis.filter(
-                                        (upstreamApi) =>
-                                            upstreamApi.environmentId.toString() ===
-                                            environment._id.toString()
-                                    )
-                            })
-                        )
+                upstreamApis:
+                    upstreamApis.filter(
+                        (upstreamApi) =>
+                            upstreamApi.integrationId.toString() ===
+                            integration._id.toString()
+                    )
             })
         );
     }
@@ -385,47 +333,18 @@ class IntegrationService {
             );
         }
 
-        const environments =
-            await Environment.find({
+        const upstreamApis =
+            await UpstreamApi.find({
                 integrationId: integration._id,
                 organizationId,
                 projectId
             }).select(
-                "_id integrationId name status"
-            );
-
-        const environmentIds =
-            environments.map(
-                (environment) => environment._id
-            );
-
-        const upstreamApis =
-            await UpstreamApi.find({
-                environmentId: {
-                    $in: environmentIds
-                },
-                organizationId,
-                projectId
-            }).select(
-                "_id environmentId name baseUrl path status createdAt updatedAt"
+                "_id integrationId name baseUrl path status createdAt updatedAt"
             );
 
         return {
             ...integration.toObject(),
-
-            environments:
-                environments.map(
-                    (environment) => ({
-                        ...environment.toObject(),
-
-                        upstreamApis:
-                            upstreamApis.filter(
-                                (upstreamApi) =>
-                                    upstreamApi.environmentId.toString() ===
-                                    environment._id.toString()
-                            )
-                    })
-                )
+            upstreamApis
         };
     }
 

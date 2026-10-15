@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
 
 export default function IntegrationSelector() {
-  const { integrations, activeIntegration, switchIntegration, activeOrg, activeProject, activeEnvironment } = useOrg();
+  const { integrations, activeIntegration, switchIntegration, activeOrg } = useOrg();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -33,17 +33,7 @@ export default function IntegrationSelector() {
     };
   }, [isOpen]);
 
-  const activeEnvUpper = (activeEnvironment?.name || "").toUpperCase();
-  // Filter integrations to those configured with the active environment, or all if none specified
-  const filteredIntegrations = integrations.filter((integ) => {
-    if (!activeEnvUpper) return true;
-    return (integ.environments || []).some(
-      (e) => (e.name || "").toUpperCase() === activeEnvUpper
-    );
-  });
-
-  const displayList = filteredIntegrations.length > 0 ? filteredIntegrations : integrations;
-  const currentInteg = displayList.find((i) => i._id === activeIntegration?._id) || displayList[0];
+  const currentInteg = integrations.find((i) => i._id === activeIntegration?._id) || integrations[0];
   const integName = currentInteg?.name || activeIntegration?.name || "Select Integration";
 
   return (
@@ -65,20 +55,15 @@ export default function IntegrationSelector() {
         <div className="absolute left-0 mt-2 w-64 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
           <div className="px-3 py-2 text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 flex items-center justify-between">
             <span>Integrations</span>
-            {activeEnvironment?.name && (
-              <span className="text-[9px] text-emerald-400/80 font-normal">
-                {activeEnvironment.name}
-              </span>
-            )}
           </div>
 
           <div className="max-h-60 overflow-y-auto py-1">
-            {displayList.length === 0 ? (
+            {integrations.length === 0 ? (
               <div className="px-3 py-3 text-xs text-gray-400 italic text-center">
-                No integrations in active environment
+                No integrations configured
               </div>
             ) : (
-              displayList.map((integ) => {
+              integrations.map((integ) => {
                 const isSelected = activeIntegration?._id === integ._id;
                 return (
                   <button

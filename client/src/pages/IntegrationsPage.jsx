@@ -2,19 +2,17 @@
  * IntegrationsPage.jsx
  *
  * Professional developer console for managing Integrations and upstream connections.
- * Hierarchy: Organization -> Project -> Environment -> Integration -> Upstream API
+ * Hierarchy: Organization -> Project -> Integration -> Upstream API
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
 import projectsApi from "../api/projects";
 import integrationsApi from "../api/integrations";
-import upstreamApisApi from "../api/upstreamApis";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
-import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -22,33 +20,12 @@ import {
   Blocks,
   Plus,
   Server,
-  Play,
   Search,
   Settings,
 } from "lucide-react";
 
-const ENV_STAGE_STYLES = {
-  PRODUCTION: {
-    badge: "text-[#f59e0b] border-[#f59e0b]/40 bg-[#f59e0b]/10",
-    dot: "bg-[#f59e0b]",
-  },
-  STAGING: {
-    badge: "text-purple-400 border-purple-500/40 bg-purple-500/10",
-    dot: "bg-purple-400",
-  },
-  DEVELOPMENT: {
-    badge: "text-blue-400 border-blue-500/40 bg-blue-500/10",
-    dot: "bg-blue-400",
-  },
-  TEST: {
-    badge: "text-emerald-400 border-emerald-500/40 bg-emerald-500/10",
-    dot: "bg-emerald-400",
-  },
-};
-
 export default function IntegrationsPage() {
-  const { activeOrg, activeProject, switchUpstreamApi, switchIntegration } = useOrg();
-  const navigate = useNavigate();
+  const { activeOrg, activeProject } = useOrg();
   const [searchParams] = useSearchParams();
 
   // Project state
@@ -60,9 +37,6 @@ export default function IntegrationsPage() {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterEnv, setFilterEnv] = useState(
-    searchParams.get("env")?.toUpperCase() || "ALL"
-  ); // ALL | DEVELOPMENT | STAGING | PRODUCTION | TEST
 
   // Data state
   const [integrations, setIntegrations] = useState([]);
@@ -76,7 +50,6 @@ export default function IntegrationsPage() {
 
   // Create form state
   const [newIntegrationName, setNewIntegrationName] = useState("");
-  const [newEnvironment, setNewEnvironment] = useState("PRODUCTION");
   const [newUpstreamName, setNewUpstreamName] = useState("");
   const [newBaseUrl, setNewBaseUrl] = useState("");
   const [newPath, setNewPath] = useState("");
@@ -117,14 +90,10 @@ export default function IntegrationsPage() {
     }
   }, [selectedProjectId]);
 
-  // Handle URL query actions and environment filters
+  // Handle URL query actions
   useEffect(() => {
     if (searchParams.get("action") === "create") {
       setShowCreateModal(true);
-    }
-    const envParam = searchParams.get("env");
-    if (envParam) {
-      setFilterEnv(envParam.toUpperCase());
     }
   }, [searchParams]);
 
@@ -158,42 +127,12 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Flattened integrations by environment for easy filtering
-  const flattenedIntegrations = useMemo(() => {
-    const list = [];
-    integrations.forEach((integ) => {
-      const envs = integ.environments || [];
-      if (envs.length === 0) {
-        list.push({
-          ...integ,
-          envName: "PRODUCTION",
-          envStatus: integ.status || "ACTIVE",
-          upstreamApis: [],
-        });
-      } else {
-        envs.forEach((env) => {
-          list.push({
-            ...integ,
-            envId: env._id,
-            envName: env.name || "PRODUCTION",
-            envStatus: env.status || "ACTIVE",
-            upstreamApis: env.upstreamApis || [],
-          });
-        });
-      }
+  const filteredIntegrations = useMemo(() => {
+    return integrations.filter((item) => {
+      if (!searchQuery) return true;
+      return item.name?.toLowerCase().includes(searchQuery.toLowerCase());
     });
-
-    return list.filter((item) => {
-      const matchEnv =
-        filterEnv === "ALL" ||
-        item.envName.toUpperCase() === filterEnv.toUpperCase();
-      const matchSearch =
-        searchQuery === "" ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.envName.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchEnv && matchSearch;
-    });
-  }, [integrations, filterEnv, searchQuery]);
+  }, [integrations, searchQuery]);
 
   const handleCreateIntegration = async (e) => {
     e.preventDefault();
@@ -212,7 +151,6 @@ export default function IntegrationsPage() {
 
       const payload = {
         name: newIntegrationName.trim(),
-        environment: newEnvironment,
         upstreamApiName: newUpstreamName.trim() || undefined,
         baseUrl: newBaseUrl.trim() || undefined,
         path: newPath.trim() || undefined,
@@ -236,7 +174,6 @@ export default function IntegrationsPage() {
 
   const resetForm = () => {
     setNewIntegrationName("");
-    setNewEnvironment("PRODUCTION");
     setNewUpstreamName("");
     setNewBaseUrl("");
     setNewPath("");
@@ -270,14 +207,6 @@ export default function IntegrationsPage() {
     });
   };
 
-  const handleTestIntegration = (integ, api) => {
-    switchIntegration(integ);
-    if (api) {
-      switchUpstreamApi(api);
-    }
-    navigate("/test-api");
-  };
-
   if (loadingProjects) {
     return <LoadingSpinner message="Loading workspace projects..." />;
   }
@@ -296,7 +225,7 @@ export default function IntegrationsPage() {
           </nav>
           <h1 className="text-xl font-bold text-white tracking-tight">Integrations</h1>
           <p className="text-xs text-gray-400 mt-1">
-            Manage connections to your upstream APIs across environments.
+            Manage connections to your upstream APIs.
           </p>
         </div>
 
@@ -328,9 +257,8 @@ export default function IntegrationsPage() {
 
       {error && <ErrorMessage message={error} />}
 
-      {/* ── SEARCH & FILTER CONTROLS ───────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0e131f] border border-white/10 rounded-xl p-3">
-        {/* Search input */}
+      {/* ── SEARCH CONTROL ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 bg-[#0e131f] border border-white/10 rounded-xl p-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -341,32 +269,12 @@ export default function IntegrationsPage() {
             className="w-full bg-[#070b12] border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
           />
         </div>
-
-        {/* Environment Filter Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {["ALL", "DEVELOPMENT", "STAGING", "PRODUCTION", "TEST"].map((env) => {
-            const isActive = filterEnv === env;
-            return (
-              <button
-                key={env}
-                onClick={() => setFilterEnv(env)}
-                className={`px-3 py-1 rounded-md text-xs font-mono font-medium transition-colors uppercase ${
-                  isActive
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {env}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* ── INTEGRATIONS TABLE ──────────────────────────────────────────────── */}
       {loadingData ? (
         <LoadingSpinner message="Loading integrations..." />
-      ) : flattenedIntegrations.length === 0 ? (
+      ) : filteredIntegrations.length === 0 ? (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-12 text-center">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
             <Blocks className="w-6 h-6" />
@@ -390,22 +298,20 @@ export default function IntegrationsPage() {
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-mono text-gray-400 uppercase tracking-wider">
                   <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Environment</th>
                   <th className="px-4 py-3 font-medium">Upstream APIs</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Created At</th>
                   <th className="px-4 py-3 font-medium">Last Activity</th>
                   <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {flattenedIntegrations.map((item, idx) => {
-                  const upper = item.envName.toUpperCase();
-                  const stage = ENV_STAGE_STYLES[upper] || ENV_STAGE_STYLES.PRODUCTION;
+                {filteredIntegrations.map((item) => {
                   const apisCount = (item.upstreamApis || []).length;
                   const isActive = item.status === "ACTIVE";
 
                   return (
-                    <tr key={`${item._id}-${item.envName}-${idx}`} className="hover:bg-white/[0.02] transition-colors">
+                    <tr key={item._id} className="hover:bg-white/[0.02] transition-colors">
                       {/* Name */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
@@ -419,14 +325,6 @@ export default function IntegrationsPage() {
                             </div>
                           </div>
                         </div>
-                      </td>
-
-                      {/* Environment */}
-                      <td className="px-4 py-3.5 font-mono">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${stage.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${stage.dot}`} />
-                          {item.envName}
-                        </span>
                       </td>
 
                       {/* Upstream APIs */}
@@ -449,22 +347,19 @@ export default function IntegrationsPage() {
                         </span>
                       </td>
 
+                      {/* Created At */}
+                      <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+                      </td>
+
                       {/* Last Activity */}
                       <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
-                        {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "Active today"}
+                        {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "N/A"}
                       </td>
 
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleTestIntegration(item, item.upstreamApis?.[0])}
-                            className="p-1.5 rounded-md hover:bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 border border-white/5 hover:border-emerald-500/30 transition-colors"
-                            title="Test API"
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                          </button>
-
                           <button
                             onClick={() => handleToggleStatus(item)}
                             className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors"
@@ -506,20 +401,6 @@ export default function IntegrationsPage() {
               className="input"
               required
             />
-          </div>
-
-          <div>
-            <label className="label">Target Environment *</label>
-            <select
-              value={newEnvironment}
-              onChange={(e) => setNewEnvironment(e.target.value)}
-              className="input"
-            >
-              <option value="PRODUCTION">Production</option>
-              <option value="STAGING">Staging</option>
-              <option value="DEVELOPMENT">Development</option>
-              <option value="TEST">Test</option>
-            </select>
           </div>
 
           <div className="pt-2 border-t border-white/10">

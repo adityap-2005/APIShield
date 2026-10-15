@@ -130,7 +130,7 @@ export default function ProjectsPage() {
             Projects
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 mt-1">
-            Manage projects, environments, and team access within {activeOrg?.name || "your organization"}.
+            Manage projects, integrations, and member access within {activeOrg?.name || "your organization"}.
           </p>
         </div>
 
@@ -289,7 +289,7 @@ export default function ProjectsPage() {
           onClose={() => setConfirmState({ isOpen: false, projectId: null, projectName: "", loading: false })}
           onConfirm={handleConfirmDelete}
           title="Delete Project"
-          message={`Are you sure you want to delete "${confirmState.projectName}"? All environment integrations and API keys within this project will be deleted.`}
+          message={`Are you sure you want to delete "${confirmState.projectName}"? All integrations and API keys within this project will be deleted.`}
           confirmText="Delete Project"
           isDanger={true}
           isLoading={confirmState.loading}

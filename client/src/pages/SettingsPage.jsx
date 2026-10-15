@@ -339,7 +339,7 @@ export default function SettingsPage() {
               <span>Danger Zone</span>
             </h2>
             <p className="text-xs text-gray-400">
-              Permanently delete this organization and all associated projects, environments, integrations, and API keys. This action cannot be undone.
+              Permanently delete this organization and all associated projects, integrations, and API keys. This action cannot be undone.
             </p>
 
             <div className="pt-2">
@@ -363,7 +363,7 @@ export default function SettingsPage() {
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDeleteOrg}
           title="Delete Organization"
-          message={`Are you sure you want to delete ${currentOrg.name}? This will permanently delete all projects, integrations, environments, and API keys.`}
+          message={`Are you sure you want to delete ${currentOrg.name}? This will permanently delete all projects, integrations, and API keys.`}
           confirmText="Yes, delete organization"
           isDanger={true}
           isLoading={isDeleting}

@@ -15,20 +15,10 @@ import {
   KeyRound,
 } from "lucide-react";
 
-const ENV_COLORS = {
-  DEVELOPMENT: "bg-blue-400",
-  STAGING: "bg-purple-400",
-  PRODUCTION: "bg-emerald-400",
-  TEST: "bg-amber-400",
-};
-
 export default function TestApiPage() {
   const {
     activeOrg,
     activeProject,
-    environments,
-    activeEnvironment,
-    switchEnvironment,
     activeIntegration,
     upstreamApis,
     activeUpstreamApi,
@@ -91,7 +81,6 @@ export default function TestApiPage() {
 
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
-  const [envDropdownOpen, setEnvDropdownOpen] = useState(false);
   const [apiDropdownOpen, setApiDropdownOpen] = useState(false);
   const [keyDropdownOpen, setKeyDropdownOpen] = useState(false);
 
@@ -274,7 +263,6 @@ export default function TestApiPage() {
             wind_speed: 12.4,
             ...(paramObj.current_weather ? { current_weather: true } : {}),
             routed_via: "APIShield Gateway",
-            environment: activeEnvironment?.name || "DEVELOPMENT",
             upstream: activeUpstreamApi?.name || "Weather API",
           },
         };
@@ -342,23 +330,22 @@ export default function TestApiPage() {
         {/* Formatted Code */}
         <div className="pl-4 space-y-0.5 text-gray-200 whitespace-pre">
           {lines.map((line, i) => {
-            // Highlight keys and values with regex
             const formattedLine = line.replace(
               /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
               (match) => {
-                let cls = "text-sky-400"; // default key
+                let cls = "text-sky-400";
                 if (/^"/.test(match)) {
                   if (/:$/.test(match)) {
-                    cls = "text-[#60a5fa]"; // property key (cyan/blue)
+                    cls = "text-[#60a5fa]";
                   } else {
-                    cls = "text-[#34d399]"; // string value (emerald green)
+                    cls = "text-[#34d399]";
                   }
                 } else if (/true|false/.test(match)) {
-                  cls = "text-[#c084fc]"; // boolean (purple)
+                  cls = "text-[#c084fc]";
                 } else if (/null/.test(match)) {
                   cls = "text-gray-500";
                 } else {
-                  cls = "text-[#fbbf24]"; // number (amber)
+                  cls = "text-[#fbbf24]";
                 }
                 return `<span class="${cls}">${match}</span>`;
               }
@@ -376,15 +363,10 @@ export default function TestApiPage() {
     );
   };
 
-  const currentEnvName = (activeEnvironment?.name || "DEVELOPMENT").toUpperCase();
-  const envDotColor = ENV_COLORS[currentEnvName] || "bg-emerald-400";
-  const envDisplay = currentEnvName.charAt(0) + currentEnvName.slice(1).toLowerCase();
-
   return (
     <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8">
       {/* ── BREADCRUMBS & HIERARCHY BAR ────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        {/* Supabase / Gateway Hierarchy Indicator */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">
           <Link to="/" className="text-gray-400 hover:text-white transition-colors">
             APIShield
@@ -392,10 +374,6 @@ export default function TestApiPage() {
           <span className="text-gray-600">/</span>
           <span className="text-gray-400 truncate max-w-[120px]">
             {activeProject?.name || "Project"}
-          </span>
-          <span className="text-gray-600">/</span>
-          <span className="text-gray-400 truncate max-w-[120px]">
-            {envDisplay}
           </span>
           <span className="text-gray-600">/</span>
           <span className="text-gray-400 truncate max-w-[140px]">
@@ -406,7 +384,7 @@ export default function TestApiPage() {
         </nav>
       </div>
 
-      {/* ── PAGE TITLE & ENVIRONMENT SWITCHER ──────────────────────────────── */}
+      {/* ── PAGE TITLE & UPSTREAM SELECTOR ─────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -417,61 +395,8 @@ export default function TestApiPage() {
           </p>
         </div>
 
-        {/* Environment Selector Pill (matches reference design) */}
+        {/* Upstream API Switcher Pill */}
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          {/* Environment dropdown button */}
-          <div className="relative">
-            <button
-              onClick={() => setEnvDropdownOpen(!envDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-[#0e131f] text-xs font-medium text-white hover:border-white/20 transition-all shadow-sm"
-              aria-label="Select environment"
-            >
-              <span className={`w-2 h-2 rounded-full ${envDotColor} shrink-0`} />
-              <span>{envDisplay}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-            </button>
-
-            {envDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#131826] border border-white/10 rounded-xl shadow-2xl py-1.5 z-40">
-                <div className="px-3 py-1.5 text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider border-b border-white/5">
-                  Switch Environment
-                </div>
-                {(environments?.length > 0
-                  ? environments
-                  : [
-                      { _id: "dev", name: "DEVELOPMENT" },
-                      { _id: "stg", name: "STAGING" },
-                      { _id: "prod", name: "PRODUCTION" },
-                      { _id: "test", name: "TEST" },
-                    ]
-                ).map((env) => {
-                  const isCur = activeEnvironment?.name === env.name;
-                  const itemColor = ENV_COLORS[env.name.toUpperCase()] || "bg-emerald-400";
-                  const formatted = env.name.charAt(0) + env.name.slice(1).toLowerCase();
-                  return (
-                    <button
-                      key={env._id || env.name}
-                      onClick={() => {
-                        switchEnvironment(env);
-                        setEnvDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-white/5 transition-colors ${
-                        isCur ? "text-emerald-400 font-semibold bg-emerald-950/20" : "text-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${itemColor}`} />
-                        <span>{formatted}</span>
-                      </div>
-                      {isCur && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Upstream API Switcher Pill */}
           {upstreamApis?.length > 1 && (
             <div className="relative">
               <button
@@ -522,7 +447,6 @@ export default function TestApiPage() {
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-2xl space-y-5">
           {/* Method and Path Bar */}
           <div className="flex items-center gap-2.5">
-            {/* Method Select */}
             <div className="relative">
               <select
                 value={method}
@@ -538,7 +462,6 @@ export default function TestApiPage() {
               <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Dynamic Endpoint Path Input */}
             <div className="flex-1 relative">
               <input
                 type="text"
@@ -718,9 +641,7 @@ export default function TestApiPage() {
               </span>
             </div>
 
-            {/* Key Switcher Dropdown & Custom Token Input */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {/* Select from project's authorized keys */}
               <div className="relative">
                 <button
                   type="button"
@@ -742,7 +663,7 @@ export default function TestApiPage() {
                     </div>
                     {availableKeys.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-gray-500 italic">
-                        No keys in this environment
+                        No keys in this project
                       </div>
                     ) : (
                       availableKeys.map((k) => (
@@ -768,7 +689,6 @@ export default function TestApiPage() {
                 )}
               </div>
 
-              {/* Paste or Enter specific token */}
               <input
                 type="password"
                 value={customApiKey}
@@ -809,7 +729,6 @@ export default function TestApiPage() {
         <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-2xl flex flex-col min-h-[460px]">
           {/* Top Bar with Tabs and Status */}
           <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-            {/* Tabs */}
             <div className="flex items-center gap-5">
               <button
                 type="button"
@@ -882,7 +801,6 @@ export default function TestApiPage() {
 
           {/* Panel Content Area */}
           <div className="flex-1 flex flex-col relative">
-            {/* Loading Overlay */}
             {loading && (
               <div className="absolute inset-0 bg-[#0e131f]/90 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-20 rounded-lg">
                 <span className="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -895,7 +813,6 @@ export default function TestApiPage() {
             {/* Tab: Response */}
             {responseTab === "response" && (
               <div className="relative flex-1 bg-[#080c14] border border-white/5 rounded-lg p-4 overflow-auto max-h-[500px]">
-                {/* Copy Button */}
                 <button
                   type="button"
                   onClick={() =>

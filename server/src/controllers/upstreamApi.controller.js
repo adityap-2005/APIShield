@@ -1,10 +1,6 @@
 import upstreamApiService from "../services/upstreamApi.service.js";
-
-
 class UpstreamApiController {
-
     async createUpstreamApi(req, res) {
-
         const {
             organizationId,
             projectId,
@@ -18,8 +14,8 @@ class UpstreamApiController {
                 organizationId,
                 projectId,
                 integrationId,
-                environmentId,
-                req.body
+                req.body,
+                environmentId || null
             );
 
         return res.status(201).json({
@@ -28,14 +24,11 @@ class UpstreamApiController {
         });
     }
 
-
     async getUpstreamApis(req, res) {
-
         const {
             organizationId,
             projectId,
-            integrationId,
-            environmentId
+            integrationId
         } = req.params;
 
         const upstreamApis =
@@ -43,8 +36,7 @@ class UpstreamApiController {
                 req.user._id,
                 organizationId,
                 projectId,
-                integrationId,
-                environmentId
+                integrationId
             );
 
         return res.status(200).json({
@@ -53,14 +45,11 @@ class UpstreamApiController {
         });
     }
 
-
     async getUpstreamApi(req, res) {
-
         const {
             organizationId,
             projectId,
             integrationId,
-            environmentId,
             upstreamApiId
         } = req.params;
 
@@ -70,7 +59,6 @@ class UpstreamApiController {
                 organizationId,
                 projectId,
                 integrationId,
-                environmentId,
                 upstreamApiId
             );
 
@@ -80,14 +68,11 @@ class UpstreamApiController {
         });
     }
 
-
     async updateUpstreamApi(req, res) {
-
         const {
             organizationId,
             projectId,
             integrationId,
-            environmentId,
             upstreamApiId
         } = req.params;
 
@@ -97,7 +82,6 @@ class UpstreamApiController {
                 organizationId,
                 projectId,
                 integrationId,
-                environmentId,
                 upstreamApiId,
                 req.body
             );
@@ -107,7 +91,30 @@ class UpstreamApiController {
             data: upstreamApi
         });
     }
-}
 
+    async deleteUpstreamApi(req, res) {
+        const {
+            organizationId,
+            projectId,
+            integrationId,
+            upstreamApiId
+        } = req.params;
+
+        const result =
+            await upstreamApiService.deleteUpstreamApi(
+                req.user._id,
+                organizationId,
+                projectId,
+                integrationId,
+                upstreamApiId
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: "Upstream API deleted successfully.",
+            data: result
+        });
+    }
+}
 
 export default new UpstreamApiController();

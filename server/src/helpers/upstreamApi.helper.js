@@ -6,16 +6,21 @@ export const _getUpstreamApiWithCredential = async (
     upstreamApiId,
     organizationId,
     projectId,
-    environmentId
+    environmentId = null
 ) => {
 
+    const query = {
+        _id: upstreamApiId,
+        organizationId,
+        projectId
+    };
+
+    if (environmentId) {
+        query.environmentId = environmentId;
+    }
+
     const upstreamApi =
-        await UpstreamApi.findOne({
-            _id: upstreamApiId,
-            organizationId,
-            projectId,
-            environmentId
-        }).select(
+        await UpstreamApi.findOne(query).select(
             "+encryptedCredential +encryptionIv +encryptionAuthTag"
         );
 

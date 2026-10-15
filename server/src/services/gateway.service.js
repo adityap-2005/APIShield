@@ -1,7 +1,6 @@
 import axios from "axios";
 
 import Integration from "../models/integration.model.js";
-import Environment from "../models/environment.model.js";
 
 import {
     _getUpstreamApiWithCredential
@@ -17,38 +16,15 @@ class GatewayService {
     async getUpstreamApiCredential(
         upstreamApiId,
         organizationId,
-        projectId,
-        environmentId
+        projectId
     ) {
 
         const upstreamApi =
             await _getUpstreamApiWithCredential(
                 upstreamApiId,
                 organizationId,
-                projectId,
-                environmentId
-            );
-
-        const environment =
-            await Environment.findOne({
-                _id: environmentId,
-                organizationId,
                 projectId
-            });
-
-        if (!environment) {
-            throw new ApiError(
-                404,
-                "Environment not found."
             );
-        }
-
-        if (environment.status !== "ACTIVE") {
-            throw new ApiError(
-                400,
-                "Environment is disabled."
-            );
-        }
 
         const integration =
             await Integration.findOne({
@@ -81,7 +57,6 @@ class GatewayService {
         if (upstreamApi.authentication?.type === "NONE") {
             return {
                 upstreamApi,
-                environment,
                 integration,
                 credential: null
             };
@@ -95,7 +70,6 @@ class GatewayService {
 
         return {
             upstreamApi,
-            environment,
             integration,
             credential
         };
@@ -108,13 +82,6 @@ class GatewayService {
         apiKeyContext,
         requestContext
     ) {
-        if (!apiKeyContext?.environmentId) {
-            throw new ApiError(
-                400,
-                "API key is not associated with an environment."
-            );
-        }
-
         if (
             apiKeyContext.organizationId.toString() !==
             organizationId.toString()
@@ -141,19 +108,8 @@ class GatewayService {
         } = await this.getUpstreamApiCredential(
             upstreamApiId,
             organizationId,
-            projectId,
-            apiKeyContext.environmentId
+            projectId
         );
-
-        if (
-            upstreamApi.environmentId.toString() !==
-            apiKeyContext.environmentId.toString()
-        ) {
-            throw new ApiError(
-                403,
-                "Upstream API does not belong to the API key environment."
-            );
-        }
 
         const startedAt = Date.now();
 
@@ -167,7 +123,7 @@ class GatewayService {
                     apiKeyId: apiKeyContext.apiKeyId,
                     organizationId,
                     projectId,
-                    environmentId: apiKeyContext.environmentId,
+                    ...(apiKeyContext.environmentId ? { environmentId: apiKeyContext.environmentId } : {}),
                     upstreamApiId: upstreamApi._id,
                     method: requestContext?.method || "GET",
                     endpoint,
