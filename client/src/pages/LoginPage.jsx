@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
+import BrandLogo from "../components/BrandLogo";
 import {
   ShieldCheck,
   ArrowRight,
@@ -56,23 +57,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white font-sans flex flex-col justify-between selection:bg-[#2f81f7]/30 selection:text-blue-300">
+    <div className="min-h-screen bg-[#0d1117] text-white font-sans flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Top Minimal Navigation Bar */}
       <header className="border-b border-white/10 bg-[#0d1117]/90 backdrop-blur-md px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-[#2f81f7] flex items-center justify-center text-white shadow-sm shadow-blue-500/30 group-hover:bg-blue-500 transition-colors">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-bold text-white text-base tracking-tight">
-                APIShield
-              </span>
-              <span className="text-[10px] font-mono text-blue-300 border border-blue-800/40 px-1.5 py-0.5 rounded bg-blue-950/50">
-                v1.0
-              </span>
-            </div>
-          </Link>
+          <BrandLogo size="md" badge="v1.0" to="/" />
 
           <Link
             to="/register"
@@ -94,8 +83,8 @@ export default function LoginPage() {
             className="hidden lg:flex lg:col-span-5 flex-col space-y-6 text-left pr-2"
           >
             <div className="space-y-2.5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/50 border border-blue-800/40 text-blue-300 text-xs font-mono">
-                <Terminal className="w-3.5 h-3.5 text-blue-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-800/40 text-emerald-300 text-xs font-mono">
+                <Terminal className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Console Authentication</span>
               </div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">

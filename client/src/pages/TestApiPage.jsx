@@ -364,7 +364,7 @@ export default function TestApiPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="space-y-6">
       {/* ── BREADCRUMBS & HIERARCHY BAR ────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">

@@ -7,8 +7,9 @@ import invitationsApi from "../api/invitations";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
-import EmptyState from "../components/EmptyState";
+import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canInviteMembers, canManageOrgMember } from "../utils/permissions";
 
 import {
   UserCheck,
@@ -167,7 +168,7 @@ export default function MembersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── HEADER (Matches Screen #10) ───────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -186,16 +187,18 @@ export default function MembersPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setShowInviteModal(true)}
-            className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Member</span>
-          </button>
-        </div>
+        {canInviteMembers(activeOrg) && (
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowInviteModal(true)}
+              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Member</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Success Notification */}
@@ -284,7 +287,7 @@ export default function MembersPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      {!isOwner && (
+                      {canManageOrgMember(activeOrg, member.role, member.userId?._id, currentUser?._id) && (
                         <button
                           type="button"
                           onClick={() => openRemoveConfirm(member._id, uName)}

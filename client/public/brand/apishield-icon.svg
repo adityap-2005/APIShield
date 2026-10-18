@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#0b101b"/>
+  <rect width="32" height="32" rx="7" stroke="#10b981" stroke-width="1.2" stroke-opacity="0.35"/>
+  
+  <!-- Shield Contour -->
+  <path d="M16 4.75L25 8.2V15.5C25 21.2 21 25.4 16 27.25C11 25.4 7 21.2 7 15.5V8.2L16 4.75Z"
+        fill="#111827"
+        stroke="#10b981"
+        stroke-width="1.75"
+        stroke-linejoin="round"/>
+  
+  <!-- Gateway Flow -->
+  <path d="M5.5 16H11M21 16H26.5"
+        stroke="#34d399"
+        stroke-width="1.75"
+        stroke-linecap="round"/>
+  
+  <!-- Diamond Core -->
+  <path d="M16 11L20.5 16L16 21L11.5 16Z"
+        fill="#10b981"
+        fill-opacity="0.25"
+        stroke="#10b981"
+        stroke-width="1.5"
+        stroke-linejoin="round"/>
+  
+  <!-- Nexus Center -->
+  <circle cx="16" cy="16" r="2" fill="#34d399"/>
+</svg>

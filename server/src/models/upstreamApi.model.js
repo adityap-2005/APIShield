@@ -92,6 +92,10 @@ const upstreamApiSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
+    },
+    lastUsed: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true

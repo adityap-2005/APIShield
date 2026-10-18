@@ -152,7 +152,7 @@ export default function AuditLogsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── HEADER (Matches Screen #9) ────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

@@ -194,9 +194,19 @@ export function OrgProvider({ children }) {
     }
   };
 
-  const addOrg = (org) => {
-    setOrganizations((prev) => [...prev, org]);
-    switchOrg(org);
+  const addOrg = async (org) => {
+    const orgWithRole = {
+      ...org,
+      role: org.role || "OWNER",
+    };
+    setOrganizations((prev) => {
+      const exists = prev.some((o) => o._id === orgWithRole._id);
+      if (exists) {
+        return prev.map((o) => (o._id === orgWithRole._id ? orgWithRole : o));
+      }
+      return [...prev, orgWithRole];
+    });
+    await switchOrg(orgWithRole);
   };
 
   const updateOrg = (updatedOrg) => {

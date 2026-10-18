@@ -8,6 +8,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import EmptyState from "../components/EmptyState";
 import Badge, { getInvitationStatusVariant } from "../components/Badge";
 import ConfirmModal from "../components/ConfirmModal";
+import { canCancelInvitation } from "../utils/permissions";
 
 import { Mail, Check, X, Ban, Building2 } from "lucide-react";
 
@@ -205,7 +206,7 @@ export default function InvitationsPage() {
                         {new Date(inv.expiresAt).toLocaleDateString()}
                       </td>
                       <td>
-                        {inv.status === "PENDING" && (
+                        {inv.status === "PENDING" && canCancelInvitation(activeOrg) && (
                           <button
                             onClick={() => openCancelConfirm(inv._id)}
                             className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"

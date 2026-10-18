@@ -1,144 +1,173 @@
 import { motion } from "framer-motion";
-import { KeyRound, Activity, ShieldCheck, Terminal } from "lucide-react";
+import { KeyRound, Activity, ShieldCheck, Terminal, Server, ArrowRight } from "lucide-react";
 
 export default function DashboardPreview() {
   const sampleKeys = [
     {
-      name: "production-api",
-      scope: "read, write",
+      name: "production-worker",
+      prefix: "aps_live_948f21•••",
+      scopes: "gateway:call, read:metrics",
       status: "Active",
-      created: "2d ago",
+      lastUsed: "4m ago",
     },
     {
-      name: "development-api",
-      scope: "read",
+      name: "webhook-ingest",
+      prefix: "aps_live_512b77•••",
+      scopes: "gateway:call",
       status: "Active",
-      created: "5d ago",
+      lastUsed: "12m ago",
     },
     {
-      name: "analytics-service",
-      scope: "telemetry",
+      name: "telemetry-collector",
+      prefix: "aps_live_389c04•••",
+      scopes: "read:telemetry",
       status: "Active",
-      created: "1w ago",
+      lastUsed: "1h ago",
     },
   ];
 
   return (
     <motion.div
-      animate={{ y: [0, -5, 0] }}
-      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-      className="w-full rounded-xl border border-white/10 bg-[#161b22] shadow-2xl shadow-blue-950/20 overflow-hidden text-left font-sans"
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      className="w-full rounded-2xl border border-white/10 bg-[#161b22] shadow-2xl shadow-emerald-950/20 overflow-hidden text-left font-sans select-none"
     >
-      {/* Console Window Top Bar */}
+      {/* Console Window Top Chrome Bar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#1c2128] border-b border-white/5 text-[11px] text-gray-400">
         <div className="flex items-center gap-2">
+          {/* Traffic light window controls */}
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
           </div>
-          <span className="ml-2 font-mono text-gray-300 flex items-center gap-1">
-            <Terminal className="w-3 h-3 text-blue-400" />
-            apishield-console
+          <span className="ml-2 font-mono text-gray-300 flex items-center gap-1.5 text-[11px]">
+            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+            <span>apishield.internal / acme-org / production</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-green-400 font-mono text-[10px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          live
+        <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[10px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          gateway active
         </div>
       </div>
 
       {/* Console Interior */}
-      <div className="p-5 space-y-5">
+      <div className="p-5 space-y-4">
         {/* Metric Cards Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Active Keys Metric */}
-          <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-gray-400">
-              <span className="flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-blue-400" />
-                Active Keys
+        <div className="grid grid-cols-3 gap-2.5">
+          {/* Metric 1: Request Volume */}
+          <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-gray-400 text-[10px]">
+              <span className="flex items-center gap-1 font-mono">
+                <Activity className="w-3 h-3 text-emerald-400" />
+                Requests (24h)
               </span>
-              <span className="text-[10px] font-mono text-green-400">+14%</span>
+              <span className="font-mono text-emerald-400">+14%</span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono text-white">24</span>
-              {/* Mini Sparkline SVG with path animation */}
-              <svg className="w-16 h-6 text-blue-400" viewBox="0 0 60 20" fill="none">
-                <motion.path
-                  d="M2 16 L12 12 L22 15 L32 8 L42 11 L52 4 L58 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-                />
-              </svg>
+              <span className="text-xl font-bold font-mono text-white">2.48M</span>
+              <span className="text-[10px] text-gray-500 font-mono">99.98%</span>
             </div>
           </div>
 
-          {/* API Requests Metric */}
-          <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-gray-400">
-              <span className="flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-blue-400" />
-                API Requests
+          {/* Metric 2: Active Keys */}
+          <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-gray-400 text-[10px]">
+              <span className="flex items-center gap-1 font-mono">
+                <KeyRound className="w-3 h-3 text-emerald-400" />
+                Active Keys
               </span>
-              <span className="text-[10px] font-mono text-green-400">+8.1%</span>
+              <span className="text-[10px] font-mono text-emerald-400">Scoped</span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono text-white">12.4K</span>
-              {/* Mini Sparkline SVG with path animation */}
-              <svg className="w-16 h-6 text-blue-400" viewBox="0 0 60 20" fill="none">
-                <motion.path
-                  d="M2 17 L12 14 L22 10 L32 12 L42 6 L52 8 L58 2"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
-                />
-              </svg>
+              <span className="text-xl font-bold font-mono text-white">18</span>
+              <span className="text-[10px] text-gray-500 font-mono">0 revoked</span>
+            </div>
+          </div>
+
+          {/* Metric 3: Avg Proxy Latency */}
+          <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-gray-400 text-[10px]">
+              <span className="flex items-center gap-1 font-mono">
+                <Server className="w-3 h-3 text-emerald-400" />
+                Proxy Latency
+              </span>
+              <span className="font-mono text-emerald-400">&lt; 2ms</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xl font-bold font-mono text-white">41ms</span>
+              <span className="text-[10px] text-gray-500 font-mono">p99: 86ms</span>
             </div>
           </div>
         </div>
 
-        {/* Recent Keys Table Preview */}
-        <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3.5 space-y-2.5">
-          <div className="flex items-center justify-between text-xs font-semibold text-gray-300 pb-1 border-b border-white/5">
+        {/* Live Gateway Route Execution Card */}
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-2">
+          <div className="flex items-center justify-between text-[11px] pb-1 border-b border-white/5">
+            <span className="font-semibold text-gray-300 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              Gateway Route Proxy
+            </span>
+            <span className="text-[10px] text-gray-500 font-mono">Verified Ingress</span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#161b22] p-2.5 rounded border border-white/5 text-xs font-mono">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0">
+                POST
+              </span>
+              <span className="text-gray-200 truncate text-[11px]">
+                /gateway/payments/charge
+              </span>
+              <ArrowRight className="w-3 h-3 text-gray-500 shrink-0" />
+              <span className="text-gray-400 truncate text-[11px] hidden sm:inline">
+                https://api.stripe.com/v1/charges
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 text-[10px]">
+              <span className="text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded font-semibold">
+                200 OK
+              </span>
+              <span className="text-gray-500">38ms</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Scoped API Keys Table Preview */}
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-gray-300 pb-1 border-b border-white/5">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-              Recent API Keys
+              <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
+              Project API Keys
             </span>
             <span className="text-[10px] text-gray-500 font-mono">Scoped Workspace</span>
           </div>
 
           <div className="space-y-1.5">
-            {sampleKeys.map((k, index) => (
-              <motion.div
+            {sampleKeys.map((k) => (
+              <div
                 key={k.name}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.5 + index * 0.15 }}
                 className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-white/5 transition-colors text-xs"
               >
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-                  <span className="font-mono text-gray-200 text-[11px]">{k.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono text-gray-500 hidden sm:inline">
-                    {k.scope}
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="font-mono text-gray-200 text-[11px] truncate">
+                    {k.name}
                   </span>
-                  <span className="text-[10px] text-green-400 font-mono bg-green-950/60 border border-green-800/40 px-1.5 py-0.5 rounded">
+                  <span className="font-mono text-gray-500 text-[10px] hidden sm:inline">
+                    {k.prefix}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <span className="text-[10px] font-mono text-gray-500 hidden md:inline">
+                    {k.scopes}
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded">
                     {k.status}
                   </span>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

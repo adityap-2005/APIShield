@@ -15,6 +15,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canManageApiKeys } from "../utils/permissions";
 
 import {
   KeyRound,
@@ -221,6 +222,9 @@ export default function ApiKeysPage() {
     });
   };
 
+  const currentProject = projects.find((p) => p._id === selectedProjectId) || activeProject;
+  const canManage = canManageApiKeys(currentProject);
+
   if (loadingProjects) {
     return <LoadingSpinner message="Loading workspace projects..." />;
   }
@@ -238,17 +242,19 @@ export default function ApiKeysPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setCreatedSecret(null);
-            setSecretAction("generated");
-            setShowGenerateModal(true);
-          }}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Generate API Key</span>
-        </button>
+        {canManage && (
+          <button
+            onClick={() => {
+              setCreatedSecret(null);
+              setSecretAction("generated");
+              setShowGenerateModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Generate API Key</span>
+          </button>
+        )}
       </div>
 
       {error && <ErrorMessage message={error} />}
@@ -265,16 +271,18 @@ export default function ApiKeysPage() {
           <p className="text-xs text-gray-400 max-w-md mx-auto mb-6">
             Generate an API access key to authenticate gateway requests.
           </p>
-          <button
-            onClick={() => {
-              setCreatedSecret(null);
-              setShowGenerateModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Generate API Key</span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => {
+                setCreatedSecret(null);
+                setShowGenerateModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Generate API Key</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-sm">
@@ -288,7 +296,7 @@ export default function ApiKeysPage() {
                   <th className="px-4 py-3 font-medium">EXPIRES</th>
                   <th className="px-4 py-3 font-medium">LAST ROTATED</th>
                   <th className="px-4 py-3 font-medium">STATUS</th>
-                  <th className="px-4 py-3 font-medium text-right">ACTIONS</th>
+                  {canManage && <th className="px-4 py-3 font-medium text-right">ACTIONS</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -358,28 +366,30 @@ export default function ApiKeysPage() {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {isActive && (
-                            <>
-                              <button
-                                onClick={() => handleRotateKey(k)}
-                                className="p-1.5 rounded-md hover:bg-amber-500/10 text-gray-400 hover:text-amber-400 transition-colors"
-                                title="Rotate Key"
-                              >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleRevokeKey(k)}
-                                className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors"
-                                title="Revoke Key"
-                              >
-                                <Ban className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+                      {canManage && (
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isActive && (
+                              <>
+                                <button
+                                  onClick={() => handleRotateKey(k)}
+                                  className="p-1.5 rounded-md hover:bg-amber-500/10 text-gray-400 hover:text-amber-400 transition-colors"
+                                  title="Rotate Key"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleRevokeKey(k)}
+                                  className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors"
+                                  title="Revoke Key"
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

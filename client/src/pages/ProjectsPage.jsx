@@ -8,6 +8,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canCreateProject, canDeleteProject } from "../utils/permissions";
 
 import {
   FolderKanban,
@@ -115,7 +116,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -134,13 +135,15 @@ export default function ProjectsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Create Project</span>
-        </button>
+        {canCreateProject(activeOrg) && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Create Project</span>
+          </button>
+        )}
       </div>
 
       {error && <ErrorMessage message={error} onRetry={loadProjects} />}
@@ -151,13 +154,15 @@ export default function ProjectsPage() {
           <EmptyState
             message="No projects created yet in this organization."
             action={
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4" />
-                Create First Project
-              </button>
+              canCreateProject(activeOrg) ? (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create First Project
+                </button>
+              ) : null
             }
           />
         ) : (
@@ -178,13 +183,15 @@ export default function ProjectsPage() {
                         <p className="font-mono text-[10px] text-gray-500">slug: {project.slug}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => openDeleteConfirm(project._id, project.name)}
-                      className="p-1.5 text-gray-500 hover:text-rose-400 rounded transition-colors"
-                      title="Delete Project"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {canDeleteProject(activeOrg, project) && (
+                      <button
+                        onClick={() => openDeleteConfirm(project._id, project.name)}
+                        className="p-1.5 text-gray-500 hover:text-rose-400 rounded transition-colors"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   <p className="text-xs text-gray-400 mt-3 line-clamp-2">

@@ -118,7 +118,10 @@ class OrganizationService {
 
             await session.commitTransaction();
 
-            return createdOrganization;
+            return {
+                ...createdOrganization.toObject(),
+                role: MEMBERSHIP_ROLES.OWNER
+            };
         }
         catch (error) {
             await session.abortTransaction();
@@ -130,8 +133,8 @@ class OrganizationService {
 
     }
 
-    async getUserOrganizations(userId) {
 
+    async getUserOrganizations(userId) {
         const memberships = await Membership.find({
             userId,
             status: MEMBERSHIP_STATUS.ACTIVE
@@ -140,9 +143,12 @@ class OrganizationService {
             select: "-__v"
         });
 
-        return memberships.map(
-            membership => membership.organizationId
-        );
+        return memberships
+            .filter(membership => membership.organizationId)
+            .map(membership => ({
+                ...membership.organizationId.toObject(),
+                role: membership.role
+            }));
     }
 
     async updateOrganization(userId, organizationId, organizationData) {
@@ -192,7 +198,10 @@ class OrganizationService {
 
         await organization.save();
 
-        return organization;
+        return {
+            ...organization.toObject(),
+            role: MEMBERSHIP_ROLES.OWNER
+        };
     }
 
     async deleteOrganization(userId, organizationId) {

@@ -14,6 +14,7 @@ import axiosInstance from "../api/axiosInstance";
 
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canManageUpstreamApis } from "../utils/permissions";
 import {
   Server,
   Play,
@@ -290,6 +291,8 @@ export default function UpstreamApisPage() {
     });
   };
 
+  const canManage = canManageUpstreamApis(activeOrg, activeProject);
+
   return (
     <div className="space-y-6">
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
@@ -303,13 +306,15 @@ export default function UpstreamApisPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Upstream API</span>
-        </button>
+        {canManage && (
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Upstream API</span>
+          </button>
+        )}
       </div>
 
       {/* ── SEARCH BAR ──────────────────────────────────────────────────────── */}
@@ -340,13 +345,15 @@ export default function UpstreamApisPage() {
           <p className="text-xs text-gray-400 max-w-md mx-auto mb-6">
             Connect an upstream service to begin routing API traffic through APIShield.
           </p>
-          <button
-            onClick={handleOpenAddModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Upstream API</span>
-          </button>
+          {canManage && (
+            <button
+              onClick={handleOpenAddModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Upstream API</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-sm">
@@ -385,16 +392,14 @@ export default function UpstreamApisPage() {
                       {/* Status */}
                       <td className="px-4 py-3.5 font-mono">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                            isActive
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
-                          }`}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${isActive
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isActive ? "bg-emerald-400" : "bg-gray-400"
-                            }`}
+                            className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-gray-400"
+                              }`}
                           />
                           {isActive ? "ACTIVE" : "DISABLED"}
                         </span>
@@ -402,7 +407,9 @@ export default function UpstreamApisPage() {
 
                       {/* Last Called */}
                       <td className="px-4 py-3.5 text-gray-400 font-mono text-[11px]">
-                        {api.lastUsed ? new Date(api.lastUsed).toLocaleTimeString() : "Never"}
+                        {api.lastUsed
+                          ? new Date(api.lastUsed).toLocaleTimeString()
+                          : "Never"}
                       </td>
 
                       {/* Actions */}
@@ -432,24 +439,28 @@ export default function UpstreamApisPage() {
                                 >
                                   View Details
                                 </button>
-                                <button
-                                  onClick={() => handleOpenEdit(api)}
-                                  className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleToggleApiStatus(api)}
-                                  className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white"
-                                >
-                                  {isActive ? "Disable" : "Enable"}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteApi(api)}
-                                  className="w-full px-3 py-2 text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200"
-                                >
-                                  Delete
-                                </button>
+                                {canManage && (
+                                  <>
+                                    <button
+                                      onClick={() => handleOpenEdit(api)}
+                                      className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => handleToggleApiStatus(api)}
+                                      className="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white"
+                                    >
+                                      {isActive ? "Disable" : "Enable"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteApi(api)}
+                                      className="w-full px-3 py-2 text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200"
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>

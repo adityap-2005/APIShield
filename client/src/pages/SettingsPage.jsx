@@ -4,6 +4,7 @@ import { useOrg } from "../context/OrgContext";
 import organizationsApi from "../api/organizations";
 import EmptyState from "../components/EmptyState";
 import ConfirmModal from "../components/ConfirmModal";
+import { canManageOrg, canDeleteOrg } from "../utils/permissions";
 import {
   Settings,
   Building2,
@@ -27,6 +28,8 @@ export default function SettingsPage() {
 
   const currentOrg = organizations.find((o) => o._id === organizationId) || activeOrg;
   const targetOrgId = currentOrg?._id;
+  const canManage = canManageOrg(currentOrg);
+  const canDelete = canDeleteOrg(currentOrg);
 
   const [activeTab, setActiveTab] = useState("general"); // "general" | "members" | "security" | "billing"
 
@@ -111,7 +114,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── HEADER (Matches Screen #6) ────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -197,6 +200,13 @@ export default function SettingsPage() {
       {/* ── GENERAL SETTINGS TAB CONTENT (Matches Screen #6) ────────────────── */}
       {activeTab === "general" && (
         <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
+          {!canManage && (
+            <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-xs flex items-center gap-2">
+              <Shield className="w-4 h-4 shrink-0 text-blue-400" />
+              <span>View-only mode: Only the organization owner can modify organization settings or delete this workspace.</span>
+            </div>
+          )}
+
           {saveSuccess && (
             <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
               <Check className="w-4 h-4" />
@@ -225,7 +235,8 @@ export default function SettingsPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#090d16] text-gray-200 text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"
+                  disabled={!canManage}
+                  className={`w-full bg-[#090d16] text-gray-200 text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 ${!canManage ? "opacity-75 cursor-not-allowed" : ""}`}
                 />
               </div>
 
@@ -250,7 +261,8 @@ export default function SettingsPage() {
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-[#090d16] text-gray-200 text-xs border border-white/10 rounded-lg p-3 focus:outline-none focus:border-emerald-500"
+                disabled={!canManage}
+                className={`w-full bg-[#090d16] text-gray-200 text-xs border border-white/10 rounded-lg p-3 focus:outline-none focus:border-emerald-500 ${!canManage ? "opacity-75 cursor-not-allowed" : ""}`}
               />
             </div>
 
@@ -263,7 +275,8 @@ export default function SettingsPage() {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://example.com"
-                className="w-full bg-[#090d16] text-gray-200 text-xs font-mono border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"
+                disabled={!canManage}
+                className={`w-full bg-[#090d16] text-gray-200 text-xs font-mono border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 ${!canManage ? "opacity-75 cursor-not-allowed" : ""}`}
               />
             </div>
           </div>
@@ -284,8 +297,9 @@ export default function SettingsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setEnforce2FA(!enforce2FA)}
-                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors ${
+                  onClick={() => canManage && setEnforce2FA(!enforce2FA)}
+                  disabled={!canManage}
+                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors ${!canManage ? "cursor-not-allowed opacity-60" : ""} ${
                     enforce2FA ? "bg-emerald-500" : "bg-gray-700"
                   }`}
                 >
@@ -306,8 +320,9 @@ export default function SettingsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setRequireSignedRequests(!requireSignedRequests)}
-                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors ${
+                  onClick={() => canManage && setRequireSignedRequests(!requireSignedRequests)}
+                  disabled={!canManage}
+                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors ${!canManage ? "cursor-not-allowed opacity-60" : ""} ${
                     requireSignedRequests ? "bg-emerald-500" : "bg-gray-700"
                   }`}
                 >
@@ -321,38 +336,42 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{isSaving ? "Saving Changes..." : "Save Changes"}</span>
-            </button>
-          </div>
-
-          {/* ── DANGER ZONE (Matches Screen #6) ─────────────────────────────── */}
-          <div className="bg-[#0e131f] border border-rose-500/20 rounded-xl p-5 shadow-xl space-y-3">
-            <h2 className="text-sm font-bold text-rose-400 tracking-tight flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Danger Zone</span>
-            </h2>
-            <p className="text-xs text-gray-400">
-              Permanently delete this organization and all associated projects, integrations, and API keys. This action cannot be undone.
-            </p>
-
-            <div className="pt-2">
+          {canManage && (
+            <div className="flex justify-end">
               <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                type="submit"
+                disabled={isSaving}
+                className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Organization</span>
+                <Save className="w-3.5 h-3.5" />
+                <span>{isSaving ? "Saving Changes..." : "Save Changes"}</span>
               </button>
             </div>
-          </div>
+          )}
+
+          {/* ── DANGER ZONE (Matches Screen #6) ─────────────────────────────── */}
+          {canDelete && (
+            <div className="bg-[#0e131f] border border-rose-500/20 rounded-xl p-5 shadow-xl space-y-3">
+              <h2 className="text-sm font-bold text-rose-400 tracking-tight flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Danger Zone</span>
+              </h2>
+              <p className="text-xs text-gray-400">
+                Permanently delete this organization and all associated projects, integrations, and API keys. This action cannot be undone.
+              </p>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Organization</span>
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       )}
 

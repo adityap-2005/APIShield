@@ -5,12 +5,14 @@
  */
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Modal from "./Modal";
 import organizationsApi from "../api/organizations";
 import { useOrg } from "../context/OrgContext";
 
 export default function CreateOrgModal({ isOpen, onClose }) {
   const { addOrg } = useOrg();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [website, setWebsite] = useState("");
@@ -24,6 +26,11 @@ export default function CreateOrgModal({ isOpen, onClose }) {
       return;
     }
 
+    if (website.trim() && !/^https?:\/\//i.test(website.trim())) {
+      setError("Website must start with http:// or https://");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -34,11 +41,12 @@ export default function CreateOrgModal({ isOpen, onClose }) {
       );
 
       const newOrg = response.data.data;
-      addOrg(newOrg);
+      await addOrg(newOrg);
       setName("");
       setDescription("");
       setWebsite("");
       onClose();
+      navigate(`/org/${newOrg._id}/overview`);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create organization");
     } finally {

@@ -1,115 +1,182 @@
 import { motion } from "framer-motion";
-import { KeyRound, Users, FileText, BarChart3 } from "lucide-react";
+import {
+  KeyRound,
+  Server,
+  Users,
+  FileText,
+  BarChart3,
+  ShieldCheck,
+  Check,
+} from "lucide-react";
 
 export default function Features() {
   const featureList = [
     {
-      id: "lifecycle",
-      title: "API Key Lifecycle",
-      description: "Create, manage, rotate, and revoke API credentials from one centralized workspace.",
+      id: "keys",
+      title: "API Key Lifecycle & Instant Revocation",
+      description:
+        "Generate scoped, prefixed credentials (aps_...) with custom permissions, rotation schedules, and one-click revocation that takes effect across the gateway instantly.",
       icon: KeyRound,
-      iconBg: "bg-blue-950/60 border-blue-800/60 text-blue-400",
+      badge: "CREDENTIAL SECURITY",
       content: (
-        <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3.5 font-mono text-[11px] text-gray-300 space-y-1 overflow-x-auto">
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3.5 font-mono text-[11px] text-gray-300 space-y-1.5 overflow-x-auto">
           <div className="text-gray-500 text-[10px] pb-1 border-b border-white/5 flex items-center justify-between">
-            <span>Example Usage</span>
-            <span className="text-blue-400">javascript</span>
+            <span>curl command</span>
+            <span className="text-emerald-400">bash</span>
           </div>
-          <p className="text-blue-300">const <span className="text-white">apiKey</span> = await <span className="text-blue-400">apiShield</span>.keys.create(&#123;</p>
-          <p className="pl-4 text-gray-300">name: <span className="text-green-300">"production-api"</span>,</p>
-          <p className="pl-4 text-gray-300">scopes: [<span className="text-green-300">"read"</span>, <span className="text-green-300">"write"</span>]</p>
-          <p className="text-blue-300">&#125;);</p>
+          <p className="text-gray-400">curl -X GET \</p>
+          <p className="pl-4 text-gray-400">
+            -H <span className="text-emerald-300">"x-api-key: aps_live_948f21•••"</span> \
+          </p>
+          <p className="pl-4 text-gray-400">
+            https://gateway.apishield.io/v1/orders
+          </p>
+          <div className="pt-1 flex items-center gap-2 text-[10px] text-emerald-400">
+            <Check className="w-3 h-3" />
+            <span>Key hash verified • Scope: [read:orders]</span>
+          </div>
         </div>
       ),
     },
     {
-      id: "access",
-      title: "Controlled Access",
-      description: "Manage organization members, projects, invitations, and roles from one place.",
-      icon: Users,
-      iconBg: "bg-blue-950/60 border-blue-800/60 text-blue-400",
+      id: "gateway",
+      title: "Upstream API Integrations & Gateway Proxy",
+      description:
+        "Keep origin credentials confidential. The APIShield proxy authenticates incoming calls, injects encrypted upstream secrets, and proxies traffic smoothly to your services.",
+      icon: Server,
+      badge: "GATEWAY ROUTING",
       content: (
-        <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3 space-y-2 text-xs">
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-2 text-xs font-mono">
+          <div className="flex items-center justify-between py-1 px-2 rounded bg-white/5">
+            <span className="text-gray-400 text-[11px]">Ingress</span>
+            <span className="text-emerald-400 text-[11px]">POST /gateway/stripe/charge</span>
+          </div>
+          <div className="flex items-center justify-between py-1 px-2 rounded bg-white/5">
+            <span className="text-gray-400 text-[11px]">Upstream</span>
+            <span className="text-gray-200 text-[11px]">api.stripe.com/v1/charges</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
+            <span>Secret Masking: Enabled</span>
+            <span className="text-emerald-400">Proxy Overhead: &lt; 2ms</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "projects",
+      title: "Multi-Tenant Organization & Project Hierarchy",
+      description:
+        "Structure resources logically. Organizations contain Projects, which encapsulate API Keys, Integrations, and Member roles with zero cross-project leakage.",
+      icon: Users,
+      badge: "ACCESS GOVERNANCE",
+      content: (
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between py-1 px-2 rounded bg-white/5">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-300 text-[10px] font-bold flex items-center justify-center font-mono">
-                AD
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold flex items-center justify-center font-mono">
+                SA
               </div>
-              <span className="text-gray-200 text-[11px]">aditya@apishield.io</span>
+              <span className="text-gray-200 text-[11px]">lead-architect@corp.io</span>
             </div>
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/40">
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/40">
               OWNER
             </span>
           </div>
-
           <div className="flex items-center justify-between py-1 px-2 rounded hover:bg-white/5">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600/20 text-blue-300 text-[10px] font-bold flex items-center justify-center font-mono">
-                DV
+              <div className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold flex items-center justify-center font-mono">
+                DE
               </div>
-              <span className="text-gray-300 text-[11px]">dev-lead@apishield.io</span>
+              <span className="text-gray-300 text-[11px]">backend-dev@corp.io</span>
             </div>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/40">
-              ADMIN
+              MEMBER
             </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "audit",
-      title: "Real-Time Audit Trail",
-      description: "Track important actions across your organization with clear audit records.",
-      icon: FileText,
-      iconBg: "bg-yellow-950/60 border-yellow-800/60 text-yellow-400",
-      content: (
-        <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3 font-mono text-[11px] space-y-2">
-          <div className="flex items-center justify-between text-gray-400">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">11:42:18</span>
-              <span className="text-green-400">key_created</span>
-            </div>
-            <span className="text-gray-500">production-api</span>
-          </div>
-          <div className="flex items-center justify-between text-gray-400 border-t border-white/5 pt-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">11:40:12</span>
-              <span className="text-blue-400">member_invited</span>
-            </div>
-            <span className="text-gray-500">project-lead</span>
-          </div>
-          <div className="flex items-center justify-between text-gray-400 border-t border-white/5 pt-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">11:38:05</span>
-              <span className="text-blue-300">role_updated</span>
-            </div>
-            <span className="text-gray-500">admin</span>
           </div>
         </div>
       ),
     },
     {
       id: "analytics",
-      title: "Usage & Analytics",
-      description: "Understand API activity through usage information and organization analytics.",
+      title: "Gateway Telemetry & Endpoint Analytics",
+      description:
+        "Inspect real-time request volume, latency distributions, and status codes (2xx, 4xx, 5xx). Identify high-traffic endpoints and latency spikes instantly.",
       icon: BarChart3,
-      iconBg: "bg-green-950/60 border-green-800/60 text-green-400",
+      badge: "TELEMETRY",
       content: (
-        <div className="rounded-lg border border-white/5 bg-[#1c2128] p-3.5 space-y-2.5">
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3.5 space-y-2.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-300 font-mono">Response Status</span>
-            <span className="text-green-400 font-mono text-[11px] font-semibold">98.4% Success</span>
+            <span className="text-gray-300 font-mono">Gateway Health</span>
+            <span className="text-emerald-400 font-mono text-[11px] font-semibold">
+              99.98% Success
+            </span>
           </div>
-
           <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden flex">
-            <div className="h-full bg-green-400 w-[98.4%]" />
-            <div className="h-full bg-yellow-400 w-[1.2%]" />
-            <div className="h-full bg-red-400 w-[0.4%]" />
+            <div className="h-full bg-emerald-400 w-[99.2%]" />
+            <div className="h-full bg-amber-400 w-[0.6%]" />
+            <div className="h-full bg-red-400 w-[0.2%]" />
           </div>
-
           <div className="flex items-center justify-between text-[10px] font-mono text-gray-500 pt-1">
-            <span>200 OK (98.4%)</span>
-            <span>401 Unauthorized (1.2%)</span>
+            <span>200 OK (99.2%)</span>
+            <span>401 Unauthorized (0.6%)</span>
+            <span>500 Error (0.2%)</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "audit",
+      title: "Real-Time Immutable Audit Logging",
+      description:
+        "Full audit trail for every credential generated, rotated, or revoked, as well as team membership changes, complete with actor attribution and timestamps.",
+      icon: FileText,
+      badge: "COMPLIANCE & AUDIT",
+      content: (
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 font-mono text-[11px] space-y-1.5">
+          <div className="flex items-center justify-between text-gray-400">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">14:22:04</span>
+              <span className="text-emerald-400">key.created</span>
+            </div>
+            <span className="text-gray-400">production-worker</span>
+          </div>
+          <div className="flex items-center justify-between text-gray-400 border-t border-white/5 pt-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">14:18:30</span>
+              <span className="text-amber-400">key.rotated</span>
+            </div>
+            <span className="text-gray-400">webhook-ingest</span>
+          </div>
+          <div className="flex items-center justify-between text-gray-400 border-t border-white/5 pt-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">13:50:11</span>
+              <span className="text-blue-400">member.invited</span>
+            </div>
+            <span className="text-gray-400">security-lead</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "security",
+      title: "Zero-Trust Encryption & Secret Masking",
+      description:
+        "Raw API keys are never stored in plain text. Upstream credentials are encrypted at rest with industry-standard cryptographic algorithms.",
+      icon: ShieldCheck,
+      badge: "SECURITY ASSURANCE",
+      content: (
+        <div className="rounded-lg border border-white/5 bg-[#0e131b] p-3 space-y-2 text-xs font-mono">
+          <div className="flex items-center justify-between py-1 px-2 rounded bg-white/5">
+            <span className="text-gray-400 text-[11px]">Storage Hash</span>
+            <span className="text-emerald-300 text-[11px]">bcrypt salted (cost 10)</span>
+          </div>
+          <div className="flex items-center justify-between py-1 px-2 rounded bg-white/5">
+            <span className="text-gray-400 text-[11px]">Raw Key Exposure</span>
+            <span className="text-emerald-400 text-[11px]">Never (One-time reveal)</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
+            <span>Encrypted at Rest</span>
+            <span className="text-emerald-400">TLS In Transit</span>
           </div>
         </div>
       ),
@@ -121,48 +188,58 @@ export default function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
           className="space-y-3"
         >
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono text-blue-400 uppercase tracking-widest">
-            <span>// BUILT FOR API INFRASTRUCTURE</span>
+          <div className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-400 uppercase tracking-widest">
+            <span>// PLATFORM CAPABILITIES</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Security details developers actually need
+            Security controls developers actually need
           </h2>
           <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
-            Everything you need to secure, govern, and monitor API credentials across your organization.
+            Everything required to issue, govern, and monitor API credentials
+            across projects, backed by high-throughput proxy routing.
           </p>
         </motion.div>
 
-        {/* 2x2 Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 3x2 Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featureList.map((f, index) => {
             const Icon = f.icon;
             return (
               <motion.div
                 key={f.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
+                transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="rounded-xl border border-white/10 bg-[#161b22] p-6 space-y-5 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-950/20 transition-colors"
+                className="rounded-xl border border-white/10 bg-[#161b22] p-5 space-y-4 hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-950/20 transition-all flex flex-col justify-between"
               >
-                <div className="space-y-2">
-                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${f.iconBg}`}>
-                    <Icon className="w-4 h-4" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-lg border border-emerald-500/30 bg-emerald-950/60 text-emerald-400 flex items-center justify-center">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded">
+                      {f.badge}
+                    </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white">{f.title}</h3>
+
+                  <h3 className="text-base font-bold text-white tracking-tight leading-snug">
+                    {f.title}
+                  </h3>
+
                   <p className="text-xs text-gray-400 leading-relaxed">
                     {f.description}
                   </p>
                 </div>
 
-                {f.content}
+                <div className="pt-2">{f.content}</div>
               </motion.div>
             );
           })}

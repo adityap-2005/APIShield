@@ -277,7 +277,7 @@ class IntegrationService {
                 organizationId,
                 projectId
             }).select(
-                "_id integrationId name baseUrl path authentication status createdAt updatedAt"
+                "_id integrationId name baseUrl path authentication status lastUsed createdAt updatedAt"
             );
 
         return integrations.map(
@@ -339,7 +339,7 @@ class IntegrationService {
                 organizationId,
                 projectId
             }).select(
-                "_id integrationId name baseUrl path status createdAt updatedAt"
+                "_id integrationId name baseUrl path status lastUsed createdAt updatedAt"
             );
 
         return {

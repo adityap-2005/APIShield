@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import authApi from "../api/auth";
+import BrandLogo from "../components/BrandLogo";
 import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, ArrowRight } from "lucide-react";
 
 export default function VerifyEmailPage() {
@@ -52,14 +53,10 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white font-sans flex flex-col justify-center items-center p-4 selection:bg-[#2f81f7]/30 selection:text-blue-300">
+    <div className="min-h-screen bg-[#0d1117] text-white font-sans flex flex-col justify-center items-center p-4 selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-950/60 border border-blue-800/40 text-white mb-3 shadow-sm shadow-blue-500/20">
-          <ShieldCheck className="w-6 h-6 text-blue-400" />
-        </div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">APIShield</h2>
-        <p className="text-xs text-gray-500 font-mono mt-1">Email Verification</p>
+        <BrandLogo size="lg" badge="Verification" to="/" />
       </div>
 
       {/* Card Content */}

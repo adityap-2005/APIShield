@@ -49,11 +49,11 @@ export default function ProfileDropdown() {
 
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "AP";
 
   const handleLogout = () => {
@@ -76,7 +76,7 @@ export default function ProfileDropdown() {
         <div className="text-left hidden sm:block">
           <div className="text-xs font-medium text-white leading-tight">{user?.name || "Aditya Panda"}</div>
           <div className="text-[10px] text-gray-400 leading-tight">
-            {activeOrg?.role || "Owner"}
+            {activeOrg?.role ?? "Role unavailable"}
           </div>
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-gray-500" />

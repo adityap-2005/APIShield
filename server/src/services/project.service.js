@@ -106,7 +106,10 @@ class ProjectService {
             metadata: {}
         });
 
-        return project;
+        return {
+            ...project.toObject(),
+            projectRole: PROJECT_ROLES.PROJECT_ADMIN
+        };
     }
 
     async getOrganizationProjects(
@@ -140,7 +143,19 @@ class ProjectService {
 
         const projects = await Project.find(projectQuery).sort({ createdAt: -1 });
 
-        return projects;
+        const userProjectMemberships = await ProjectMembership.find({
+            organizationId,
+            membershipId: membership._id,
+        }).select("projectId role");
+
+        const roleMap = new Map(
+            userProjectMemberships.map((pm) => [pm.projectId.toString(), pm.role])
+        );
+
+        return projects.map((p) => ({
+            ...p.toObject(),
+            projectRole: roleMap.get(p._id.toString()) || null
+        }));
     }
 
     async getProjectById(
@@ -170,7 +185,15 @@ class ProjectService {
             await _getActiveProjectMembership(projectId, membership._id);
         }
 
-        return project;
+        const userProjectMembership = await ProjectMembership.findOne({
+            projectId: project._id,
+            membershipId: membership._id
+        });
+
+        return {
+            ...project.toObject(),
+            projectRole: userProjectMembership ? userProjectMembership.role : null
+        };
     }
 
     async updateProject(
@@ -246,7 +269,10 @@ class ProjectService {
 
         await project.save();
 
-        return project;
+        return {
+            ...project.toObject(),
+            projectRole: projectMembership.role
+        };
     }
 
     async deleteProject(

@@ -162,7 +162,6 @@ class UpstreamApiService {
         return upstreamApi;
     }
 
-
     async getUpstreamApis(
         userId,
         organizationId,
@@ -211,7 +210,7 @@ class UpstreamApiService {
                 projectId
             })
                 .select(
-                    "_id integrationId name baseUrl path status createdAt updatedAt"
+                    "_id integrationId name baseUrl path status lastUsed createdAt updatedAt"
                 )
                 .sort({
                     createdAt: -1
@@ -219,7 +218,6 @@ class UpstreamApiService {
 
         return upstreamApis;
     }
-
 
     async getUpstreamApi(
         userId,
@@ -271,7 +269,7 @@ class UpstreamApiService {
                 projectId
             })
                 .select(
-                    "_id integrationId name baseUrl path authentication status createdAt updatedAt"
+                    "_id integrationId name baseUrl path authentication status lastUsed createdAt updatedAt"
                 );
 
         if (!upstreamApi) {
@@ -283,7 +281,6 @@ class UpstreamApiService {
 
         return upstreamApi;
     }
-
 
     async updateUpstreamApi(
         userId,
@@ -404,7 +401,6 @@ class UpstreamApiService {
 
         return upstreamApi;
     }
-
 
     async deleteUpstreamApi(
         userId,

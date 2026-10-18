@@ -12,6 +12,12 @@ import upstreamApisApi from "../api/upstreamApis";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import EmptyState from "../components/EmptyState";
+import CreateOrgModal from "../components/CreateOrgModal";
+import {
+  canManageApiKeys,
+  canManageIntegrations,
+  canCreateOrg,
+} from "../utils/permissions";
 
 import {
   KeyRound,
@@ -22,6 +28,7 @@ import {
   TrendingUp,
   Play,
   BarChart3,
+  Plus,
 } from "lucide-react";
 
 export default function OrgDashboardPage() {
@@ -40,6 +47,7 @@ export default function OrgDashboardPage() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
   const [upstreamApis, setUpstreamApis] = useState([]);
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 
   const loadDashboardData = async () => {
     if (!targetOrgId) return;
@@ -60,14 +68,27 @@ export default function OrgDashboardPage() {
       setSelectedProjectId(initialProjectId);
 
       if (initialProjectId) {
-        const [integrationsRes, keysRes, upstreamApisRes] = await Promise.all([
-          integrationsApi.getAll(targetOrgId, initialProjectId).catch(() => ({ data: { data: [] } })),
-          apiKeysApi.getAll(targetOrgId, initialProjectId).catch(() => ({ data: { data: [] } })),
-          upstreamApisApi.getAll(targetOrgId, initialProjectId).catch(() => ({ data: { data: [] } })),
+        const [integrationsRes, keysRes] = await Promise.all([
+          integrationsApi.getAll(targetOrgId, initialProjectId)
+            .catch(() => ({ data: { data: [] } })),
+          apiKeysApi.getAll(targetOrgId, initialProjectId)
+            .catch(() => ({ data: { data: [] } })),
         ]);
-        setIntegrations(integrationsRes.data?.data || []);
+
+        const integrationList = integrationsRes.data?.data || [];
+
+        setIntegrations(integrationList);
         setApiKeys(keysRes.data?.data || []);
-        setUpstreamApis(upstreamApisRes.data?.data || []);
+
+        setUpstreamApis(
+          integrationList.flatMap((integration) =>
+            (integration.upstreamApis || []).map((api) => ({
+              ...api,
+              integrationId: integration._id,
+              integrationName: integration.name,
+            }))
+          )
+        );
       }
 
       try {
@@ -117,7 +138,7 @@ export default function OrgDashboardPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── WELCOME BANNER (Matches Screen #1) ──────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -130,15 +151,18 @@ export default function OrgDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <Link
-            to={`/org/${targetOrgId}/upstream-apis/test`}
-            className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>Launch Gateway Test</span>
-          </Link>
-        </div>
+        {canCreateOrg(user) && (
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowCreateOrgModal(true)}
+              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create Organization</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── TOP 4 METRIC KPI CARDS (Matches Screen #1) ─────────────────────── */}
@@ -298,41 +322,45 @@ export default function OrgDashboardPage() {
           </div>
 
           <div className="space-y-2.5">
-            <Link
-              to={`/org/${targetOrgId}/api-keys`}
-              className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] hover:bg-white/5 border border-white/5 hover:border-white/15 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
-                  <KeyRound className="w-4 h-4" />
+            {canManageApiKeys(activeProject) && (
+              <Link
+                to={`/org/${targetOrgId}/api-keys`}
+                className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] hover:bg-white/5 border border-white/5 hover:border-white/15 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                      Create Access Key
+                    </p>
+                    <p className="text-[10px] text-gray-500">Generate client token</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
-                    Create Access Key
-                  </p>
-                  <p className="text-[10px] text-gray-500">Generate client token</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
-            </Link>
+                <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
+              </Link>
+            )}
 
-            <Link
-              to={`/org/${targetOrgId}/integrations`}
-              className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] hover:bg-white/5 border border-white/5 hover:border-white/15 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
-                  <Blocks className="w-4 h-4" />
+            {canManageIntegrations(activeOrg, activeProject) && (
+              <Link
+                to={`/org/${targetOrgId}/integrations`}
+                className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] hover:bg-white/5 border border-white/5 hover:border-white/15 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                    <Blocks className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                      Add Integration
+                    </p>
+                    <p className="text-[10px] text-gray-500">Connect upstream provider</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-white group-hover:text-emerald-400 transition-colors">
-                    Add Integration
-                  </p>
-                  <p className="text-[10px] text-gray-500">Connect upstream provider</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
-            </Link>
+                <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-white transition-colors" />
+              </Link>
+            )}
 
             <Link
               to={`/org/${targetOrgId}/upstream-apis/test`}
@@ -372,6 +400,11 @@ export default function OrgDashboardPage() {
           </div>
         </div>
       </div>
+
+      <CreateOrgModal
+        isOpen={showCreateOrgModal}
+        onClose={() => setShowCreateOrgModal(false)}
+      />
     </div>
   );
 }

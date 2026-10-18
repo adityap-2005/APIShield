@@ -15,6 +15,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canManageIntegrations } from "../utils/permissions";
 
 import {
   Blocks,
@@ -211,6 +212,9 @@ export default function IntegrationsPage() {
     return <LoadingSpinner message="Loading workspace projects..." />;
   }
 
+  const currentProject = projects.find((p) => p._id === selectedProjectId) || activeProject;
+  const canManage = canManageIntegrations(activeOrg, currentProject);
+
   return (
     <div className="space-y-6">
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
@@ -245,13 +249,15 @@ export default function IntegrationsPage() {
             </select>
           )}
 
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Integration</span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Integration</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -283,13 +289,15 @@ export default function IntegrationsPage() {
           <p className="text-xs text-gray-400 max-w-md mx-auto mb-6">
             Connect your first upstream API service to enable routing, rate limiting, and analytics.
           </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Integration</span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Integration</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-sm">
@@ -302,7 +310,7 @@ export default function IntegrationsPage() {
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Created At</th>
                   <th className="px-4 py-3 font-medium">Last Activity</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  {canManage && <th className="px-4 py-3 font-medium text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -358,17 +366,19 @@ export default function IntegrationsPage() {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleToggleStatus(item)}
-                            className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors"
-                            title={isActive ? "Disable Integration" : "Enable Integration"}
-                          >
-                            <Settings className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                      {canManage && (
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleToggleStatus(item)}
+                              className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors"
+                              title={isActive ? "Disable Integration" : "Enable Integration"}
+                            >
+                              <Settings className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

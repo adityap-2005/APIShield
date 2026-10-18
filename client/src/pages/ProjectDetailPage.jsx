@@ -8,6 +8,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { canAddProjectMember, canRemoveProjectMember } from "../utils/permissions";
 
 import {
   FolderKanban,
@@ -154,7 +155,7 @@ export default function ProjectDetailPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-gray-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       {/* ── HEADER & BREADCRUMBS ──────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -252,14 +253,16 @@ export default function ProjectDetailPage() {
             <p className="text-[11px] text-gray-400">Members assigned to this project workspace</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowAddModal(true)}
-            className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Add Member</span>
-          </button>
+          {canAddProjectMember(project) && (
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Add Member</span>
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -317,14 +320,16 @@ export default function ProjectDetailPage() {
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openRemoveConfirm(pm.projectMembershipId, uName)}
-                        className="p-1.5 hover:bg-rose-500/10 rounded text-gray-400 hover:text-rose-400 transition-colors"
-                        title="Remove from Project"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {canRemoveProjectMember(activeOrg, project, pm.projectRole || pm.role) && (
+                        <button
+                          type="button"
+                          onClick={() => openRemoveConfirm(pm.projectMembershipId, uName)}
+                          className="p-1.5 hover:bg-rose-500/10 rounded text-gray-400 hover:text-rose-400 transition-colors"
+                          title="Remove from Project"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

@@ -160,10 +160,6 @@ class ApiKeyService {
                 organizationMembership._id
             );
 
-        _authorizeApiKeyManagement(
-            projectMembership
-        );
-
         const apiKeys = await ApiKey.find({
             organizationId,
             projectId
@@ -190,10 +186,6 @@ class ApiKeyService {
                 projectId,
                 organizationMembership._id
             );
-
-        _authorizeApiKeyManagement(
-            projectMembership
-        );
 
         const apiKey =
             await _getApiKeyById(

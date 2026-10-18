@@ -31,14 +31,6 @@ class AnalyticsService {
                 organizationId
             );
 
-        await _validateOrganizationRole(
-            organizationMembership,
-            [
-                ORGANIZATION_ROLES.OWNER,
-                ORGANIZATION_ROLES.ADMIN
-            ]
-        );
-
         const overview =
             await _getOverview(organizationId);
 

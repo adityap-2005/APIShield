@@ -1,5 +1,6 @@
 import { NavLink, useParams, useLocation, Link } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
+import BrandLogo, { BrandSymbol } from "./BrandLogo";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -107,23 +108,15 @@ export default function Sidebar({
         {isCollapsed && !isMobileOpen ? (
           <button
             onClick={() => setIsCollapsed(false)}
-            className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center shrink-0 relative group"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative group hover:bg-white/5 transition-colors"
             aria-label="Expand sidebar"
           >
-            <ShieldCheck className="w-4 h-4 text-[#052e16] group-hover:opacity-0 transition-opacity" />
-            <PanelLeftOpen className="w-4 h-4 text-[#052e16] absolute opacity-0 group-hover:opacity-100 transition-opacity" />
+            <BrandSymbol className="w-6 h-6 group-hover:opacity-0 transition-opacity" />
+            <PanelLeftOpen className="w-4 h-4 text-emerald-400 absolute opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
         ) : (
           <>
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center text-[#052e16] shadow-sm shadow-emerald-500/30 group-hover:bg-emerald-400 transition-colors shrink-0">
-                <ShieldCheck className="w-4 h-4 text-black" />
-              </div>
-              <div>
-                <span className="font-bold text-white text-xs tracking-tight block">APIShield</span>
-                <span className="text-[8px] text-gray-500 font-mono block tracking-wider uppercase font-semibold">GATEWAY OS</span>
-              </div>
-            </Link>
+            <BrandLogo size="md" badge="Console" to="/" />
 
             <div className="flex items-center gap-1">
               <button
