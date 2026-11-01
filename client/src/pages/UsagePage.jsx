@@ -321,7 +321,7 @@ export default function UsagePage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse min-w-[760px]">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.01] text-[11px] font-mono text-gray-400 font-medium">
                     <th className="py-3 px-5">Endpoint</th>

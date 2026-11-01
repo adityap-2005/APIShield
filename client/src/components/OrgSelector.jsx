@@ -58,17 +58,17 @@ export default function OrgSelector() {
         >
           {/* Hexagonal/Boxes icon */}
           <Boxes className="w-4 h-4 text-gray-300 shrink-0" />
-          <span className="truncate max-w-[85px] sm:max-w-[170px] text-white">
+          <span className="truncate max-w-[130px] sm:max-w-[170px] text-white">
             {orgName}
           </span>
-          <span className="hidden sm:inline-block bg-white/10 border border-white/5 text-gray-300 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold tracking-wide uppercase leading-none">
+          <span className="bg-white/10 border border-white/5 text-gray-300 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold tracking-wide uppercase leading-none">
             FREE
           </span>
           <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-0.5" />
         </button>
 
         {isOpen && (
-          <div className="absolute left-0 mt-2 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute left-0 mt-2 w-72 bg-[#161b22] border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
             <div className="px-3 py-2 text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5">
               Organizations
             </div>

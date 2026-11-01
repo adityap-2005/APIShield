@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import authApi from "../api/auth";
 import BrandLogo from "../components/BrandLogo";
-import { CheckCircle2, XCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, ArrowRight } from "lucide-react";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -60,11 +60,11 @@ export default function VerifyEmailPage() {
       </div>
 
       {/* Card Content */}
-      <div className="w-full sm:max-w-md card bg-[#161b22] border border-white/10 p-8 shadow-2xl shadow-emerald-950/20 text-center space-y-5 rounded-xl">
+      <div className="w-full sm:max-w-md card bg-[#161b22] border border-white/10 p-8 shadow-2xl shadow-blue-950/20 text-center space-y-5 rounded-xl">
         {/* Loading State */}
         {status === "loading" && (
           <div className="space-y-4 py-4">
-            <div className="w-8 h-8 border-2 border-white/10 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-2 border-white/10 border-t-blue-500 rounded-full animate-spin mx-auto" />
             <h3 className="text-base font-semibold text-white">Verifying your email...</h3>
             <p className="text-xs text-gray-400">Please wait while we validate your verification token.</p>
           </div>

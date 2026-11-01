@@ -41,15 +41,10 @@ const apiKeysApi = {
 
   // POST /api/v1/organizations/:organizationId/projects/:projectId/api-keys/:apiKeyId/archive
   // Body: none
+  // Key must be REVOKED status first
   // Returns: { success, message, data: { apiKeyId, publicKeyId, status: "ARCHIVED", archivedAt } }
   archive: (organizationId, projectId, apiKeyId) =>
     axiosInstance.post(`/organizations/${organizationId}/projects/${projectId}/api-keys/${apiKeyId}/archive`),
-
-  // DELETE /api/v1/organizations/:organizationId/projects/:projectId/api-keys/:apiKeyId
-  // Body: none
-  // Returns: { success, message, data: { apiKeyId, publicKeyId, deleted: true } }
-  delete: (organizationId, projectId, apiKeyId) =>
-    axiosInstance.delete(`/organizations/${organizationId}/projects/${projectId}/api-keys/${apiKeyId}`),
 };
 
 export default apiKeysApi;

@@ -16,6 +16,7 @@ import {
   Trash2,
   Blocks,
   KeyRound,
+  Play,
 } from "lucide-react";
 
 export default function ProjectDetailPage() {
@@ -186,6 +187,13 @@ export default function ProjectDetailPage() {
 
         {/* Quick Launch Actions */}
         <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+          <Link
+            to={`/org/${targetOrgId}/upstream-apis/test`}
+            className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-lg shadow-emerald-950/40 transition-all"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Test API</span>
+          </Link>
           <Link
             to={`/org/${targetOrgId}/integrations?projectId=${project._id}`}
             className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-medium px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors"

@@ -68,7 +68,7 @@ export default function Header({ onMobileMenuToggle }) {
   return (
     <header className="h-14 bg-[#0a0d14] border-b border-white/10 px-3 sm:px-5 flex items-center justify-between shrink-0 sticky top-0 z-30 select-none">
       {/* Left Area: Mobile Hamburger + Context Bar */}
-      <div className="flex items-center gap-1 sm:gap-1.5 py-1 min-w-0 overflow-hidden">
+      <div className="flex items-center gap-1 sm:gap-1.5 py-1 min-w-0 flex-wrap sm:flex-nowrap">
         {/* Mobile Hamburger Toggle */}
         <button
           onClick={onMobileMenuToggle}

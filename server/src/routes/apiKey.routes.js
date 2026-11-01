@@ -49,4 +49,10 @@ router.post(
     apiKeyController.archiveApiKey
 );
 
+router.delete(
+    "/:apiKeyId",
+    protect,
+    apiKeyController.deleteApiKey
+);
+
 export default router;

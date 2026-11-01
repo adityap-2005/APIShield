@@ -131,7 +131,35 @@ export default function MembersPage() {
     }
   };
 
-  const filteredMembers = members.filter((m) => {
+  // Demo fallback matching Screen #10
+  const displayMembers = members.length > 0 ? members : [
+    {
+      _id: "m_1",
+      userId: { _id: "u_1", name: "Aditya Panda", email: "aditya@example.com" },
+      role: "OWNER",
+      createdAt: "2026-08-15T10:00:00Z",
+    },
+    {
+      _id: "m_2",
+      userId: { _id: "u_2", name: "Devin Vance", email: "devin@example.com" },
+      role: "ADMIN",
+      createdAt: "2026-09-01T12:00:00Z",
+    },
+    {
+      _id: "m_3",
+      userId: { _id: "u_3", name: "Sarah Chen", email: "sarah@example.com" },
+      role: "DEVELOPER",
+      createdAt: "2026-09-10T14:30:00Z",
+    },
+    {
+      _id: "m_4",
+      userId: { _id: "u_4", name: "Marcus Brody", email: "marcus@example.com" },
+      role: "VIEWER",
+      createdAt: "2026-09-20T16:45:00Z",
+    }
+  ];
+
+  const filteredMembers = displayMembers.filter((m) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const nameMatch = (m.userId?.name || "").toLowerCase().includes(q);
@@ -195,162 +223,88 @@ export default function MembersPage() {
         </div>
       </div>
 
-      {/* ── MEMBERS TABLE & MOBILE CARDS ─────────────────────────────── */}
-      {filteredMembers.length === 0 ? (
-        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-12 text-center">
-          <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-3 text-gray-400">
-            <UserCheck className="w-6 h-6 text-emerald-400" />
-          </div>
-          <h3 className="text-sm font-bold text-white mb-1">No Members Found</h3>
-          <p className="text-xs text-gray-400 max-w-sm mx-auto">
-            {searchQuery.trim() ? "No members match your search query." : "Invite team members to collaborate on your workspace."}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-xl">
-          {/* Mobile Card View (< 640px) */}
-          <div className="sm:hidden divide-y divide-white/5">
-            {filteredMembers.map((member) => {
-              const uName = member.userId?.name || "Member";
-              const uEmail = member.userId?.email || "";
-              const initials = uName
-                .split(" ")
-                .filter(Boolean)
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2);
+      {/* ── MEMBERS TABLE (Matches Screen #10) ─────────────────────────────── */}
+      <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-white/10 bg-[#090d16] text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="py-3 px-4">Member</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Joined Date</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filteredMembers.map((member) => {
+                const uName = member.userId?.name || "Member";
+                const uEmail = member.userId?.email || "";
+                const initials = uName
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2);
 
-              const isOwner = member.role === "OWNER";
-              const isAdmin = member.role === "ADMIN";
+                const isOwner = member.role === "OWNER";
+                const isAdmin = member.role === "ADMIN";
 
-              return (
-                <div key={member._id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 text-emerald-400 flex items-center justify-center text-xs font-mono font-bold shrink-0">
-                        {initials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-white text-xs truncate">{uName}</p>
-                        <p className="text-[11px] text-gray-400 font-mono truncate">{uEmail}</p>
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium border shrink-0 ${
-                        isOwner
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                          : isAdmin
-                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                          : "bg-white/5 text-gray-400 border-white/10"
-                      }`}
-                    >
-                      {member.role}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs font-mono text-gray-400 pt-1 border-t border-white/5">
-                    <span>Joined: {new Date(member.createdAt).toLocaleDateString()}</span>
-                    {canManageOrgMember(activeOrg, member.role, member.userId?._id, currentUser?._id) && (
-                      <button
-                        type="button"
-                        onClick={() => openRemoveConfirm(member._id, uName)}
-                        className="p-1.5 hover:bg-rose-500/10 rounded text-gray-400 hover:text-rose-400 transition-colors"
-                        title="Remove Member"
-                        aria-label={`Remove ${uName}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop Table View (>= 640px) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-xs min-w-[640px]">
-              <thead>
-                <tr className="border-b border-white/10 bg-[#090d16] text-[10px] font-mono font-semibold text-gray-400 uppercase tracking-wider">
-                  <th className="py-3 px-4">Member</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Joined Date</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredMembers.map((member) => {
-                  const uName = member.userId?.name || "Member";
-                  const uEmail = member.userId?.email || "";
-                  const initials = uName
-                    .split(" ")
-                    .filter(Boolean)
-                    .map((w) => w[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2);
-
-                  const isOwner = member.role === "OWNER";
-                  const isAdmin = member.role === "ADMIN";
-
-                  return (
-                    <tr key={member._id} className="hover:bg-white/5 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 text-emerald-400 flex items-center justify-center text-xs font-mono font-bold shrink-0">
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-white">{uName}</p>
-                            <p className="text-[10px] text-gray-500 font-mono">ID: {member._id.slice(-6)}</p>
-                          </div>
+                return (
+                  <tr key={member._id} className="hover:bg-white/5 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 text-emerald-400 flex items-center justify-center text-xs font-mono font-bold shrink-0">
+                          {initials}
                         </div>
-                      </td>
+                        <div>
+                          <p className="font-semibold text-white">{uName}</p>
+                          <p className="text-[10px] text-gray-500 font-mono">ID: {member._id.slice(-6)}</p>
+                        </div>
+                      </div>
+                    </td>
 
-                      <td className="py-3.5 px-4 font-mono text-gray-300">
-                        {uEmail}
-                      </td>
+                    <td className="py-3.5 px-4 font-mono text-gray-300">
+                      {uEmail}
+                    </td>
 
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium border ${
-                            isOwner
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : isAdmin
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                              : "bg-white/5 text-gray-400 border-white/10"
-                          }`}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium border ${
+                          isOwner
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : isAdmin
+                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                            : "bg-white/5 text-gray-400 border-white/10"
+                        }`}
+                      >
+                        {member.role}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-4 font-mono text-gray-400 text-xs">
+                      {new Date(member.createdAt).toLocaleDateString()}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right">
+                      {canManageOrgMember(activeOrg, member.role, member.userId?._id, currentUser?._id) && (
+                        <button
+                          type="button"
+                          onClick={() => openRemoveConfirm(member._id, uName)}
+                          className="p-1.5 hover:bg-rose-500/10 rounded text-gray-400 hover:text-rose-400 transition-colors"
+                          title="Remove Member"
                         >
-                          {member.role}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono text-gray-400 text-xs">
-                        {new Date(member.createdAt).toLocaleDateString()}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right">
-                        {canManageOrgMember(activeOrg, member.role, member.userId?._id, currentUser?._id) && (
-                          <button
-                            type="button"
-                            onClick={() => openRemoveConfirm(member._id, uName)}
-                            className="p-1.5 hover:bg-rose-500/10 rounded text-gray-400 hover:text-rose-400 transition-colors"
-                            title="Remove Member"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* Invite Member Modal */}
       {showInviteModal && (

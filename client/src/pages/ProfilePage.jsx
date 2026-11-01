@@ -31,7 +31,7 @@ export default function ProfilePage() {
         .join("")
         .toUpperCase()
         .slice(0, 2)
-    : (user?.email || "U")[0].toUpperCase();
+    : "AP";
 
   const handleOpenModal = () => {
     setName(user?.name || "");
@@ -87,7 +87,7 @@ export default function ProfilePage() {
       <div className="page-header">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <User className="w-5 h-5 text-emerald-400" />
+            <User className="w-5 h-5 text-blue-400" />
             My Profile
           </h1>
           <p className="page-description">Your personal account details and platform memberships</p>
@@ -96,14 +96,14 @@ export default function ProfilePage() {
 
       {/* Success Feedback Alert */}
       {successMessage && (
-        <div className="p-3 bg-emerald-950/60 border border-emerald-800/60 rounded-xl flex items-center justify-between text-xs text-emerald-300">
+        <div className="p-3 bg-green-950/60 border border-green-800/60 rounded-xl flex items-center justify-between text-xs text-green-300">
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <Check className="w-4 h-4 text-green-400 shrink-0" />
             <span>{successMessage}</span>
           </div>
           <button
             onClick={() => setSuccessMessage("")}
-            className="text-emerald-400 hover:text-emerald-200 text-xs underline ml-4 cursor-pointer"
+            className="text-green-400 hover:text-green-200 text-xs underline ml-4"
           >
             Dismiss
           </button>
@@ -111,10 +111,10 @@ export default function ProfilePage() {
       )}
 
       {/* Clean Read-Only Profile Card */}
-      <div className="card bg-[#161b22] border border-white/10 space-y-6 rounded-xl shadow-xl shadow-emerald-950/10">
+      <div className="card bg-[#161b22] border border-white/10 space-y-6 rounded-xl shadow-xl shadow-blue-950/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-white/5 pb-6">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-xl bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 flex items-center justify-center text-xl font-bold font-mono shadow-md">
+            <div className="w-16 h-16 rounded-xl bg-blue-950/60 border border-blue-800/40 text-blue-300 flex items-center justify-center text-xl font-bold font-mono shadow-md">
               {initials}
             </div>
             <div>
@@ -168,7 +168,7 @@ export default function ProfilePage() {
       {/* Organization Memberships */}
       <div className="card bg-[#161b22] border border-white/10 space-y-4 rounded-xl">
         <h2 className="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 pb-3 flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-emerald-400" />
+          <Building2 className="w-4 h-4 text-blue-400" />
           Associated Workspaces ({organizations.length})
         </h2>
 
@@ -206,7 +206,7 @@ export default function ProfilePage() {
 
           <div>
             <label className="label" htmlFor="modalFullName">
-              Full Name <span className="text-emerald-400">*</span>
+              Full Name <span className="text-blue-400">*</span>
             </label>
             <input
               id="modalFullName"

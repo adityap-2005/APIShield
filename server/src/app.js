@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import errorHandler from "./middleware/error.middleware.js";
 
@@ -17,23 +18,19 @@ const app = express();
 
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173",
-            "http://localhost:3000",
-            "http://127.0.0.1:5500",
-            "https://apishield-app.vercel.app"
-        ],
+        origin: "https://apishield-app.vercel.app",
+        credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: [
             "Content-Type",
             "Authorization",
             "x-api-key"
-        ],
-        credentials: true
+        ]
     })
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
     res.send("Welcome to APIShield");

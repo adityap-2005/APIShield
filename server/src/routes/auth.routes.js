@@ -8,6 +8,22 @@ router.post("/register", authController.register);
 
 router.post("/login", authController.login);
 
+router.post(
+    "/refresh",
+    authController.refresh.bind(authController)
+);
+
+router.post(
+    "/logout",
+    authController.logout.bind(authController)
+);
+
+router.post(
+    "/logout-all",
+    protect,
+    authController.logoutAll.bind(authController)
+);
+
 router.get("/me", protect, authController.getProfile);
 
 router.get(

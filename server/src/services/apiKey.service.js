@@ -11,6 +11,7 @@ import { AUDIT_ACTIONS } from "../constants/auditActions.js";
 import { AUDIT_ENTITY_TYPES } from "../constants/auditEntityTypes.js";
 
 import { _getOrganizationById } from "../helpers/organization.helper.js";
+import { _getProjectById } from "../helpers/project.helper.js";
 import {
     _getActiveMembership,
     _getActiveProjectMembership
@@ -28,7 +29,6 @@ class ApiKeyService {
         userId,
         apiKeyData
     ) {
-
         const {
             name,
             description,
@@ -37,10 +37,7 @@ class ApiKeyService {
         } = apiKeyData;
 
         // Check Active Organization Membership
-
-        await _getOrganizationById(
-            organizationId
-        );
+        await _getOrganizationById(organizationId);
 
         const organizationMembership =
             await _getActiveMembership(
@@ -48,18 +45,8 @@ class ApiKeyService {
                 organizationId
             );
 
-        // Check Project Exists
-        const project = await Project.findOne({
-            _id: projectId,
-            organizationId,
-        });
-
-        if (!project) {
-            throw new ApiError(
-                404,
-                "Project not found."
-            );
-        }
+        // Check Project Exists & Belongs to Organization
+        await _getProjectById(projectId, organizationId);
 
         // Check Active Project Membership
         const projectMembership =
@@ -94,23 +81,14 @@ class ApiKeyService {
         // Save API Key
         const createdApiKey =
             await ApiKey.create({
-
                 organizationId,
-
                 projectId,
-
                 ...(environmentId ? { environmentId } : {}),
-
                 name,
-
                 description,
-
                 expiresAt,
-
                 publicKeyId,
-
                 keyHash,
-
                 createdBy: userId
             });
 
@@ -120,26 +98,19 @@ class ApiKeyService {
         await auditLogService.log({
             organizationId,
             projectId,
-
             actor,
-
             action: AUDIT_ACTIONS.API_KEY_CREATED,
-
             entity: {
                 id: createdApiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
                 name: createdApiKey.name
             },
-
             metadata: {}
         });
 
         return {
-
             apiKey,
-
             apiKeyDetails: createdApiKey
-
         };
     }
 
@@ -148,23 +119,25 @@ class ApiKeyService {
         projectId,
         userId
     ) {
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
 
-        const projectMembership =
-            await _getActiveProjectMembership(
-                projectId,
-                organizationMembership._id
-            );
+        await _getProjectById(projectId, organizationId);
+
+        await _getActiveProjectMembership(
+            projectId,
+            organizationMembership._id
+        );
 
         const apiKeys = await ApiKey.find({
             organizationId,
             projectId
-        })
-            .sort({ createdAt: -1 });
+        }).sort({ createdAt: -1 });
 
         return apiKeys;
     }
@@ -175,17 +148,20 @@ class ApiKeyService {
         apiKeyId,
         userId
     ) {
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
 
-        const projectMembership =
-            await _getActiveProjectMembership(
-                projectId,
-                organizationMembership._id
-            );
+        await _getProjectById(projectId, organizationId);
+
+        await _getActiveProjectMembership(
+            projectId,
+            organizationMembership._id
+        );
 
         const apiKey =
             await _getApiKeyById(
@@ -210,11 +186,15 @@ class ApiKeyService {
             expiresAt
         } = apiKeyData;
 
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
+
+        await _getProjectById(projectId, organizationId);
 
         const projectMembership =
             await _getActiveProjectMembership(
@@ -232,6 +212,20 @@ class ApiKeyService {
                 projectId,
                 organizationId
             );
+
+        if (apiKey.status === API_KEY_STATUS.ARCHIVED) {
+            throw new ApiError(
+                400,
+                "Archived API key cannot be modified."
+            );
+        }
+
+        if (apiKey.status === API_KEY_STATUS.REVOKED) {
+            throw new ApiError(
+                400,
+                "Revoked API key cannot be modified."
+            );
+        }
 
         if (
             expiresAt &&
@@ -269,17 +263,13 @@ class ApiKeyService {
         await auditLogService.log({
             organizationId,
             projectId,
-
             actor,
-
             action: AUDIT_ACTIONS.API_KEY_UPDATED,
-
             entity: {
                 id: apiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
                 name: apiKey.name
             },
-
             metadata: {
                 previousValues,
                 updatedValues: {
@@ -299,11 +289,15 @@ class ApiKeyService {
         apiKeyId,
         userId
     ) {
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
+
+        await _getProjectById(projectId, organizationId);
 
         const projectMembership =
             await _getActiveProjectMembership(
@@ -322,6 +316,13 @@ class ApiKeyService {
                 organizationId
             );
 
+        if (apiKey.status === API_KEY_STATUS.ARCHIVED) {
+            throw new ApiError(
+                400,
+                "Archived API key cannot be rotated."
+            );
+        }
+
         if (apiKey.status === API_KEY_STATUS.REVOKED) {
             throw new ApiError(
                 400,
@@ -329,9 +330,16 @@ class ApiKeyService {
             );
         }
 
+        if (apiKey.status !== API_KEY_STATUS.ACTIVE) {
+            throw new ApiError(
+                400,
+                "Only active API keys can be rotated."
+            );
+        }
+
         if (
             apiKey.expiresAt &&
-            apiKey.expiresAt <= new Date()
+            new Date(apiKey.expiresAt) <= new Date()
         ) {
             throw new ApiError(
                 400,
@@ -339,28 +347,20 @@ class ApiKeyService {
             );
         }
 
+        // Generate new credential
         const {
             apiKey: newPlainApiKey,
             publicKeyId,
             keyHash
         } = generateApiKey();
 
-        const rotatedApiKey =
-            await ApiKey.create({
-                organizationId,
-                projectId,
-                ...(apiKey.environmentId ? { environmentId: apiKey.environmentId } : {}),
-                name: apiKey.name,
-                description: apiKey.description,
-                expiresAt: apiKey.expiresAt,
-                publicKeyId,
-                keyHash,
-                createdBy: userId
-            });
+        const previousPublicKeyId = apiKey.publicKeyId;
 
-        apiKey.status = API_KEY_STATUS.REVOKED;
-        apiKey.revokedAt = new Date();
-        apiKey.revokedBy = userId;
+        // Securely update existing key record (preserve identity, org, project, environment, createdBy)
+        apiKey.publicKeyId = publicKeyId;
+        apiKey.keyHash = keyHash;
+        apiKey.lastRotatedAt = new Date();
+        apiKey.rotatedBy = userId;
 
         await apiKey.save();
 
@@ -370,27 +370,22 @@ class ApiKeyService {
         await auditLogService.log({
             organizationId,
             projectId,
-
             actor,
-
             action: AUDIT_ACTIONS.API_KEY_ROTATED,
-
             entity: {
-                id: rotatedApiKey._id,
+                id: apiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
-                name: rotatedApiKey.name
+                name: apiKey.name
             },
-
             metadata: {
-                previousApiKeyId: apiKey._id,
-                previousPublicKeyId: apiKey.publicKeyId,
-                publicKeyId: rotatedApiKey.publicKeyId
+                previousPublicKeyId,
+                publicKeyId: apiKey.publicKeyId
             }
         });
 
         return {
             apiKey: newPlainApiKey,
-            apiKeyDetails: rotatedApiKey
+            apiKeyDetails: apiKey
         };
     }
 
@@ -400,11 +395,15 @@ class ApiKeyService {
         apiKeyId,
         userId
     ) {
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
+
+        await _getProjectById(projectId, organizationId);
 
         const projectMembership =
             await _getActiveProjectMembership(
@@ -423,9 +422,14 @@ class ApiKeyService {
                 organizationId
             );
 
-        if (
-            apiKey.status === API_KEY_STATUS.REVOKED
-        ) {
+        if (apiKey.status === API_KEY_STATUS.ARCHIVED) {
+            throw new ApiError(
+                400,
+                "Archived API key cannot be revoked."
+            );
+        }
+
+        if (apiKey.status === API_KEY_STATUS.REVOKED) {
             throw new ApiError(
                 400,
                 "API key is already revoked."
@@ -444,17 +448,13 @@ class ApiKeyService {
         await auditLogService.log({
             organizationId,
             projectId,
-
             actor,
-
             action: AUDIT_ACTIONS.API_KEY_REVOKED,
-
             entity: {
                 id: apiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
                 name: apiKey.name
             },
-
             metadata: {
                 publicKeyId: apiKey.publicKeyId
             }
@@ -474,11 +474,15 @@ class ApiKeyService {
         apiKeyId,
         userId
     ) {
+        await _getOrganizationById(organizationId);
+
         const organizationMembership =
             await _getActiveMembership(
                 userId,
                 organizationId
             );
+
+        await _getProjectById(projectId, organizationId);
 
         const projectMembership =
             await _getActiveProjectMembership(
@@ -497,22 +501,14 @@ class ApiKeyService {
                 organizationId
             );
 
-        if (
-            apiKey.status === API_KEY_STATUS.ARCHIVED
-        ) {
-            throw new ApiError(
-                400,
-                "API key is already archived."
-            );
-        }
-
-        if (
-            apiKey.status !== API_KEY_STATUS.REVOKED
-        ) {
-            throw new ApiError(
-                400,
-                "API key must be revoked before it can be archived."
-            );
+        // Safe idempotent handling for repeated archive requests
+        if (apiKey.status === API_KEY_STATUS.ARCHIVED) {
+            return {
+                apiKeyId: apiKey._id,
+                publicKeyId: apiKey.publicKeyId,
+                status: apiKey.status,
+                archivedAt: apiKey.archivedAt
+            };
         }
 
         apiKey.status = API_KEY_STATUS.ARCHIVED;
@@ -527,17 +523,13 @@ class ApiKeyService {
         await auditLogService.log({
             organizationId,
             projectId,
-
             actor,
-
             action: AUDIT_ACTIONS.API_KEY_ARCHIVED,
-
             entity: {
                 id: apiKey._id,
                 type: AUDIT_ENTITY_TYPES.API_KEY,
                 name: apiKey.name
             },
-
             metadata: {
                 publicKeyId: apiKey.publicKeyId
             }
@@ -548,6 +540,70 @@ class ApiKeyService {
             publicKeyId: apiKey.publicKeyId,
             status: apiKey.status,
             archivedAt: apiKey.archivedAt
+        };
+    }
+
+    async deleteApiKey(
+        organizationId,
+        projectId,
+        apiKeyId,
+        userId
+    ) {
+        await _getOrganizationById(organizationId);
+
+        const organizationMembership =
+            await _getActiveMembership(
+                userId,
+                organizationId
+            );
+
+        await _getProjectById(projectId, organizationId);
+
+        const projectMembership =
+            await _getActiveProjectMembership(
+                projectId,
+                organizationMembership._id
+            );
+
+        _authorizeApiKeyManagement(
+            projectMembership
+        );
+
+        const apiKey =
+            await _getApiKeyById(
+                apiKeyId,
+                projectId,
+                organizationId
+            );
+
+        await ApiKey.deleteOne({
+            _id: apiKey._id,
+            projectId,
+            organizationId
+        });
+
+        const actor =
+            await auditLogService.getActor(userId);
+
+        await auditLogService.log({
+            organizationId,
+            projectId,
+            actor,
+            action: AUDIT_ACTIONS.API_KEY_DELETED,
+            entity: {
+                id: apiKey._id,
+                type: AUDIT_ENTITY_TYPES.API_KEY,
+                name: apiKey.name
+            },
+            metadata: {
+                publicKeyId: apiKey.publicKeyId
+            }
+        });
+
+        return {
+            apiKeyId: apiKey._id,
+            publicKeyId: apiKey.publicKeyId,
+            deleted: true
         };
     }
 }

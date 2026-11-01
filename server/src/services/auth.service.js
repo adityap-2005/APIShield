@@ -1,6 +1,12 @@
+import mongoose from "mongoose";
 import User from "../models/user.model.js";
-import jwt from "jsonwebtoken";
+import Session from "../models/session.model.js";
 import crypto from "crypto";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+    hashRefreshToken
+} from "../utils/token.js";
 
 import ApiError from "../utils/ApiError.js";
 import { generateEmailVerificationToken } from "../utils/emailVerification.js";
@@ -11,7 +17,10 @@ import { ACCOUNT_STATUS } from "../constants/accountStatus.js";
 class AuthService {
 
     async register(userData) {
-
+        if (!userData.password) {
+            throw new ApiError(400, "Password is required.");
+        }
+        
         const normalizedEmail =
             userData.email.trim().toLowerCase();
 
@@ -55,10 +64,7 @@ class AuthService {
     }
 
     async login(loginData) {
-
-        const normalizedEmail =
-            loginData.email.trim().toLowerCase();
-
+        const normalizedEmail = loginData.email.trim().toLowerCase();
         const { password } = loginData;
 
         const user = await User.findOne({
@@ -66,53 +72,194 @@ class AuthService {
         }).select("+password");
 
         if (!user) {
-            throw new ApiError(
-                401,
-                "Invalid email or password."
-            );
+            throw new ApiError(401, "Invalid email or password.");
         }
 
         if (user.status !== ACCOUNT_STATUS.ACTIVE) {
-            throw new ApiError(
-                403,
-                "Your account is inactive."
-            );
+            throw new ApiError(403, "Your account is inactive.");
         }
 
-        // if (!user.isVerified) {
-        //     throw new ApiError(
-        //         403,
-        //         "Please verify your email before logging in."
-        //     );
-        // }
-
-        const isPasswordValid =
-            await user.comparePassword(password);
-
-        if (!isPasswordValid) {
+        if (!user.password) {
             throw new ApiError(
                 401,
-                "Invalid email or password."
+                "This account uses social login. Please sign in with your provider."
             );
         }
 
-        const token = jwt.sign(
-            {
-                userId: user._id
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: process.env.JWT_EXPIRES_IN
-            }
-        );
+        const isPasswordValid = await user.comparePassword(password);
+
+        if (!isPasswordValid) {
+            throw new ApiError(401, "Invalid email or password.");
+        }
+
+        const { accessToken, refreshToken } =
+            await this.createSession(user._id);
 
         const userObject = user.toObject();
+
         delete userObject.password;
+        delete userObject.verificationTokenHash;
+        delete userObject.verificationTokenExpiry;
 
         return {
             user: userObject,
-            token
+            accessToken,
+            refreshToken
         };
+    }
+
+    async createSession(userId) {
+        const accessToken = generateAccessToken(userId);
+
+        const refreshToken = generateRefreshToken();
+
+        const tokenHash = hashRefreshToken(refreshToken);
+
+        const familyId = crypto.randomUUID();
+
+        const refreshTokenExpiry = new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+        );
+
+        await Session.create({
+            user: userId,
+            tokenHash,
+            familyId,
+            expiresAt: refreshTokenExpiry
+        });
+
+        return {
+            accessToken,
+            refreshToken
+        };
+    }
+
+    async refreshAccessToken(refreshToken) {
+        const tokenHash = hashRefreshToken(refreshToken);
+
+        const session = await Session.findOne({
+            tokenHash
+        });
+
+        if (!session) {
+            throw new ApiError(401, "Invalid refresh token.");
+        }
+
+        if (session.revokedAt) {
+            await Session.updateMany(
+                {
+                    familyId: session.familyId,
+                    revokedAt: null
+                },
+                {
+                    revokedAt: new Date()
+                }
+            );
+
+            throw new ApiError(
+                401,
+                "Refresh token reuse detected. Please log in again."
+            );
+        }
+
+        if (session.expiresAt <= new Date()) {
+            throw new ApiError(401, "Refresh token expired.");
+        }
+
+        const user = await User.findById(session.user);
+
+        if (!user || user.status !== ACCOUNT_STATUS.ACTIVE) {
+            throw new ApiError(401, "Invalid user session.");
+        }
+
+        const newRefreshToken = generateRefreshToken();
+        const newTokenHash = hashRefreshToken(newRefreshToken);
+
+        const newAccessToken = generateAccessToken(user._id);
+
+        const newSessionId = new mongoose.Types.ObjectId();
+
+        const newExpiresAt = new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+        );
+
+        const dbSession = await mongoose.startSession();
+
+        try {
+            await dbSession.withTransaction(async () => {
+                const result = await Session.updateOne(
+                    {
+                        _id: session._id,
+                        revokedAt: null,
+                        expiresAt: { $gt: new Date() }
+                    },
+                    {
+                        $set: {
+                            revokedAt: new Date(),
+                            replacedBy: newSessionId
+                        }
+                    },
+                    { session: dbSession }
+                );
+
+                if (result.modifiedCount !== 1) {
+                    throw new ApiError(
+                        401,
+                        "Refresh token has already been used."
+                    );
+                }
+
+                await Session.create(
+                    [{
+                        _id: newSessionId,
+                        user: user._id,
+                        tokenHash: newTokenHash,
+                        familyId: session.familyId,
+                        expiresAt: newExpiresAt
+                    }],
+                    { session: dbSession }
+                );
+            });
+        } finally {
+            await dbSession.endSession();
+        }
+
+        return {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken
+        };
+    }
+
+    async logout(refreshToken) {
+        if (!refreshToken) {
+            return;
+        }
+
+        const tokenHash = hashRefreshToken(refreshToken);
+
+        const session = await Session.findOne({
+            tokenHash,
+            revokedAt: null
+        });
+
+        if (session) {
+            session.revokedAt = new Date();
+            await session.save();
+        }
+    }
+
+    async logoutAll(userId) {
+        await Session.updateMany(
+            {
+                user: userId,
+                revokedAt: null
+            },
+            {
+                $set: {
+                    revokedAt: new Date()
+                }
+            }
+        );
     }
 
     async verifyEmail(rawToken) {

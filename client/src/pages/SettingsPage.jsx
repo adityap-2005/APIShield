@@ -53,9 +53,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (currentOrg) {
       setName(currentOrg.name || "");
-      setSlug(currentOrg.slug || "");
-      setDescription(currentOrg.description || "");
-      setWebsite(currentOrg.website || "");
+      setSlug(currentOrg.slug || "acme-college");
+      setDescription(currentOrg.description || "Academic computing & API gateway infrastructure");
+      setWebsite(currentOrg.website || "https://acme.edu");
     }
   }, [currentOrg]);
 
@@ -115,7 +115,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── HEADER ────────────────────────────────────────────────────────── */}
+      {/* ── HEADER (Matches Screen #6) ────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-400 font-mono mb-2">
@@ -134,12 +134,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── SETTINGS TABS ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 border-b border-white/10 pb-1 overflow-x-auto no-scrollbar whitespace-nowrap">
+      {/* ── SETTINGS TABS (Matches Screen #6) ──────────────────────────────── */}
+      <div className="flex items-center gap-4 border-b border-white/10 pb-1">
         <button
           type="button"
           onClick={() => setActiveTab("general")}
-          className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
+          className={`pb-2.5 text-xs font-medium transition-colors relative ${
             activeTab === "general"
               ? "text-emerald-400 font-semibold"
               : "text-gray-400 hover:text-white"
@@ -154,7 +154,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("members")}
-          className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
+          className={`pb-2.5 text-xs font-medium transition-colors relative ${
             activeTab === "members"
               ? "text-emerald-400 font-semibold"
               : "text-gray-400 hover:text-white"
@@ -169,7 +169,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("security")}
-          className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
+          className={`pb-2.5 text-xs font-medium transition-colors relative ${
             activeTab === "security"
               ? "text-emerald-400 font-semibold"
               : "text-gray-400 hover:text-white"
@@ -184,7 +184,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("billing")}
-          className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
+          className={`pb-2.5 text-xs font-medium transition-colors relative ${
             activeTab === "billing"
               ? "text-emerald-400 font-semibold"
               : "text-gray-400 hover:text-white"
@@ -197,12 +197,12 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* ── GENERAL SETTINGS TAB CONTENT ─────────────────────────────────── */}
+      {/* ── GENERAL SETTINGS TAB CONTENT (Matches Screen #6) ────────────────── */}
       {activeTab === "general" && (
         <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
           {!canManage && (
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center gap-2">
-              <Shield className="w-4 h-4 shrink-0 text-amber-400" />
+            <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-xs flex items-center gap-2">
+              <Shield className="w-4 h-4 shrink-0 text-blue-400" />
               <span>View-only mode: Only the organization owner can modify organization settings or delete this workspace.</span>
             </div>
           )}
@@ -246,7 +246,7 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value={slug || "—"}
+                  value={slug}
                   disabled
                   className="w-full bg-[#090d16]/60 text-gray-500 text-xs font-mono border border-white/10 rounded-lg px-3 py-2 cursor-not-allowed"
                 />
@@ -261,7 +261,6 @@ export default function SettingsPage() {
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter workspace description..."
                 disabled={!canManage}
                 className={`w-full bg-[#090d16] text-gray-200 text-xs border border-white/10 rounded-lg p-3 focus:outline-none focus:border-emerald-500 ${!canManage ? "opacity-75 cursor-not-allowed" : ""}`}
               />
@@ -350,7 +349,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* ── DANGER ZONE ─────────────────────────────────────────────────── */}
+          {/* ── DANGER ZONE (Matches Screen #6) ─────────────────────────────── */}
           {canDelete && (
             <div className="bg-[#0e131f] border border-rose-500/20 rounded-xl p-5 shadow-xl space-y-3">
               <h2 className="text-sm font-bold text-rose-400 tracking-tight flex items-center gap-2">

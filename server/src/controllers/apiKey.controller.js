@@ -149,6 +149,27 @@ class ApiKeyController {
         }
     }
 
+    async deleteApiKey(req, res, next) {
+        try {
+            const result =
+                await apiKeyService.deleteApiKey(
+                    req.params.organizationId,
+                    req.params.projectId,
+                    req.params.apiKeyId,
+                    req.user._id
+                );
+
+            return res.status(200).json({
+                success: true,
+                message: "API key deleted successfully.",
+                data: result
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getUsers(req, res) {
         return res.status(200).json({
             success: true,

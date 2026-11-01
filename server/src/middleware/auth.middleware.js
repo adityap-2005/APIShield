@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import { ACCOUNT_STATUS } from "../constants/accountStatus.js";
 
 const protect = async (req, res, next) => {
     try {
@@ -29,6 +30,13 @@ const protect = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: "User not found"
+            });
+        }
+
+        if (user.status !== ACCOUNT_STATUS.ACTIVE) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is inactive."
             });
         }
 
