@@ -66,7 +66,7 @@ export default function Sidebar({
       .join("")
       .toUpperCase()
       .slice(0, 2)
-    : "AP";
+    : "WS";
 
   const renderNavItem = (item) => {
     const Icon = item.icon;
@@ -182,10 +182,12 @@ export default function Sidebar({
               </div>
               <div className="min-w-0 text-left">
                 <p className="text-xs font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">
-                  {activeOrg?.name || "Acme College"}
+                  {activeOrg?.name || "Workspace"}
                 </p>
                 <p className="text-[10px] text-gray-400 leading-tight">
-                  {activeOrg?.role || "Owner"}
+                  {activeOrg?.role
+                    ? activeOrg.role.charAt(0).toUpperCase() + activeOrg.role.slice(1).toLowerCase().replace(/_/g, " ")
+                    : "Workspace"}
                 </p>
               </div>
             </div>

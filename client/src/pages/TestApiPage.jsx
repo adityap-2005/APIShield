@@ -11,8 +11,10 @@ import {
   Check,
   ChevronDown,
   Server,
-  Code2,
   KeyRound,
+  Clock,
+  HardDrive,
+  Terminal,
 } from "lucide-react";
 
 export default function TestApiPage() {
@@ -30,54 +32,31 @@ export default function TestApiPage() {
 
   // Request Builder State
   const [method, setMethod] = useState("GET");
-  const [endpointPath, setEndpointPath] = useState("/gateway/upstream/weather/current");
+  const [endpointPath, setEndpointPath] = useState(
+    activeUpstreamApi?.path
+      ? `/gateway/upstream${activeUpstreamApi.path.startsWith("/") ? activeUpstreamApi.path : `/${activeUpstreamApi.path}`}`
+      : ""
+  );
   const [activeTab, setActiveTab] = useState("query"); // "query" | "body" | "headers"
 
-  // Query Parameters
-  const [queryParams, setQueryParams] = useState([
-    { id: "1", key: "latitude", value: "-33.8504" },
-    { id: "2", key: "longitude", value: "151.2132" },
-    { id: "3", key: "current_weather", value: "true" },
-  ]);
+  // Query Parameters - start clean without hardcoded sample data
+  const [queryParams, setQueryParams] = useState([]);
 
-  // Headers
-  const [requestHeaders, setRequestHeaders] = useState([
-    { id: "1", key: "Accept", value: "application/json" },
-  ]);
+  // Headers - start clean without fake headers
+  const [requestHeaders, setRequestHeaders] = useState([]);
 
-  // Request Body
-  const [requestBody, setRequestBody] = useState(`{\n  "demo": true\n}`);
+  // Request Body - start clean
+  const [requestBody, setRequestBody] = useState("");
 
   // API Key context switcher
   const [availableKeys, setAvailableKeys] = useState([]);
   const [selectedKeyId, setSelectedKeyId] = useState("");
   const [customApiKey, setCustomApiKey] = useState("");
 
-  // Response Panel State
+  // Response Panel State - starts as null (clear empty state before first request)
   const [responseTab, setResponseTab] = useState("response"); // "response" | "headers" | "curl"
   const [loading, setLoading] = useState(false);
-  const [responseResult, setResponseResult] = useState({
-    status: 200,
-    statusText: "OK",
-    latency: 184,
-    size: "1.2 KB",
-    data: {
-      status: "success",
-      latitude: -33.8504,
-      longitude: 151.2132,
-      data: {
-        temp: 22.5,
-        condition: "sunny",
-        wind_speed: 12.4
-      }
-    },
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "x-apishield-gateway": "active",
-      "x-ratelimit-remaining": "99",
-      "cache-control": "no-cache"
-    }
-  });
+  const [responseResult, setResponseResult] = useState(null);
 
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -108,7 +87,7 @@ export default function TestApiPage() {
         if (isMounted) {
           const keys = res.data?.data || [];
           setAvailableKeys(keys);
-          if (keys.length > 0) {
+          if (keys.length > 0 && !selectedKeyId) {
             setSelectedKeyId(keys[0]._id);
           }
         }
@@ -118,12 +97,13 @@ export default function TestApiPage() {
     }
 
     loadKeys();
+
     return () => {
       isMounted = false;
     };
   }, [orgId, activeProject?._id]);
 
-  // Manage Query Parameters
+  // Manage Query Params
   const addQueryParam = () => {
     setQueryParams((prev) => [
       ...prev,
@@ -163,7 +143,7 @@ export default function TestApiPage() {
   const selectedKey = availableKeys.find((k) => k._id === selectedKeyId);
   const effectiveApiKey =
     customApiKey.trim() ||
-    (selectedKey ? `key_${selectedKey.publicKeyId || selectedKey._id.slice(-8)}` : "api_live_demo_test_key");
+    (selectedKey ? `key_${selectedKey.publicKeyId || selectedKey._id.slice(-8)}` : "");
 
   // Generated cURL Command
   const generatedCurl = useMemo(() => {
@@ -175,8 +155,10 @@ export default function TestApiPage() {
       queryString = `?${search.toString()}`;
     }
 
-    let cmd = `curl -X ${method} "https://gateway.apishield.io${endpointPath}${queryString}" \\\n`;
-    cmd += `  -H "x-api-key: ${effectiveApiKey}" \\\n`;
+    const host = typeof window !== "undefined" ? window.location.origin : "https://gateway.apishield.io";
+    const cleanPath = endpointPath.startsWith("/") ? endpointPath : `/${endpointPath}`;
+    let cmd = `curl -X ${method} "${host}${cleanPath}${queryString}" \\\n`;
+    cmd += `  -H "x-api-key: ${effectiveApiKey || "YOUR_APISHIELD_API_KEY"}" \\\n`;
 
     requestHeaders
       .filter((h) => h.key.trim())
@@ -222,79 +204,65 @@ export default function TestApiPage() {
       }
     }
 
+    // Require target configuration
+    if (!orgId || !activeProject?._id || !activeUpstreamApi?._id) {
+      setLoading(false);
+      setResponseResult({
+        status: 400,
+        statusText: "Bad Request",
+        latency: 0,
+        size: "0.2 KB",
+        data: {
+          error: "Missing Configuration",
+          message: "Please select an Organization, Project, and Upstream API to route your test request.",
+        },
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+        },
+      });
+      return;
+    }
+
+    const keyToUse = customApiKey.trim() || effectiveApiKey;
+
     try {
-      if (orgId && activeProject?._id && activeUpstreamApi?._id && customApiKey) {
-        const res = await gatewayApi.call(
-          orgId,
-          activeProject._id,
-          activeUpstreamApi._id,
-          customApiKey.trim(),
-          {
-            method,
-            queryParams: paramObj,
-            body: parsedBody,
-            headers: headerObj,
-          }
-        );
-        const duration = Math.round(performance.now() - startTime);
-        const sizeBytes = new Blob([JSON.stringify(res.data)]).size;
+      const res = await gatewayApi.call(
+        orgId,
+        activeProject._id,
+        activeUpstreamApi._id,
+        keyToUse,
+        {
+          method,
+          queryParams: paramObj,
+          body: parsedBody,
+          headers: headerObj,
+        }
+      );
+      const duration = Math.round(performance.now() - startTime);
+      const sizeBytes = new Blob([JSON.stringify(res.data)]).size;
 
-        setResponseResult({
-          status: res.status,
-          statusText: res.statusText || "OK",
-          latency: duration,
-          size: `${(sizeBytes / 1024).toFixed(1)} KB`,
-          data: res.data,
-          headers: res.headers || {},
-        });
-      } else {
-        // Interactive simulated gateway response
-        await new Promise((r) => setTimeout(r, 260));
-        const duration = Math.round(performance.now() - startTime);
-
-        // Dynamically compute response matching query params
-        const responseData = {
-          status: "success",
-          latitude: parseFloat(paramObj.latitude) || -33.8504,
-          longitude: parseFloat(paramObj.longitude) || 151.2132,
-          data: {
-            temp: 22.5,
-            condition: "sunny",
-            wind_speed: 12.4,
-            ...(paramObj.current_weather ? { current_weather: true } : {}),
-            routed_via: "APIShield Gateway",
-            upstream: activeUpstreamApi?.name || "Weather API",
-          },
-        };
-
-        const sizeBytes = new Blob([JSON.stringify(responseData)]).size;
-
-        setResponseResult({
-          status: 200,
-          statusText: "OK",
-          latency: duration,
-          size: `${(sizeBytes / 1024).toFixed(1)} KB`,
-          data: responseData,
-          headers: {
-            "content-type": "application/json; charset=utf-8",
-            "x-apishield-gateway": "active",
-            "x-ratelimit-remaining": "99",
-            "x-request-id": "req_" + Math.random().toString(36).slice(2, 10),
-            "cache-control": "no-cache",
-          },
-        });
-      }
+      setResponseResult({
+        status: res.status,
+        statusText: res.statusText || "OK",
+        latency: duration,
+        size: `${(sizeBytes / 1024).toFixed(1)} KB`,
+        data: res.data,
+        headers: res.headers || {},
+      });
     } catch (err) {
       const duration = Math.round(performance.now() - startTime);
+      const errPayload = err.response?.data || {
+        error: "Gateway Request Failed",
+        message: err.message || "Failed to reach target upstream API through gateway.",
+      };
+      const sizeBytes = new Blob([JSON.stringify(errPayload)]).size;
+
       setResponseResult({
-        status: err.response?.status || 500,
-        statusText: err.response?.statusText || "Error",
+        status: err.response?.status || 502,
+        statusText: err.response?.statusText || "Gateway Error",
         latency: duration,
-        size: "0.4 KB",
-        data: err.response?.data || {
-          error: "Gateway Request Failed",
-          message: err.message || "Failed to reach upstream API",
-        },
+        size: `${(sizeBytes / 1024).toFixed(1)} KB`,
+        data: errPayload,
         headers: err.response?.headers || { "content-type": "application/json" },
       });
     } finally {
@@ -303,6 +271,7 @@ export default function TestApiPage() {
   };
 
   const copyToClipboard = (text, type) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     if (type === "response") {
       setCopiedResponse(true);
@@ -315,20 +284,25 @@ export default function TestApiPage() {
 
   // Syntax highlighting for formatted JSON
   const renderJsonWithLineNumbers = (obj) => {
-    const jsonString = JSON.stringify(obj, null, 2);
+    let jsonString = "";
+    try {
+      jsonString = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+    } catch {
+      jsonString = String(obj);
+    }
     const lines = jsonString.split("\n");
 
     return (
       <div className="flex font-mono text-xs leading-relaxed overflow-x-auto">
         {/* Line Numbers */}
-        <div className="select-none pr-4 text-right text-gray-600 border-r border-white/10 shrink-0 space-y-0.5">
+        <div className="select-none pr-3 sm:pr-4 text-right text-gray-600 border-r border-white/10 shrink-0 space-y-0.5 font-mono text-[11px]">
           {lines.map((_, i) => (
             <div key={i}>{i + 1}</div>
           ))}
         </div>
 
         {/* Formatted Code */}
-        <div className="pl-4 space-y-0.5 text-gray-200 whitespace-pre">
+        <div className="pl-3 sm:pl-4 space-y-0.5 text-gray-200 whitespace-pre font-mono text-xs overflow-x-auto">
           {lines.map((line, i) => {
             const formattedLine = line.replace(
               /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
@@ -444,14 +418,14 @@ export default function TestApiPage() {
       {/* ── TWO-COLUMN CONSOLE GRID ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* ── LEFT COLUMN: REQUEST BUILDER ─────────────────────────────────── */}
-        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-2xl space-y-5">
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-4 sm:p-5 shadow-2xl space-y-5">
           {/* Method and Path Bar */}
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="relative shrink-0">
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                className="appearance-none bg-[#090d16] text-white font-mono font-semibold text-xs border border-white/10 rounded-lg px-3 py-2.5 pr-8 hover:border-white/20 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="w-full sm:w-auto appearance-none bg-[#090d16] text-white font-mono font-semibold text-xs border border-white/10 rounded-lg px-3 py-2.5 pr-8 hover:border-white/20 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
@@ -462,28 +436,28 @@ export default function TestApiPage() {
               <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               <input
                 type="text"
                 value={endpointPath}
                 onChange={(e) => setEndpointPath(e.target.value)}
                 className="w-full bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
-                placeholder="/gateway/upstream/weather/current"
+                placeholder="/gateway/upstream/endpoint"
               />
             </div>
           </div>
 
           {/* Request Sub-Tabs */}
-          <div className="border-b border-white/10 flex items-center gap-6">
+          <div className="border-b border-white/10 flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap">
             <button
               onClick={() => setActiveTab("query")}
-              className={`pb-2.5 text-xs font-medium transition-colors relative ${
+              className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
                 activeTab === "query"
                   ? "text-emerald-400 font-semibold"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              Query Parameters
+              Query Parameters {queryParams.length > 0 && `(${queryParams.length})`}
               {activeTab === "query" && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
               )}
@@ -491,13 +465,13 @@ export default function TestApiPage() {
 
             <button
               onClick={() => setActiveTab("body")}
-              className={`pb-2.5 text-xs font-medium transition-colors relative ${
+              className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
                 activeTab === "body"
                   ? "text-emerald-400 font-semibold"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              Request Body
+              Request Body {requestBody.trim() ? "•" : ""}
               {activeTab === "body" && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
               )}
@@ -505,13 +479,13 @@ export default function TestApiPage() {
 
             <button
               onClick={() => setActiveTab("headers")}
-              className={`pb-2.5 text-xs font-medium transition-colors relative ${
+              className={`pb-2.5 text-xs font-medium transition-colors relative shrink-0 ${
                 activeTab === "headers"
                   ? "text-emerald-400 font-semibold"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              Headers
+              Headers {requestHeaders.length > 0 && `(${requestHeaders.length})`}
               {activeTab === "headers" && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
               )}
@@ -521,41 +495,57 @@ export default function TestApiPage() {
           {/* TAB 1: Query Parameters */}
           {activeTab === "query" && (
             <div className="space-y-3">
-              {queryParams.map((param) => (
-                <div key={param.id} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={param.key}
-                    onChange={(e) => updateQueryParam(param.id, "key", e.target.value)}
-                    placeholder="Key"
-                    className="flex-1 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
-                  />
-                  <input
-                    type="text"
-                    value={param.value}
-                    onChange={(e) => updateQueryParam(param.id, "value", e.target.value)}
-                    placeholder="Value"
-                    className="flex-1 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
-                  />
+              {queryParams.length === 0 ? (
+                <div className="py-6 px-4 text-center border border-dashed border-white/10 rounded-lg text-gray-500 text-xs">
+                  <p>No query parameters configured.</p>
                   <button
                     type="button"
-                    onClick={() => removeQueryParam(param.id)}
-                    className="p-2 text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    title="Remove Parameter"
+                    onClick={addQueryParam}
+                    className="mt-2 text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add first parameter</span>
                   </button>
                 </div>
-              ))}
+              ) : (
+                <>
+                  {queryParams.map((param) => (
+                    <div key={param.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={param.key}
+                        onChange={(e) => updateQueryParam(param.id, "key", e.target.value)}
+                        placeholder="Key"
+                        className="flex-1 min-w-0 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
+                      />
+                      <input
+                        type="text"
+                        value={param.value}
+                        onChange={(e) => updateQueryParam(param.id, "value", e.target.value)}
+                        placeholder="Value"
+                        className="flex-1 min-w-0 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeQueryParam(param.id)}
+                        className="p-2 text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0"
+                        title="Remove Parameter"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
 
-              <button
-                type="button"
-                onClick={addQueryParam}
-                className="w-full py-2 border border-dashed border-white/15 hover:border-emerald-500/40 rounded-lg text-xs font-medium text-gray-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Parameter</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={addQueryParam}
+                    className="w-full py-2 border border-dashed border-white/15 hover:border-emerald-500/40 rounded-lg text-xs font-medium text-gray-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Parameter</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -564,25 +554,27 @@ export default function TestApiPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[11px] text-gray-400 font-mono">
                 <span>JSON Payload (Content-Type: application/json)</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      setRequestBody(JSON.stringify(JSON.parse(requestBody), null, 2));
-                    } catch {
-                      // ignore parse error
-                    }
-                  }}
-                  className="hover:text-emerald-400 transition-colors"
-                >
-                  Format JSON
-                </button>
+                {requestBody.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        setRequestBody(JSON.stringify(JSON.parse(requestBody), null, 2));
+                      } catch {
+                        // ignore parse error
+                      }
+                    }}
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    Format JSON
+                  </button>
+                )}
               </div>
               <textarea
                 rows={6}
                 value={requestBody}
                 onChange={(e) => setRequestBody(e.target.value)}
-                placeholder="{\n  key: value\n}"
+                placeholder={'{\n  "key": "value"\n}'}
                 className="w-full bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg p-3 focus:outline-none focus:border-emerald-500 transition-colors leading-relaxed"
               />
             </div>
@@ -591,41 +583,57 @@ export default function TestApiPage() {
           {/* TAB 3: Headers */}
           {activeTab === "headers" && (
             <div className="space-y-3">
-              {requestHeaders.map((header) => (
-                <div key={header.id} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={header.key}
-                    onChange={(e) => updateHeader(header.id, "key", e.target.value)}
-                    placeholder="Header Name"
-                    className="flex-1 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
-                  />
-                  <input
-                    type="text"
-                    value={header.value}
-                    onChange={(e) => updateHeader(header.id, "value", e.target.value)}
-                    placeholder="Value"
-                    className="flex-1 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
-                  />
+              {requestHeaders.length === 0 ? (
+                <div className="py-6 px-4 text-center border border-dashed border-white/10 rounded-lg text-gray-500 text-xs">
+                  <p>No custom request headers configured.</p>
                   <button
                     type="button"
-                    onClick={() => removeHeader(header.id)}
-                    className="p-2 text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    title="Remove Header"
+                    onClick={addHeader}
+                    className="mt-2 text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add first header</span>
                   </button>
                 </div>
-              ))}
+              ) : (
+                <>
+                  {requestHeaders.map((header) => (
+                    <div key={header.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={header.key}
+                        onChange={(e) => updateHeader(header.id, "key", e.target.value)}
+                        placeholder="Header Name"
+                        className="flex-1 min-w-0 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
+                      />
+                      <input
+                        type="text"
+                        value={header.value}
+                        onChange={(e) => updateHeader(header.id, "value", e.target.value)}
+                        placeholder="Value"
+                        className="flex-1 min-w-0 bg-[#090d16] text-gray-200 font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 placeholder-gray-600 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeHeader(header.id)}
+                        className="p-2 text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0"
+                        title="Remove Header"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
 
-              <button
-                type="button"
-                onClick={addHeader}
-                className="w-full py-2 border border-dashed border-white/15 hover:border-emerald-500/40 rounded-lg text-xs font-medium text-gray-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Header</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={addHeader}
+                    className="w-full py-2 border border-dashed border-white/15 hover:border-emerald-500/40 rounded-lg text-xs font-medium text-gray-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Header</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -650,14 +658,16 @@ export default function TestApiPage() {
                 >
                   <span className="truncate">
                     {selectedKey
-                      ? `${selectedKey.name} (•••${selectedKey.publicKeyId?.slice(-4) || "8f2a"})`
-                      : "Default Demo Key"}
+                      ? `${selectedKey.name} (•••${selectedKey.publicKeyId?.slice(-4) || "key"})`
+                      : availableKeys.length > 0
+                      ? "Select Project Key"
+                      : "No Project Keys"}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-gray-500 shrink-0 ml-1" />
                 </button>
 
                 {keyDropdownOpen && (
-                  <div className="absolute left-0 mt-1 w-full bg-[#131826] border border-white/10 rounded-xl shadow-2xl py-1 z-30">
+                  <div className="absolute left-0 mt-1 w-full bg-[#131826] border border-white/10 rounded-xl shadow-2xl py-1 z-30 max-h-48 overflow-y-auto">
                     <div className="px-3 py-1.5 text-[10px] font-mono text-gray-400 uppercase tracking-wider border-b border-white/5">
                       Project Keys (Masked)
                     </div>
@@ -708,12 +718,12 @@ export default function TestApiPage() {
               type="button"
               onClick={handleSendRequest}
               disabled={loading}
-              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 hover:shadow-emerald-950/60 transition-all disabled:opacity-60 cursor-pointer"
+              className="w-full sm:w-auto bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 hover:shadow-emerald-950/60 transition-all disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-[#052e16] border-t-transparent rounded-full animate-spin" />
-                  <span>Sending...</span>
+                  <span>Sending Request...</span>
                 </>
               ) : (
                 <>
@@ -726,10 +736,10 @@ export default function TestApiPage() {
         </div>
 
         {/* ── RIGHT COLUMN: RESPONSE PANEL ─────────────────────────────────── */}
-        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-5 shadow-2xl flex flex-col min-h-[460px]">
+        <div className="bg-[#0e131f] border border-white/10 rounded-xl p-4 sm:p-5 shadow-2xl flex flex-col min-h-[460px]">
           {/* Top Bar with Tabs and Status */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-            <div className="flex items-center gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-3">
+            <div className="flex items-center gap-4 sm:gap-5">
               <button
                 type="button"
                 onClick={() => setResponseTab("response")}
@@ -767,13 +777,15 @@ export default function TestApiPage() {
               </button>
             </div>
 
-            {/* Status & Latency Badges */}
+            {/* Status & Latency Badges - Only rendered when response is received */}
             {responseResult && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium border ${
                     responseResult.status >= 200 && responseResult.status < 300
                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                      : responseResult.status >= 300 && responseResult.status < 400
+                      ? "bg-amber-500/10 text-amber-400 border-amber-500/25"
                       : "bg-rose-500/10 text-rose-400 border-rose-500/25"
                   }`}
                 >
@@ -781,6 +793,8 @@ export default function TestApiPage() {
                     className={`w-1.5 h-1.5 rounded-full ${
                       responseResult.status >= 200 && responseResult.status < 300
                         ? "bg-emerald-400"
+                        : responseResult.status >= 300 && responseResult.status < 400
+                        ? "bg-amber-400"
                         : "bg-rose-400"
                     }`}
                   />
@@ -789,10 +803,12 @@ export default function TestApiPage() {
                   </span>
                 </span>
 
-                <span className="text-[11px] font-mono text-gray-500 hidden sm:inline-block">
+                <span className="text-[11px] font-mono text-gray-400 inline-flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-gray-500" />
                   {responseResult.latency}ms
                 </span>
-                <span className="text-[11px] font-mono text-gray-500 hidden sm:inline-block">
+                <span className="text-[11px] font-mono text-gray-400 inline-flex items-center gap-1">
+                  <HardDrive className="w-3 h-3 text-gray-500" />
                   {responseResult.size}
                 </span>
               </div>
@@ -802,10 +818,10 @@ export default function TestApiPage() {
           {/* Panel Content Area */}
           <div className="flex-1 flex flex-col relative">
             {loading && (
-              <div className="absolute inset-0 bg-[#0e131f]/90 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-20 rounded-lg">
+              <div className="absolute inset-0 bg-[#0e131f]/95 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-20 rounded-lg">
                 <span className="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 <span className="text-xs font-mono text-gray-300">
-                  Routing through APIShield Gateway...
+                  Routing request through APIShield Gateway...
                 </span>
               </div>
             )}
@@ -813,30 +829,38 @@ export default function TestApiPage() {
             {/* Tab: Response */}
             {responseTab === "response" && (
               <div className="relative flex-1 bg-[#080c14] border border-white/5 rounded-lg p-4 overflow-auto max-h-[500px]">
-                <button
-                  type="button"
-                  onClick={() =>
-                    copyToClipboard(
-                      JSON.stringify(responseResult?.data, null, 2),
-                      "response"
-                    )
-                  }
-                  className="absolute top-3 right-3 p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                  title="Copy Response JSON"
-                >
-                  {copiedResponse ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-
-                {responseResult?.data ? (
-                  renderJsonWithLineNumbers(responseResult.data)
+                {responseResult ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(
+                          JSON.stringify(responseResult.data, null, 2),
+                          "response"
+                        )
+                      }
+                      className="absolute top-3 right-3 p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                      title="Copy Response JSON"
+                    >
+                      {copiedResponse ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    {renderJsonWithLineNumbers(responseResult.data)}
+                  </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-16 text-gray-500 text-xs">
-                    <Code2 className="w-8 h-8 text-gray-600 mb-2" />
-                    <span>Click Send Request to test the upstream API</span>
+                  /* Clean Empty State before first request */
+                  <div className="flex flex-col items-center justify-center h-full text-center py-20 px-4 text-gray-500">
+                    <div className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center mb-3 text-gray-400">
+                      <Terminal className="w-5 h-5 text-emerald-400/80" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-200">No Request Executed</h3>
+                    <p className="text-xs text-gray-400 max-w-sm mt-1 leading-relaxed">
+                      Configure your endpoint and parameters, then click{" "}
+                      <span className="text-emerald-400 font-medium">Send Request</span> to test live upstream responses.
+                    </p>
                   </div>
                 )}
               </div>
@@ -845,22 +869,28 @@ export default function TestApiPage() {
             {/* Tab: Response Headers */}
             {responseTab === "headers" && (
               <div className="flex-1 bg-[#080c14] border border-white/5 rounded-lg p-4 overflow-auto max-h-[500px]">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-white/10 text-[10px] text-gray-500 uppercase">
-                      <th className="pb-2">Header</th>
-                      <th className="pb-2">Value</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-gray-300">
-                    {Object.entries(responseResult?.headers || {}).map(([key, val]) => (
-                      <tr key={key} className="hover:bg-white/5">
-                        <td className="py-2 text-sky-400 pr-4">{key}</td>
-                        <td className="py-2 text-emerald-300 break-all">{String(val)}</td>
+                {responseResult && Object.keys(responseResult.headers || {}).length > 0 ? (
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-white/10 text-[10px] text-gray-500 uppercase">
+                        <th className="pb-2">Header</th>
+                        <th className="pb-2">Value</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-gray-300">
+                      {Object.entries(responseResult.headers).map(([key, val]) => (
+                        <tr key={key} className="hover:bg-white/5">
+                          <td className="py-2 text-sky-400 pr-4">{key}</td>
+                          <td className="py-2 text-emerald-300 break-all">{String(val)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-20 text-gray-500 text-xs">
+                    <p>{responseResult ? "No response headers received." : "Send a request to inspect response headers."}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -879,7 +909,7 @@ export default function TestApiPage() {
                     <Copy className="w-3.5 h-3.5" />
                   )}
                 </button>
-                <pre className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                <pre className="text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
                   {generatedCurl}
                 </pre>
               </div>
