@@ -9,6 +9,21 @@ const authApi = {
   login: (email, password) =>
     axiosInstance.post("/auth/login", { email, password }),
 
+  // POST /api/v1/auth/refresh
+  // Exchanges HTTP-only refreshToken cookie for a new accessToken
+  refreshToken: () =>
+    axiosInstance.post("/auth/refresh"),
+
+  // POST /api/v1/auth/logout
+  // Revokes refreshToken and clears HTTP-only cookie
+  logout: () =>
+    axiosInstance.post("/auth/logout"),
+
+  // POST /api/v1/auth/logout-all
+  // Revokes all refreshTokens for the user
+  logoutAll: () =>
+    axiosInstance.post("/auth/logout-all"),
+
   // GET /api/v1/auth/me
   getProfile: () =>
     axiosInstance.get("/auth/me"),

@@ -11,6 +11,7 @@ import {
 import ApiError from "../utils/ApiError.js";
 import { generateEmailVerificationToken } from "../utils/emailVerification.js";
 import emailService from "./email.service.js";
+import googleOAuthClient from "../config/googleOAuth.js";
 
 import { ACCOUNT_STATUS } from "../constants/accountStatus.js";
 
@@ -20,7 +21,7 @@ class AuthService {
         if (!userData.password) {
             throw new ApiError(400, "Password is required.");
         }
-        
+
         const normalizedEmail =
             userData.email.trim().toLowerCase();
 
@@ -260,6 +261,106 @@ class AuthService {
                 }
             }
         );
+    }
+
+    async getGoogleAuthUrl(state) {
+        return googleOAuthClient.generateAuthUrl({
+            access_type: "online",
+            scope: [
+                "openid",
+                "email",
+                "profile"
+            ],
+            state
+        });
+    }
+
+    async verifyGoogleCode(code) {
+        const { tokens } = await googleOAuthClient.getToken(code);
+
+        if (!tokens.id_token) {
+            throw new ApiError(401, "Google ID token missing.");
+        }
+
+        const ticket = await googleOAuthClient.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        if (
+            !payload ||
+            !payload.name ||
+            !payload.sub ||
+            !payload.email ||
+            payload.email_verified !== true
+        ) {
+            throw new ApiError(401, "Google account verification failed.");
+        }
+
+        return {
+            googleId: payload.sub,
+            email: payload.email.toLowerCase(),
+            name: payload.name,
+            avatar: payload.picture
+        };
+    }
+
+    async findOrCreateGoogleUser(googleProfile) {
+        let user = await User.findOne({
+            googleId: googleProfile.googleId
+        });
+
+        if (user) {
+            if (user.status !== ACCOUNT_STATUS.ACTIVE) {
+                throw new ApiError(403, "Your account is inactive.");
+            }
+
+            return user;
+        }
+
+        const existingUser = await User.findOne({
+            email: googleProfile.email
+        });
+
+        if (existingUser) {
+            throw new ApiError(
+                409,
+                "An account with this email already exists. Please log in using your existing authentication method."
+            );
+        }
+
+        user = await User.create({
+            name: googleProfile.name,
+            email: googleProfile.email,
+            googleId: googleProfile.googleId,
+            avatar: googleProfile.avatar || null,
+            isVerified: true
+        });
+
+        return user;
+    }
+
+    async loginWithGoogle(code) {
+        const googleProfile = await this.verifyGoogleCode(code);
+
+        const user = await this.findOrCreateGoogleUser(googleProfile);
+
+        const { accessToken, refreshToken } =
+            await this.createSession(user._id);
+
+        const userObject = user.toObject();
+
+        delete userObject.password;
+        delete userObject.verificationTokenHash;
+        delete userObject.verificationTokenExpiry;
+
+        return {
+            user: userObject,
+            accessToken,
+            refreshToken
+        };
     }
 
     async verifyEmail(rawToken) {

@@ -24,6 +24,17 @@ router.post(
     authController.logoutAll.bind(authController)
 );
 
+// Google OAuth
+router.get(
+    "/google",
+    authController.googleAuth.bind(authController)
+);
+
+router.get(
+    "/google/callback",
+    authController.googleCallback.bind(authController)
+);
+
 router.get("/me", protect, authController.getProfile);
 
 router.get(

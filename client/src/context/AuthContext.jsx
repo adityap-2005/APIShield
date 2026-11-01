@@ -1,5 +1,6 @@
-import { createContext, useContext, useReducer, useEffect } from "react";
+import { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import authApi from "../api/auth";
+import { setStoredAccessToken, getStoredAccessToken } from "../api/axiosInstance";
 
 const initialState = {
   user: null,
@@ -10,13 +11,29 @@ const initialState = {
 function authReducer(state, action) {
   switch (action.type) {
     case "SET_USER":
-      return { ...state, user: action.payload.user, token: action.payload.token, isLoading: false };
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.token,
+        isLoading: false,
+      };
     case "UPDATE_USER":
-      return { ...state, user: { ...state.user, ...action.payload } };
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload },
+      };
     case "LOGOUT":
-      return { ...state, user: null, token: null, isLoading: false };
+      return {
+        ...state,
+        user: null,
+        token: null,
+        isLoading: false,
+      };
     case "DONE_LOADING":
-      return { ...state, isLoading: false };
+      return {
+        ...state,
+        isLoading: false,
+      };
     default:
       return state;
   }
@@ -27,38 +44,81 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Restore authenticated session on mount if token is present in storage
+  // Restore authenticated session on mount using stored token or HTTP-only cookie refresh
   useEffect(() => {
-    const token = localStorage.getItem("apiShield_token");
+    let isMounted = true;
 
-    if (!token) {
-      dispatch({ type: "DONE_LOADING" });
-      return;
-    }
+    const initializeAuth = async () => {
+      const existingToken = getStoredAccessToken();
 
-    authApi.getProfile()
-      .then((response) => {
-        dispatch({
-          type: "SET_USER",
-          payload: { user: response.data.data, token },
-        });
-      })
-      .catch(() => {
-        // Clear invalid or expired token to prevent infinite auth loop
-        localStorage.removeItem("apiShield_token");
+      // 1. If we have a stored access token, try getProfile first
+      if (existingToken) {
+        try {
+          const profileRes = await authApi.getProfile();
+          if (isMounted) {
+            dispatch({
+              type: "SET_USER",
+              payload: { user: profileRes.data.data, token: existingToken },
+            });
+            return;
+          }
+        } catch {
+          // Access token might be expired, proceed to refresh attempt
+        }
+      }
+
+      // 2. Try refreshing using the HTTP-only cookie
+      try {
+        const refreshRes = await authApi.refreshToken();
+        const newAccessToken =
+          refreshRes.data?.accessToken ||
+          refreshRes.data?.token ||
+          refreshRes.data?.data?.accessToken;
+
+        if (newAccessToken) {
+          setStoredAccessToken(newAccessToken);
+          const profileRes = await authApi.getProfile();
+          if (isMounted) {
+            dispatch({
+              type: "SET_USER",
+              payload: { user: profileRes.data.data, token: newAccessToken },
+            });
+            return;
+          }
+        }
+      } catch {
+        // No valid session / cookie
+        setStoredAccessToken(null);
+      }
+
+      if (isMounted) {
         dispatch({ type: "DONE_LOADING" });
-      });
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (email, password) => {
     const response = await authApi.login(email, password);
-    const { token, data: user } = response.data;
-    localStorage.setItem("apiShield_token", token);
+    const token = response.data?.accessToken || response.data?.token;
+    const user = response.data?.data || response.data?.user;
+
+    setStoredAccessToken(token);
     dispatch({ type: "SET_USER", payload: { user, token } });
     return user;
   };
 
-  // Register calls ONLY the registration API. Does not automatically log in.
+  // Called after completing Google OAuth callback flow to commit state
+  const setAuthSession = useCallback((user, token) => {
+    setStoredAccessToken(token);
+    dispatch({ type: "SET_USER", payload: { user, token } });
+  }, []);
+
   const register = async (name, email, password) => {
     const response = await authApi.register(name, email, password);
     return response.data;
@@ -68,13 +128,28 @@ export function AuthProvider({ children }) {
     dispatch({ type: "UPDATE_USER", payload: updatedUserData });
   };
 
-  const logout = () => {
-    localStorage.removeItem("apiShield_token");
-    dispatch({ type: "LOGOUT" });
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Backend logout errors handled gracefully
+    } finally {
+      setStoredAccessToken(null);
+      dispatch({ type: "LOGOUT" });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, register, updateUser }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        login,
+        logout,
+        register,
+        updateUser,
+        setAuthSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

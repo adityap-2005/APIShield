@@ -1,5 +1,14 @@
+import crypto from "crypto";
 import authService from "../services/auth.service.js";
 import ApiError from "../utils/ApiError.js";
+
+const refreshCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/api/v1/auth",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+};
 
 class AuthController {
     async register(req, res, next) {
@@ -20,14 +29,6 @@ class AuthController {
         try {
             const { user, accessToken, refreshToken } =
                 await authService.login(req.body);
-
-            const refreshCookieOptions = {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "none",
-                path: "/api/v1/auth",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            };
 
             res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
@@ -53,14 +54,6 @@ class AuthController {
             const { accessToken, refreshToken: newRefreshToken } =
                 await authService.refreshAccessToken(refreshToken);
 
-            const refreshCookieOptions = {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "none",
-                path: "/api/v1/auth",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            };
-
             res.cookie("refreshToken", newRefreshToken, refreshCookieOptions);
 
             return res.status(200).json({
@@ -76,14 +69,6 @@ class AuthController {
     async logout(req, res, next) {
         try {
             await authService.logout(req.cookies.refreshToken);
-
-            const refreshCookieOptions = {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "none",
-                path: "/api/v1/auth",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            };
 
             const { maxAge, ...clearOptions } = refreshCookieOptions;
             res.clearCookie("refreshToken", clearOptions);
@@ -101,14 +86,6 @@ class AuthController {
         try {
             await authService.logoutAll(req.user._id);
 
-            const refreshCookieOptions = {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "none",
-                path: "/api/v1/auth",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            };
-
             const { maxAge, ...clearOptions } = refreshCookieOptions;
             res.clearCookie("refreshToken", clearOptions);
 
@@ -116,6 +93,79 @@ class AuthController {
                 success: true,
                 message: "Logged out from all devices."
             });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async googleAuth(req, res, next) {
+        try {
+            const state = crypto.randomBytes(32).toString("hex");
+
+            res.cookie("googleOAuthState", state, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                maxAge: 10 * 60 * 1000,
+                path: "/api/v1/auth/google"
+            });
+
+            const authUrl = await authService.getGoogleAuthUrl(state);
+
+            return res.redirect(authUrl);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async googleCallback(req, res, next) {
+        try {
+            const { code, state, error: googleError } = req.query;
+            const storedState = req.cookies.googleOAuthState;
+
+            if (googleError) {
+                return res.redirect(
+                    `${process.env.FRONTEND_URL}/oauth/callback?error=google_auth_failed`
+                );
+            }
+
+            // Validate OAuth state
+            if (
+                !state ||
+                !storedState ||
+                typeof state !== "string" ||
+                typeof storedState !== "string" ||
+                state.length !== storedState.length ||
+                !crypto.timingSafeEqual(
+                    Buffer.from(state),
+                    Buffer.from(storedState)
+                )
+            ) {
+                throw new ApiError(401, "Invalid OAuth state.");
+            }
+
+            // Clear temporary state cookie
+            res.clearCookie("googleOAuthState", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                path: "/api/v1/auth/google"
+            });
+
+            if (!code || typeof code !== "string") {
+                throw new ApiError(400, "Google authorization code missing.");
+            }
+
+            const { refreshToken } = await authService.loginWithGoogle(code);
+
+            // Set refresh token cookie
+            res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
+            // Redirect to frontend OAuth callback page
+            return res.redirect(
+                `${process.env.FRONTEND_URL}/oauth/callback`
+            );
+
         } catch (error) {
             next(error);
         }

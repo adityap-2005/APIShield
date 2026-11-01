@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-import { USER_ROLES } from '../constants/roles.js';
 import { ACCOUNT_STATUS } from '../constants/accountStatus.js';
 
 const userSchema = new mongoose.Schema({
@@ -34,6 +33,18 @@ const userSchema = new mongoose.Schema({
         required: false,
         minlength: [8, "Password must be at least 8 characters"],
         select: false
+    },
+
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    
+    githubId: {
+        type: String,
+        unique: true,
+        sparse: true
     },
 
     // ======================
@@ -70,7 +81,7 @@ const userSchema = new mongoose.Schema({
 // ======================
 
 userSchema.pre("save", async function () {
-    if (!this.isModified("password")) {
+    if (!this.isModified("password") || !this.password) {
         return;
     }
     const saltRounds = 10;
