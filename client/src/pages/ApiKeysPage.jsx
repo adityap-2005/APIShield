@@ -24,6 +24,7 @@ import {
   Check,
   Ban,
   RefreshCw,
+  Archive,
   AlertTriangle,
 } from "lucide-react";
 
@@ -222,6 +223,28 @@ export default function ApiKeysPage() {
     });
   };
 
+  const handleArchiveKey = (keyItem) => {
+    setConfirmState({
+      isOpen: true,
+      keyId: keyItem._id,
+      title: "Archive API Key",
+      description: `Are you sure you want to archive "${keyItem.name}"? This API key will be permanently retired and will no longer be able to authenticate requests. Historical audit and usage logs will be preserved.`,
+      confirmText: "Archive Key",
+      variant: "warning",
+      action: async () => {
+        try {
+          setConfirmState((prev) => ({ ...prev, loading: true }));
+          await apiKeysApi.archive(activeOrg._id, selectedProjectId, keyItem._id);
+          setConfirmState((prev) => ({ ...prev, isOpen: false, loading: false }));
+          await loadApiKeys(selectedProjectId);
+        } catch (err) {
+          setError(err.response?.data?.message || "Failed to archive API key.");
+          setConfirmState((prev) => ({ ...prev, loading: false }));
+        }
+      },
+    });
+  };
+
   const currentProject = projects.find((p) => p._id === selectedProjectId) || activeProject;
   const canManage = canManageApiKeys(currentProject);
 
@@ -286,8 +309,98 @@ export default function ApiKeysPage() {
         </div>
       ) : (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          {/* Mobile Card List View (< 640px) */}
+          <div className="sm:hidden divide-y divide-white/5">
+            {apiKeys.map((k) => {
+              const isRevoked = k.status === "REVOKED";
+              const isExpired = k.status === "EXPIRED";
+              const isArchived = k.status === "ARCHIVED";
+              const isActive = k.status === "ACTIVE";
+              const safeKeyDisplay = k.publicKeyId || "Identifier unavailable";
+              const statusLabel = isActive
+                ? "ACTIVE"
+                : isRevoked
+                ? "REVOKED"
+                : isExpired
+                ? "EXPIRED"
+                : isArchived
+                ? "ARCHIVED"
+                : k.status || "UNKNOWN";
+
+              return (
+                <div key={k._id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-semibold text-white text-xs">{k.name}</h4>
+                      <p className="text-[11px] text-gray-400 font-mono mt-0.5">{safeKeyDisplay}</p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase shrink-0 ${
+                        isActive
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : isRevoked
+                          ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                          : isArchived
+                          ? "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                          : isExpired
+                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                      }`}
+                    >
+                      {statusLabel}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-gray-400 pt-1 border-t border-white/5">
+                    <div>
+                      <span className="text-gray-500 block text-[10px]">Created:</span>
+                      <span>{k.createdAt ? new Date(k.createdAt).toLocaleDateString() : "Active"}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block text-[10px]">Last Used:</span>
+                      <span>{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleTimeString() : "Never"}</span>
+                    </div>
+                  </div>
+
+                  {canManage && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
+                      {isActive && (
+                        <>
+                          <button
+                            onClick={() => handleRotateKey(k)}
+                            className="px-2.5 py-1 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-mono inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            <span>Rotate</span>
+                          </button>
+                          <button
+                            onClick={() => handleRevokeKey(k)}
+                            className="px-2.5 py-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-mono inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Ban className="w-3 h-3" />
+                            <span>Revoke</span>
+                          </button>
+                        </>
+                      )}
+                      {!isArchived && (
+                        <button
+                          onClick={() => handleArchiveKey(k)}
+                          className="px-2.5 py-1 rounded-md bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-300 text-xs font-mono inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Archive className="w-3 h-3" />
+                          <span>Archive</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View (>= 640px) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-mono text-gray-400 uppercase tracking-wider">
                   <th className="px-4 py-3 font-medium">KEY NAME</th>
@@ -358,7 +471,13 @@ export default function ApiKeysPage() {
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
                             isActive
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : isRevoked
+                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : isArchived
+                              ? "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                              : isExpired
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
                           }`}
                         >
                           {statusLabel}
@@ -373,19 +492,28 @@ export default function ApiKeysPage() {
                               <>
                                 <button
                                   onClick={() => handleRotateKey(k)}
-                                  className="p-1.5 rounded-md hover:bg-amber-500/10 text-gray-400 hover:text-amber-400 transition-colors"
+                                  className="p-1.5 rounded-md hover:bg-amber-500/10 text-gray-400 hover:text-amber-400 transition-colors cursor-pointer"
                                   title="Rotate Key"
                                 >
                                   <RefreshCw className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleRevokeKey(k)}
-                                  className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors"
+                                  className="p-1.5 rounded-md hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 transition-colors cursor-pointer"
                                   title="Revoke Key"
                                 >
                                   <Ban className="w-3.5 h-3.5" />
                                 </button>
                               </>
+                            )}
+                            {!isArchived && (
+                              <button
+                                onClick={() => handleArchiveKey(k)}
+                                className="p-1.5 rounded-md hover:bg-slate-500/10 text-gray-400 hover:text-slate-300 transition-colors cursor-pointer"
+                                title="Archive Key"
+                              >
+                                <Archive className="w-3.5 h-3.5" />
+                              </button>
                             )}
                           </div>
                         </td>

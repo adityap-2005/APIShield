@@ -31,9 +31,21 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   const iconVariants = {
-    danger: <div className="w-9 h-9 rounded-lg bg-red-950/60 border border-red-800/60 flex items-center justify-center text-red-400 shrink-0"><AlertTriangle className="w-4 h-4" /></div>,
-    warning: <div className="w-9 h-9 rounded-lg bg-yellow-950/60 border border-yellow-800/60 flex items-center justify-center text-yellow-400 shrink-0"><ShieldAlert className="w-4 h-4" /></div>,
-    primary: <div className="w-9 h-9 rounded-lg bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0"><Info className="w-4 h-4" /></div>,
+    danger: (
+      <div className="w-9 h-9 rounded-lg bg-red-950/60 border border-red-800/60 flex items-center justify-center text-red-400 shrink-0">
+        <AlertTriangle className="w-4 h-4" />
+      </div>
+    ),
+    warning: (
+      <div className="w-9 h-9 rounded-lg bg-yellow-950/60 border border-yellow-800/60 flex items-center justify-center text-yellow-400 shrink-0">
+        <ShieldAlert className="w-4 h-4" />
+      </div>
+    ),
+    primary: (
+      <div className="w-9 h-9 rounded-lg bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
+        <Info className="w-4 h-4" />
+      </div>
+    ),
   };
 
   const btnVariants = {
@@ -44,15 +56,15 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs overflow-y-auto"
       onClick={() => !loading && onClose()}
     >
       <div
-        className="w-full max-w-md bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden text-left"
+        className="w-full max-w-md max-h-[calc(100vh-2rem)] flex flex-col bg-[#161b22] border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden text-left my-auto animate-in fade-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#1c2128]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#1c2128] shrink-0">
           <div className="flex items-center gap-3">
             {iconVariants[variant]}
             <h3 className="text-sm font-bold text-white tracking-tight">{title}</h3>
@@ -60,7 +72,7 @@ export default function ConfirmModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white transition-colors p-1"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -68,14 +80,14 @@ export default function ConfirmModal({
         </div>
 
         {/* Description Body */}
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto flex-1">
           <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
             {description}
           </div>
         </div>
 
         {/* Actions Footer */}
-        <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 bg-[#1c2128] border-t border-white/10">
+        <div className="flex items-center justify-end gap-2.5 px-5 py-3.5 bg-[#1c2128] border-t border-white/10 shrink-0">
           <button
             type="button"
             onClick={onClose}

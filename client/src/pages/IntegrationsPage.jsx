@@ -1,10 +1,3 @@
-/**
- * IntegrationsPage.jsx
- *
- * Professional developer console for managing Integrations and upstream connections.
- * Hierarchy: Organization -> Project -> Integration -> Upstream API
- */
-
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrg } from "../context/OrgContext";
@@ -12,17 +5,16 @@ import projectsApi from "../api/projects";
 import integrationsApi from "../api/integrations";
 
 import LoadingSpinner from "../components/LoadingSpinner";
-import ErrorMessage from "../components/ErrorMessage";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 import { canManageIntegrations } from "../utils/permissions";
 
 import {
   Blocks,
-  Plus,
   Server,
-  Search,
+  Plus,
   Settings,
+  Search,
 } from "lucide-react";
 
 export default function IntegrationsPage() {
@@ -130,8 +122,12 @@ export default function IntegrationsPage() {
 
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((item) => {
-      if (!searchQuery) return true;
-      return item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        item.name?.toLowerCase().includes(q) ||
+        (item.upstreamApis || []).some((api) => api.name?.toLowerCase().includes(q))
+      );
     });
   }, [integrations, searchQuery]);
 
@@ -145,21 +141,37 @@ export default function IntegrationsPage() {
       setCreateError("Please select a project first.");
       return;
     }
+    if (!newBaseUrl.trim()) {
+      setCreateError("Upstream target base URL is required.");
+      return;
+    }
+    if (newAuthType === "API_KEY_HEADER" && !newAuthKeyName.trim()) {
+      setCreateError("Authentication key name is required for API key authentication.");
+      return;
+    }
+    if (newAuthType !== "NONE" && !newCredential.trim()) {
+      setCreateError("Upstream secret / credential is required.");
+      return;
+    }
 
     try {
       setCreateSubmitting(true);
       setCreateError("");
 
+      const cleanPath = newPath.trim()
+        ? (newPath.trim().startsWith("/") ? newPath.trim() : `/${newPath.trim()}`)
+        : "/";
+
       const payload = {
         name: newIntegrationName.trim(),
-        upstreamApiName: newUpstreamName.trim() || undefined,
-        baseUrl: newBaseUrl.trim() || undefined,
-        path: newPath.trim() || undefined,
-        upstreamCredential: newCredential.trim() ? {
+        upstreamApiName: newUpstreamName.trim() || `${newIntegrationName.trim()} API`,
+        baseUrl: newBaseUrl.trim(),
+        path: cleanPath,
+        authentication: {
           type: newAuthType,
-          headerName: newAuthKeyName.trim() || undefined,
-          apiKey: newCredential.trim(),
-        } : undefined,
+          keyName: newAuthType === "API_KEY_HEADER" ? (newAuthKeyName.trim() || "x-api-key") : undefined,
+        },
+        upstreamCredential: newCredential.trim() || undefined,
       };
 
       await integrationsApi.create(activeOrg._id, selectedProjectId, payload);
@@ -227,19 +239,19 @@ export default function IntegrationsPage() {
             <span>/</span>
             <span className="text-gray-300">Integrations</span>
           </nav>
-          <h1 className="text-xl font-bold text-white tracking-tight">Integrations</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Integrations</h1>
           <p className="text-xs text-gray-400 mt-1">
-            Manage connections to your upstream APIs.
+            Manage connections to your upstream APIs and service providers.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
           {/* Project Selector if multiple projects exist */}
           {projects.length > 1 && (
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-[#0e131f] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              className="bg-[#0e131f] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
             >
               {projects.map((p) => (
                 <option key={p._id} value={p._id}>
@@ -252,32 +264,36 @@ export default function IntegrationsPage() {
           {canManage && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-emerald-400 text-black font-semibold text-xs transition-colors shadow-sm shadow-emerald-500/20"
+              className="bg-[#10b981] hover:bg-[#059669] text-[#052e16] font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add Integration</span>
             </button>
           )}
         </div>
       </div>
 
-      {error && <ErrorMessage message={error} />}
+      {error && (
+        <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-xl text-red-300 text-xs">
+          {error}
+        </div>
+      )}
 
-      {/* ── SEARCH CONTROL ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 bg-[#0e131f] border border-white/10 rounded-xl p-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* ── SEARCH BAR ──────────────────────────────────────────────────────── */}
+      <div className="bg-[#0e131f] border border-white/10 rounded-xl p-3 shadow-md max-w-md">
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search integrations by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#070b12] border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-[#070b12] border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
           />
         </div>
       </div>
 
-      {/* ── INTEGRATIONS TABLE ──────────────────────────────────────────────── */}
+      {/* ── INTEGRATIONS DATA (Cards for mobile, Table for tablet/desktop) ── */}
       {loadingData ? (
         <LoadingSpinner message="Loading integrations..." />
       ) : filteredIntegrations.length === 0 ? (
@@ -301,8 +317,61 @@ export default function IntegrationsPage() {
         </div>
       ) : (
         <div className="bg-[#0e131f] border border-white/10 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          {/* Mobile Card List View (< 640px) */}
+          <div className="sm:hidden divide-y divide-white/5">
+            {filteredIntegrations.map((item) => {
+              const apisCount = (item.upstreamApis || []).length;
+              const isActive = item.status === "ACTIVE";
+
+              return (
+                <div key={item._id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400 shrink-0">
+                        <Blocks className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-white text-xs truncate">{item.name}</h4>
+                        <p className="text-[10px] text-gray-500 font-mono">ID: {item._id.slice(-8)}</p>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase shrink-0 ${
+                        isActive
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-gray-400"}`} />
+                      {isActive ? "Active" : "Disabled"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-mono text-gray-400 pt-1 border-t border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-gray-500" />
+                      <span>{apisCount} {apisCount === 1 ? "endpoint" : "endpoints"}</span>
+                    </div>
+
+                    {canManage && (
+                      <button
+                        onClick={() => handleToggleStatus(item)}
+                        className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 transition-colors"
+                        title={isActive ? "Disable Integration" : "Enable Integration"}
+                        aria-label="Toggle Integration Status"
+                      >
+                        <Settings className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View (>= 640px) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse min-w-[640px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-mono text-gray-400 uppercase tracking-wider">
                   <th className="px-4 py-3 font-medium">Name</th>
@@ -326,8 +395,8 @@ export default function IntegrationsPage() {
                           <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400 shrink-0">
                             <Blocks className="w-4 h-4" />
                           </div>
-                          <div>
-                            <div className="font-semibold text-white text-xs">{item.name}</div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-white text-xs truncate max-w-[180px]">{item.name}</div>
                             <div className="text-[11px] text-gray-500 font-mono">
                               ID: {item._id.slice(-8)}
                             </div>
@@ -373,6 +442,7 @@ export default function IntegrationsPage() {
                               onClick={() => handleToggleStatus(item)}
                               className="p-1.5 rounded-md hover:bg-white/10 text-gray-400 hover:text-white border border-white/5 transition-colors"
                               title={isActive ? "Disable Integration" : "Enable Integration"}
+                              aria-label="Toggle status"
                             >
                               <Settings className="w-3.5 h-3.5" />
                             </button>
@@ -396,7 +466,7 @@ export default function IntegrationsPage() {
       >
         <form onSubmit={handleCreateIntegration} className="space-y-4">
           {createError && (
-            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-md text-red-300 text-xs">
+            <div className="p-3 bg-red-950/60 border border-red-800/60 rounded-xl text-red-300 text-xs">
               {createError}
             </div>
           )}
@@ -415,34 +485,39 @@ export default function IntegrationsPage() {
 
           <div className="pt-2 border-t border-white/10">
             <h4 className="text-xs font-mono font-semibold text-gray-300 uppercase tracking-wider mb-2">
-              Initial Upstream API (Optional)
+              Initial Upstream API Configuration
             </h4>
 
             <div className="space-y-3">
               <div>
-                <label className="label">Upstream Name</label>
+                <label className="label">Upstream API Name (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. Current Weather Forecast"
+                  placeholder={newIntegrationName.trim() ? `${newIntegrationName.trim()} API` : "e.g. Weather Forecast Endpoint"}
                   value={newUpstreamName}
                   onChange={(e) => setNewUpstreamName(e.target.value)}
                   className="input"
                 />
+                <span className="text-[10px] text-gray-500 font-mono mt-1 block">
+                  Defaults to your integration name if left blank
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Base URL</label>
+                  <label className="label">Upstream Base URL *</label>
                   <input
                     type="url"
                     placeholder="https://api.open-meteo.com"
                     value={newBaseUrl}
                     onChange={(e) => setNewBaseUrl(e.target.value)}
                     className="input font-mono text-xs"
+                    required
                   />
+                  <span className="text-[10px] text-gray-500 font-mono mt-1 block">Root URL of destination API</span>
                 </div>
                 <div>
-                  <label className="label">Gateway Path</label>
+                  <label className="label">Upstream Path</label>
                   <input
                     type="text"
                     placeholder="/v1/forecast"
@@ -450,6 +525,7 @@ export default function IntegrationsPage() {
                     onChange={(e) => setNewPath(e.target.value)}
                     className="input font-mono text-xs"
                   />
+                  <span className="text-[10px] text-gray-500 font-mono mt-1 block">Target path, defaults to /</span>
                 </div>
               </div>
 
@@ -466,15 +542,30 @@ export default function IntegrationsPage() {
                 </select>
               </div>
 
+              {newAuthType === "API_KEY_HEADER" && (
+                <div>
+                  <label className="label">Header Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. x-api-key or Authorization"
+                    value={newAuthKeyName}
+                    onChange={(e) => setNewAuthKeyName(e.target.value)}
+                    className="input font-mono text-xs"
+                    required
+                  />
+                </div>
+              )}
+
               {newAuthType !== "NONE" && (
                 <div>
-                  <label className="label">Upstream Secret / Token</label>
+                  <label className="label">Upstream Secret / Token *</label>
                   <input
                     type="password"
                     placeholder="Secret key for upstream target"
                     value={newCredential}
                     onChange={(e) => setNewCredential(e.target.value)}
                     className="input font-mono text-xs"
+                    required
                   />
                 </div>
               )}
@@ -501,13 +592,13 @@ export default function IntegrationsPage() {
         </form>
       </Modal>
 
-      {/* Confirmation Dialog */}
+      {/* ── CONFIRMATION MODAL ────────────────────────────────────────────── */}
       <ConfirmModal
         isOpen={confirmState.isOpen}
         onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={confirmState.action}
         title={confirmState.title}
-        message={confirmState.description}
+        description={confirmState.description}
         confirmText={confirmState.confirmText}
         loading={confirmState.loading}
       />
